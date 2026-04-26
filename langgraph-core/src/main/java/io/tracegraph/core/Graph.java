@@ -2,6 +2,7 @@ package io.tracegraph.core;
 
 import io.tracegraph.core.exec.Executor;
 import io.tracegraph.core.exec.GraphValidationException;
+import io.tracegraph.core.exec.NodeKind;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.NodeListener;
 
@@ -17,13 +18,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 
 public final class Graph<S> {
 
     private static final int DEFAULT_MAX_STEPS = 1000;
 
-    private final Map<String, Node<S>> nodes;
+    private final Map<String, NodeKind<S>> nodes;
     private final Map<String, List<Edge<S>>> edgesByFrom;
     private final List<Edge<S>> edges;
     private final Set<String> terminals;
@@ -33,6 +35,7 @@ public final class Graph<S> {
     private final Map<String, RetryPolicy> nodePolicies;
     private final RetryPolicy defaultPolicy;
     private final CheckpointStore checkpointStore;
+    private final ExecutorService userExecutor;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -51,6 +54,7 @@ public final class Graph<S> {
         this.nodePolicies = Map.copyOf(b.nodePolicies);
         this.defaultPolicy = b.defaultPolicy == null ? RetryPolicy.none() : b.defaultPolicy;
         this.checkpointStore = b.checkpointStore == null ? CheckpointStore.noop() : b.checkpointStore;
+        this.userExecutor = b.userExecutor;
     }
 
     public static <S> Builder<S> builder() {
@@ -73,7 +77,8 @@ public final class Graph<S> {
     }
 
     private Executor<S> executor() {
-        return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy, checkpointStore);
+        return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
+                nodePolicies, defaultPolicy, checkpointStore, userExecutor);
     }
 
     public Set<String> nodeNames() {
@@ -93,7 +98,7 @@ public final class Graph<S> {
     }
 
     public static final class Builder<S> {
-        private final Map<String, Node<S>> nodes = new LinkedHashMap<>();
+        private final Map<String, NodeKind<S>> nodes = new LinkedHashMap<>();
         private final List<Edge<S>> edges = new ArrayList<>();
         private final Set<String> terminals = new HashSet<>();
         private final Map<String, RetryPolicy> nodePolicies = new HashMap<>();
@@ -102,6 +107,7 @@ public final class Graph<S> {
         private int maxSteps = DEFAULT_MAX_STEPS;
         private RetryPolicy defaultPolicy;
         private CheckpointStore checkpointStore;
+        private ExecutorService userExecutor;
 
         private Builder() {}
 
@@ -110,16 +116,59 @@ public final class Graph<S> {
         }
 
         public Builder<S> node(String name, Node<S> node, RetryPolicy retryPolicy) {
+            register(name, NodeKind.sync(node), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> asyncNode(String name, AsyncNode<S> node) {
+            return asyncNode(name, node, null);
+        }
+
+        public Builder<S> asyncNode(String name, AsyncNode<S> node, RetryPolicy retryPolicy) {
+            register(name, NodeKind.async(node), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> parallel(String name, List<Node<S>> branches, Merger<S> merger) {
+            return parallel(name, branches, merger, null);
+        }
+
+        public Builder<S> parallel(String name, List<Node<S>> branches, Merger<S> merger, RetryPolicy retryPolicy) {
+            Objects.requireNonNull(branches, "branches");
+            if (branches.isEmpty()) {
+                throw new GraphValidationException("Parallel '" + name + "' must have at least one branch");
+            }
+            List<NodeKind<S>> kinds = new ArrayList<>(branches.size());
+            for (Node<S> b : branches) kinds.add(NodeKind.sync(b));
+            register(name, NodeKind.parallel(kinds, Objects.requireNonNull(merger, "merger")), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> parallelAsync(String name, List<AsyncNode<S>> branches, Merger<S> merger) {
+            return parallelAsync(name, branches, merger, null);
+        }
+
+        public Builder<S> parallelAsync(String name, List<AsyncNode<S>> branches, Merger<S> merger, RetryPolicy retryPolicy) {
+            Objects.requireNonNull(branches, "branches");
+            if (branches.isEmpty()) {
+                throw new GraphValidationException("Parallel '" + name + "' must have at least one branch");
+            }
+            List<NodeKind<S>> kinds = new ArrayList<>(branches.size());
+            for (AsyncNode<S> b : branches) kinds.add(NodeKind.async(b));
+            register(name, NodeKind.parallel(kinds, Objects.requireNonNull(merger, "merger")), retryPolicy);
+            return this;
+        }
+
+        private void register(String name, NodeKind<S> kind, RetryPolicy retryPolicy) {
             Objects.requireNonNull(name, "node name");
-            Objects.requireNonNull(node, "node");
+            Objects.requireNonNull(kind, "node");
             if (nodes.containsKey(name)) {
                 throw new GraphValidationException("Duplicate node name: '" + name + "'");
             }
-            nodes.put(name, node);
+            nodes.put(name, kind);
             if (retryPolicy != null) {
                 nodePolicies.put(name, retryPolicy);
             }
-            return this;
         }
 
         public Builder<S> edge(String from, String to) {
@@ -163,6 +212,11 @@ public final class Graph<S> {
 
         public Builder<S> checkpointStore(CheckpointStore store) {
             this.checkpointStore = Objects.requireNonNull(store, "store");
+            return this;
+        }
+
+        public Builder<S> executor(ExecutorService executor) {
+            this.userExecutor = Objects.requireNonNull(executor, "executor");
             return this;
         }
 
