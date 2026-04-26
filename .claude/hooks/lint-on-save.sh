@@ -10,6 +10,12 @@ if ! command -v mvn >/dev/null 2>&1; then
   exit 0
 fi
 
+# Project targets JDK 21; pick it up if Maven's default Java is older.
+if [ -d "/c/Program Files/Eclipse Adoptium/jdk-21.0.4.7-hotspot" ]; then
+  export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.4.7-hotspot"
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
 input=$(cat || true)
 case "$input" in
   *"src/main/java"*|*"src/test/java"*|*"pom.xml"*)

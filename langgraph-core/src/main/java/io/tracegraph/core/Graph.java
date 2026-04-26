@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,6 +28,8 @@ public final class Graph<S> {
     private final String entry;
     private final NodeListener listener;
     private final int maxSteps;
+    private final Map<String, RetryPolicy> nodePolicies;
+    private final RetryPolicy defaultPolicy;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -42,6 +45,8 @@ public final class Graph<S> {
         this.entry = b.entry;
         this.listener = b.listener == null ? NodeListener.NOOP : b.listener;
         this.maxSteps = b.maxSteps;
+        this.nodePolicies = Map.copyOf(b.nodePolicies);
+        this.defaultPolicy = b.defaultPolicy == null ? RetryPolicy.none() : b.defaultPolicy;
     }
 
     public static <S> Builder<S> builder() {
@@ -49,7 +54,8 @@ public final class Graph<S> {
     }
 
     public ExecutionResult<S> run(S initial) {
-        return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps).run(initial);
+        return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy)
+                .run(initial);
     }
 
     public Set<String> nodeNames() {
@@ -72,19 +78,28 @@ public final class Graph<S> {
         private final Map<String, Node<S>> nodes = new LinkedHashMap<>();
         private final List<Edge<S>> edges = new ArrayList<>();
         private final Set<String> terminals = new HashSet<>();
+        private final Map<String, RetryPolicy> nodePolicies = new HashMap<>();
         private String entry;
         private NodeListener listener;
         private int maxSteps = DEFAULT_MAX_STEPS;
+        private RetryPolicy defaultPolicy;
 
         private Builder() {}
 
         public Builder<S> node(String name, Node<S> node) {
+            return node(name, node, null);
+        }
+
+        public Builder<S> node(String name, Node<S> node, RetryPolicy retryPolicy) {
             Objects.requireNonNull(name, "node name");
             Objects.requireNonNull(node, "node");
             if (nodes.containsKey(name)) {
                 throw new GraphValidationException("Duplicate node name: '" + name + "'");
             }
             nodes.put(name, node);
+            if (retryPolicy != null) {
+                nodePolicies.put(name, retryPolicy);
+            }
             return this;
         }
 
@@ -119,6 +134,11 @@ public final class Graph<S> {
                 throw new IllegalArgumentException("maxSteps must be > 0");
             }
             this.maxSteps = maxSteps;
+            return this;
+        }
+
+        public Builder<S> defaultRetryPolicy(RetryPolicy policy) {
+            this.defaultPolicy = Objects.requireNonNull(policy, "policy");
             return this;
         }
 
