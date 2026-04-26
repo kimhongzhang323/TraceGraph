@@ -1,19 +1,23 @@
 package io.tracegraph.core.exec;
 
+import io.tracegraph.core.Checkpoint;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Edge;
 import io.tracegraph.core.ExecutionResult;
 import io.tracegraph.core.Node;
 import io.tracegraph.core.RetryPolicy;
 import io.tracegraph.core.Status;
+import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.NodeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class Executor<S> {
@@ -22,33 +26,37 @@ public final class Executor<S> {
 
     private final Map<String, Node<S>> nodes;
     private final Map<String, List<Edge<S>>> edgesByFrom;
-    private final java.util.Set<String> terminals;
+    private final Set<String> terminals;
     private final String entry;
     private final NodeListener listener;
     private final int maxSteps;
     private final Map<String, RetryPolicy> nodePolicies;
     private final RetryPolicy defaultPolicy;
+    private final CheckpointStore checkpointStore;
     private final Sleeper sleeper;
 
     public Executor(Map<String, Node<S>> nodes,
                     Map<String, List<Edge<S>>> edgesByFrom,
-                    java.util.Set<String> terminals,
+                    Set<String> terminals,
                     String entry,
                     NodeListener listener,
                     int maxSteps,
                     Map<String, RetryPolicy> nodePolicies,
-                    RetryPolicy defaultPolicy) {
-        this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy, Sleeper.realtime());
+                    RetryPolicy defaultPolicy,
+                    CheckpointStore checkpointStore) {
+        this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
+                checkpointStore, Sleeper.realtime());
     }
 
     Executor(Map<String, Node<S>> nodes,
              Map<String, List<Edge<S>>> edgesByFrom,
-             java.util.Set<String> terminals,
+             Set<String> terminals,
              String entry,
              NodeListener listener,
              int maxSteps,
              Map<String, RetryPolicy> nodePolicies,
              RetryPolicy defaultPolicy,
+             CheckpointStore checkpointStore,
              Sleeper sleeper) {
         this.nodes = nodes;
         this.edgesByFrom = edgesByFrom;
@@ -58,20 +66,43 @@ public final class Executor<S> {
         this.maxSteps = maxSteps;
         this.nodePolicies = nodePolicies;
         this.defaultPolicy = defaultPolicy;
+        this.checkpointStore = checkpointStore;
         this.sleeper = sleeper;
     }
 
-    public ExecutionResult<S> run(S initial) {
-        String executionId = UUID.randomUUID().toString();
-        List<String> path = new ArrayList<>();
+    public ExecutionResult<S> run(S initial, String executionId) {
+        return loop(executionId, initial, entry, new ArrayList<>());
+    }
+
+    @SuppressWarnings("unchecked")
+    public ExecutionResult<S> resume(String executionId) {
+        var maybe = checkpointStore.latest(executionId);
+        if (maybe.isEmpty()) {
+            return null;
+        }
+        Checkpoint<S> cp = (Checkpoint<S>) maybe.get();
+        S state = cp.state();
+        String last = cp.lastCompletedNode();
+
+        if (terminals.contains(last)) {
+            return new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+        }
+        String next = pickNext(last, state);
+        if (next == null) {
+            return new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+        }
+        return loop(executionId, state, next, new ArrayList<>());
+    }
+
+    private ExecutionResult<S> loop(String executionId, S initial, String startNode, List<String> path) {
         S state = initial;
-        String current = entry;
+        String current = startNode;
         int steps = 0;
 
         while (current != null) {
             if (steps++ >= maxSteps) {
                 LOG.warn("[{}] max-step guard ({}) reached at node '{}'", executionId, maxSteps, current);
-                return new ExecutionResult<>(state, path, Status.HALTED, null);
+                return new ExecutionResult<>(executionId, state, path, Status.HALTED, null);
             }
 
             Node<S> node = nodes.get(current);
@@ -82,30 +113,33 @@ public final class Executor<S> {
             NodeOutcome<S> outcome = invokeWithRetry(node, state, current, executionId, policy);
             if (outcome.failure != null) {
                 listener.onError(current, outcome.failure.getCause() != null ? outcome.failure.getCause() : outcome.failure);
-                return new ExecutionResult<>(state, path, Status.FAILED, outcome.failure);
+                return new ExecutionResult<>(executionId, state, path, Status.FAILED, outcome.failure);
             }
             state = outcome.state;
+            checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now()));
             listener.onExit(current, state);
 
             if (terminals.contains(current)) {
-                return new ExecutionResult<>(state, path, Status.COMPLETED, null);
+                return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
             }
 
-            String next = null;
-            for (Edge<S> edge : edgesByFrom.getOrDefault(current, List.of())) {
-                if (edge.matches(state)) {
-                    next = edge.to();
-                    break;
-                }
-            }
-
+            String next = pickNext(current, state);
             if (next == null) {
-                return new ExecutionResult<>(state, path, Status.COMPLETED, null);
+                return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
             }
             current = next;
         }
 
-        return new ExecutionResult<>(state, path, Status.COMPLETED, null);
+        return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
+    }
+
+    private String pickNext(String from, S state) {
+        for (Edge<S> edge : edgesByFrom.getOrDefault(from, List.of())) {
+            if (edge.matches(state)) {
+                return edge.to();
+            }
+        }
+        return null;
     }
 
     private NodeOutcome<S> invokeWithRetry(Node<S> node, S state, String name, String executionId, RetryPolicy policy) {
@@ -134,6 +168,10 @@ public final class Executor<S> {
             }
         }
         return NodeOutcome.failure(new NodeExecutionException(name, last));
+    }
+
+    public static String newExecutionId() {
+        return UUID.randomUUID().toString();
     }
 
     private record NodeOutcome<S>(S state, NodeExecutionException failure) {

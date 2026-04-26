@@ -32,6 +32,7 @@ If a feature would force `langgraph-core` to depend on Spring / Jackson / OTel /
 - **No comments unless the WHY is non-obvious.** Identifier names should carry the WHAT.
 - **Compiler args:** `-Xlint:all -Werror`. Warnings break the build.
 - **Tests cover behavior, not implementation.** Validation tests, execution tests, listener tests — see `langgraph-core/src/test/java/`.
+- **Checkpoints write after node exit, before edge resolution.** Resume re-evaluates outgoing edges of the saved `lastCompletedNode` and continues from there. Nodes are at-least-once on resume — if a crash happens mid-node, that node re-runs from attempt 1. Edge predicates must be pure functions of state. The default `CheckpointStore` is no-op; opt in via `.checkpointStore(...)`.
 - **Retry policy is graph-definition, not runtime config.** `RetryPolicy` attaches to a node via `.node(name, fn, policy)` or to the whole graph via `.defaultRetryPolicy(policy)`. Per-node beats default. The executor handles backoff and emits `NodeListener.onRetry`; node code uses `ctx.idempotencyKey()` for its own dedup. `Error` and `InterruptedException` always short-circuit retries.
 
 ## Build commands

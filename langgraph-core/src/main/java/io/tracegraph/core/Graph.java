@@ -2,6 +2,7 @@ package io.tracegraph.core;
 
 import io.tracegraph.core.exec.Executor;
 import io.tracegraph.core.exec.GraphValidationException;
+import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.NodeListener;
 
 import java.util.ArrayDeque;
@@ -14,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -30,6 +32,7 @@ public final class Graph<S> {
     private final int maxSteps;
     private final Map<String, RetryPolicy> nodePolicies;
     private final RetryPolicy defaultPolicy;
+    private final CheckpointStore checkpointStore;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -47,6 +50,7 @@ public final class Graph<S> {
         this.maxSteps = b.maxSteps;
         this.nodePolicies = Map.copyOf(b.nodePolicies);
         this.defaultPolicy = b.defaultPolicy == null ? RetryPolicy.none() : b.defaultPolicy;
+        this.checkpointStore = b.checkpointStore == null ? CheckpointStore.noop() : b.checkpointStore;
     }
 
     public static <S> Builder<S> builder() {
@@ -54,8 +58,22 @@ public final class Graph<S> {
     }
 
     public ExecutionResult<S> run(S initial) {
-        return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy)
-                .run(initial);
+        return run(initial, Executor.newExecutionId());
+    }
+
+    public ExecutionResult<S> run(S initial, String executionId) {
+        Objects.requireNonNull(executionId, "executionId");
+        return executor().run(initial, executionId);
+    }
+
+    public Optional<ExecutionResult<S>> resume(String executionId) {
+        Objects.requireNonNull(executionId, "executionId");
+        ExecutionResult<S> result = executor().resume(executionId);
+        return Optional.ofNullable(result);
+    }
+
+    private Executor<S> executor() {
+        return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy, checkpointStore);
     }
 
     public Set<String> nodeNames() {
@@ -83,6 +101,7 @@ public final class Graph<S> {
         private NodeListener listener;
         private int maxSteps = DEFAULT_MAX_STEPS;
         private RetryPolicy defaultPolicy;
+        private CheckpointStore checkpointStore;
 
         private Builder() {}
 
@@ -139,6 +158,11 @@ public final class Graph<S> {
 
         public Builder<S> defaultRetryPolicy(RetryPolicy policy) {
             this.defaultPolicy = Objects.requireNonNull(policy, "policy");
+            return this;
+        }
+
+        public Builder<S> checkpointStore(CheckpointStore store) {
+            this.checkpointStore = Objects.requireNonNull(store, "store");
             return this;
         }
 
