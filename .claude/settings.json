@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(mvn --version)",
+      "Bash(mvn -B test)",
+      "Bash(mvn -B test -pl *)",
+      "Bash(mvn -B compile)",
+      "Bash(mvn -B install -DskipTests)",
+      "Bash(mvn -B clean)",
+      "Bash(mvn dependency:tree*)",
+      "Bash(mvn versions:*)",
+      "Bash(java --version)",
+      "Bash(javac --version)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/lint-on-save.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
