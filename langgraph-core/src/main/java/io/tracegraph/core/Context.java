@@ -10,4 +10,8 @@ public interface Context {
     int attempt();
 
     Logger logger();
+
+    default String idempotencyKey() {
+        return executionId() + ":" + nodeName() + ":" + attempt();
+    }
 }

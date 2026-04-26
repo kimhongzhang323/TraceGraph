@@ -10,5 +10,10 @@ if ! command -v mvn >/dev/null 2>&1; then
   exit 0
 fi
 
+if [ -d "/c/Program Files/Eclipse Adoptium/jdk-21.0.4.7-hotspot" ]; then
+  export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.4.7-hotspot"
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
 echo "[pre-commit] running mvn -q -B -pl langgraph-core test"
 mvn -q -B -pl langgraph-core test
