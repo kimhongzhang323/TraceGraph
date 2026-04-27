@@ -19,21 +19,37 @@ public final class OtelNodeListener implements NodeListener {
 
     private static final String ATTR_NODE = "tracegraph.node.name";
     private static final String ATTR_ATTEMPT = "tracegraph.attempt";
+    private static final String ATTR_STATE_BEFORE = "tracegraph.state.before";
+    private static final String ATTR_STATE_AFTER = "tracegraph.state.after";
 
     private static final ThreadLocal<Deque<Active>> STACK = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final Tracer tracer;
+    private final StateRenderer renderer;
 
-    private OtelNodeListener(OpenTelemetry otel) {
+    private OtelNodeListener(OpenTelemetry otel, StateRenderer renderer) {
         this.tracer = otel.getTracer(INSTRUMENTATION_NAME);
+        this.renderer = renderer;
     }
 
     public static OtelNodeListener using(OpenTelemetry otel) {
-        return new OtelNodeListener(Objects.requireNonNull(otel, "otel"));
+        return using(otel, StateRenderer.DEFAULT);
+    }
+
+    public static OtelNodeListener using(OpenTelemetry otel, StateRenderer renderer) {
+        return new OtelNodeListener(
+                Objects.requireNonNull(otel, "otel"),
+                Objects.requireNonNull(renderer, "renderer"));
     }
 
     public static OtelNodeListener usingGlobal() {
-        return new OtelNodeListener(GlobalOpenTelemetry.get());
+        return usingGlobal(StateRenderer.DEFAULT);
+    }
+
+    public static OtelNodeListener usingGlobal(StateRenderer renderer) {
+        return new OtelNodeListener(
+                GlobalOpenTelemetry.get(),
+                Objects.requireNonNull(renderer, "renderer"));
     }
 
     @Override
@@ -64,6 +80,16 @@ public final class OtelNodeListener implements NodeListener {
         a.span.setStatus(StatusCode.ERROR, error.getClass().getSimpleName());
         a.scope.close();
         a.span.end();
+    }
+
+    @Override
+    public void onState(String nodeName, Object before, Object after) {
+        Active a = STACK.get().peek();
+        if (a == null || !a.nodeName.equals(nodeName)) return;
+        a.span.addEvent("state", Attributes.builder()
+                .put(ATTR_STATE_BEFORE, renderer.render(before))
+                .put(ATTR_STATE_AFTER, renderer.render(after))
+                .build());
     }
 
     @Override

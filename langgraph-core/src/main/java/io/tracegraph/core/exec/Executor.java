@@ -8,6 +8,7 @@ import io.tracegraph.core.RetryPolicy;
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.NodeListener;
+import io.tracegraph.core.spi.TraceRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ public final class Executor<S> {
     private final Map<String, RetryPolicy> nodePolicies;
     private final RetryPolicy defaultPolicy;
     private final CheckpointStore checkpointStore;
+    private final TraceRecorder traceRecorder;
     private final ExecutorService userExecutor;
     private final Sleeper sleeper;
 
@@ -47,9 +49,10 @@ public final class Executor<S> {
                     Map<String, RetryPolicy> nodePolicies,
                     RetryPolicy defaultPolicy,
                     CheckpointStore checkpointStore,
+                    TraceRecorder traceRecorder,
                     ExecutorService userExecutor) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
-                checkpointStore, userExecutor, Sleeper.realtime());
+                checkpointStore, traceRecorder, userExecutor, Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -61,6 +64,7 @@ public final class Executor<S> {
              Map<String, RetryPolicy> nodePolicies,
              RetryPolicy defaultPolicy,
              CheckpointStore checkpointStore,
+             TraceRecorder traceRecorder,
              ExecutorService userExecutor,
              Sleeper sleeper) {
         this.nodes = nodes;
@@ -72,12 +76,16 @@ public final class Executor<S> {
         this.nodePolicies = nodePolicies;
         this.defaultPolicy = defaultPolicy;
         this.checkpointStore = checkpointStore;
+        this.traceRecorder = traceRecorder;
         this.userExecutor = userExecutor;
         this.sleeper = sleeper;
     }
 
     public ExecutionResult<S> run(S initial, String executionId) {
-        return withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec));
+        traceRecorder.recordStart(executionId, initial);
+        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec));
+        traceRecorder.recordComplete(executionId, result.status(), result.finalState());
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -89,14 +97,21 @@ public final class Executor<S> {
         S state = cp.state();
         String last = cp.lastCompletedNode();
 
+        traceRecorder.recordStart(executionId, state);
+
+        ExecutionResult<S> result;
         if (terminals.contains(last)) {
-            return new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+            result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+        } else {
+            String next = pickNext(last, state);
+            if (next == null) {
+                result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+            } else {
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec));
+            }
         }
-        String next = pickNext(last, state);
-        if (next == null) {
-            return new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
-        }
-        return withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec));
+        traceRecorder.recordComplete(executionId, result.status(), result.finalState());
+        return result;
     }
 
     private ExecutionResult<S> withExecutor(java.util.function.Function<ExecutorService, ExecutionResult<S>> work) {
@@ -124,12 +139,20 @@ public final class Executor<S> {
             path.add(current);
 
             listener.onEnter(current, state);
+            traceRecorder.recordEnter(executionId, current, 1, state);
+            S before = state;
+            long startNanos = System.nanoTime();
             NodeOutcome<S> outcome = invokeWithRetry(node, state, current, executionId, policy, exec);
+            long durationNanos = System.nanoTime() - startNanos;
             if (outcome.failure != null) {
-                listener.onError(current, outcome.failure.getCause() != null ? outcome.failure.getCause() : outcome.failure);
+                Throwable err = outcome.failure.getCause() != null ? outcome.failure.getCause() : outcome.failure;
+                listener.onError(current, err);
+                traceRecorder.recordError(executionId, current, err);
                 return new ExecutionResult<>(executionId, state, path, Status.FAILED, outcome.failure);
             }
             state = outcome.state;
+            listener.onState(current, before, state);
+            traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
             checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now()));
             listener.onExit(current, state);
 
@@ -163,7 +186,7 @@ public final class Executor<S> {
             Context ctx = new SimpleContext(executionId, name, attempt);
             try {
                 S next = node.invoke(state, ctx, exec).join();
-                return NodeOutcome.success(next);
+                return NodeOutcome.success(next, attempt);
             } catch (CompletionException ce) {
                 Throwable cause = ce.getCause() != null ? ce.getCause() : ce;
                 if (cause instanceof InterruptedException) {
@@ -175,6 +198,7 @@ public final class Executor<S> {
                     return NodeOutcome.failure(new NodeExecutionException(name, cause));
                 }
                 listener.onRetry(name, attempt, cause);
+                traceRecorder.recordRetry(executionId, name, attempt, cause);
                 Duration delay = policy.backoff().delayFor(attempt);
                 try {
                     sleeper.sleep(delay);
@@ -188,6 +212,7 @@ public final class Executor<S> {
                     return NodeOutcome.failure(new NodeExecutionException(name, t));
                 }
                 listener.onRetry(name, attempt, t);
+                traceRecorder.recordRetry(executionId, name, attempt, t);
                 Duration delay = policy.backoff().delayFor(attempt);
                 try {
                     sleeper.sleep(delay);
@@ -204,9 +229,9 @@ public final class Executor<S> {
         return UUID.randomUUID().toString();
     }
 
-    private record NodeOutcome<S>(S state, NodeExecutionException failure) {
-        static <S> NodeOutcome<S> success(S state) { return new NodeOutcome<>(state, null); }
-        static <S> NodeOutcome<S> failure(NodeExecutionException ex) { return new NodeOutcome<>(null, ex); }
+    private record NodeOutcome<S>(S state, int attempts, NodeExecutionException failure) {
+        static <S> NodeOutcome<S> success(S state, int attempts) { return new NodeOutcome<>(state, attempts, null); }
+        static <S> NodeOutcome<S> failure(NodeExecutionException ex) { return new NodeOutcome<>(null, 0, ex); }
     }
 
     private record SimpleContext(String executionId, String nodeName, int attempt) implements Context {

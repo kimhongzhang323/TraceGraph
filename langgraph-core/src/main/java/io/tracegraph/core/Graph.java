@@ -5,6 +5,7 @@ import io.tracegraph.core.exec.GraphValidationException;
 import io.tracegraph.core.exec.NodeKind;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.NodeListener;
+import io.tracegraph.core.spi.TraceRecorder;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public final class Graph<S> {
     private final Map<String, RetryPolicy> nodePolicies;
     private final RetryPolicy defaultPolicy;
     private final CheckpointStore checkpointStore;
+    private final TraceRecorder traceRecorder;
     private final ExecutorService userExecutor;
 
     private Graph(Builder<S> b) {
@@ -54,6 +56,7 @@ public final class Graph<S> {
         this.nodePolicies = Map.copyOf(b.nodePolicies);
         this.defaultPolicy = b.defaultPolicy == null ? RetryPolicy.none() : b.defaultPolicy;
         this.checkpointStore = b.checkpointStore == null ? CheckpointStore.noop() : b.checkpointStore;
+        this.traceRecorder = b.traceRecorder == null ? TraceRecorder.noop() : b.traceRecorder;
         this.userExecutor = b.userExecutor;
     }
 
@@ -78,7 +81,7 @@ public final class Graph<S> {
 
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
-                nodePolicies, defaultPolicy, checkpointStore, userExecutor);
+                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, userExecutor);
     }
 
     public Set<String> nodeNames() {
@@ -107,6 +110,7 @@ public final class Graph<S> {
         private int maxSteps = DEFAULT_MAX_STEPS;
         private RetryPolicy defaultPolicy;
         private CheckpointStore checkpointStore;
+        private TraceRecorder traceRecorder;
         private ExecutorService userExecutor;
 
         private Builder() {}
@@ -212,6 +216,11 @@ public final class Graph<S> {
 
         public Builder<S> checkpointStore(CheckpointStore store) {
             this.checkpointStore = Objects.requireNonNull(store, "store");
+            return this;
+        }
+
+        public Builder<S> traceRecorder(TraceRecorder recorder) {
+            this.traceRecorder = Objects.requireNonNull(recorder, "recorder");
             return this;
         }
 

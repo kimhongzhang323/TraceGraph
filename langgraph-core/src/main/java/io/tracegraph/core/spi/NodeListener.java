@@ -8,6 +8,8 @@ public interface NodeListener {
 
     default void onExit(String nodeName, Object state) {}
 
+    default void onState(String nodeName, Object before, Object after) {}
+
     default void onError(String nodeName, Throwable error) {}
 
     default void onRetry(String nodeName, int attempt, Throwable error) {}
