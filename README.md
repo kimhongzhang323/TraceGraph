@@ -26,7 +26,12 @@ mvn test
 GitHub Actions is configured for:
 
 - CI on pushes to `main`/`master` and all pull requests using `mvn verify` on Ubuntu and Windows
-- Release publishing on `v*` tags or manual dispatch to GitHub Packages
+- Failure artifact upload for Maven test reports
+- Dependency graph submission for GitHub dependency insights
+- Weekly Dependabot updates for Maven and GitHub Actions
+- Security automation with dependency review on pull requests and scheduled CodeQL analysis
+- Release drafting on mainline changes
+- Release publishing on `v*` tags or manual dispatch to GitHub Packages and GitHub Releases
 
 To consume release publishing, ensure GitHub Packages is enabled for the repository and create version tags such as `v0.1.0`.
 
