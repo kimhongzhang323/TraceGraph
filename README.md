@@ -1,60 +1,234 @@
 # TraceGraph
 
-A production-grade agent runtime for the JVM — typed graphs, durable memory, deep observability. Not a LangGraph clone; the goal is reliability, debuggability, and enterprise readiness.
+TraceGraph is a JVM-native agent runtime for building typed execution graphs with durable state, retries, checkpoints, memory, and observability hooks.
+
+The project is aimed at teams that want graph-style orchestration on the JVM without giving up strong typing, testability, or production control. It is not trying to be a line-by-line clone of LangGraph. The focus here is reliability, debuggability, and clean integration with Java and Spring ecosystems.
+
+## Why TraceGraph
+
+- Typed graph definitions with plain Java functions
+- Deterministic execution paths and explicit state transitions
+- Built-in support for retries, async nodes, and parallel fan-out
+- Checkpointing and resume hooks for long-running flows
+- Trace recording and replay support for debugging
+- OpenTelemetry integration for production observability
+- Spring Boot auto-configuration for application integration
+- Connector modules for LLM-style adapters on the JVM
+
+## Project Status
+
+TraceGraph is under active development.
+
+- `langgraph-core` is the most mature module and already covers core graph construction and execution behavior.
+- `langgraph-runtime`, `langgraph-memory`, `langgraph-observability`, and `langgraph-spring-boot-starter` are implemented and tested, but are still evolving.
+- `langgraph-connectors` is intentionally early-stage and should be treated as experimental integration code.
+
+Until the API settles, expect breaking changes between pre-1.0 releases.
 
 ## Modules
 
-| Module | Status | Purpose |
-|---|---|---|
-| `langgraph-core` | Phase 1 ✅ | Typed `Graph`/`Node`/`Edge`/`State`, sync execution, conditional edges, listener SPI |
-| `langgraph-runtime` | Phase 2 (skeleton) | Checkpointing, retries, async/parallel nodes, resumable execution |
-| `langgraph-observability` | Phase 3 (skeleton) | OpenTelemetry, state-diff tracking, replay engine |
-| `langgraph-memory` | Phase 4 (skeleton) | Working / session / long-term / semantic memory |
-| `langgraph-spring-boot-starter` | Phase 5 (skeleton) | Auto-config, DI for nodes, REST trigger |
-| `langgraph-connectors` | Later | LLM and vector store adapters |
+| Module | Purpose |
+|---|---|
+| `langgraph-core` | Typed graphs, nodes, edges, execution results, retries, async nodes, and parallel execution primitives |
+| `langgraph-runtime` | Checkpoint store implementations and runtime-oriented resume behavior |
+| `langgraph-memory` | In-memory and file-backed memory store implementations |
+| `langgraph-observability` | OpenTelemetry listeners, trace recording, replay, diffing, and trace store implementations |
+| `langgraph-spring-boot-starter` | Spring Boot auto-configuration and web integration pieces |
+| `langgraph-connectors` | Connector adapters such as OpenAI and Anthropic HTTP clients |
 
-## Build
+## Requirements
 
-Requires JDK 21 + Maven 3.9+.
+- JDK 21
+- Maven 3.9+
+
+GitHub Actions is also configured around JDK 21, so local and CI environments should match.
+
+## Getting Started
+
+Clone the repository and run the full verification build:
+
+```bash
+mvn -B -ntp verify
+```
+
+If Maven is picking up the wrong JDK locally, verify `mvn -version` and make sure `JAVA_HOME` points to a Java 21 installation.
+
+## Quick Start
+
+The core API uses plain Java records and functions. A graph is assembled explicitly and returns a typed `ExecutionResult`.
+
+```java
+import io.tracegraph.core.ExecutionResult;
+import io.tracegraph.core.Graph;
+
+record OrderState(String id, boolean valid, boolean charged, boolean shipped) {
+    OrderState withValid(boolean value) {
+        return new OrderState(id, value, charged, shipped);
+    }
+
+    OrderState withCharged(boolean value) {
+        return new OrderState(id, valid, value, shipped);
+    }
+
+    OrderState withShipped(boolean value) {
+        return new OrderState(id, valid, charged, value);
+    }
+}
+
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        .node("validate", (state, ctx) -> state.withValid(true))
+        .node("charge", (state, ctx) -> state.withCharged(true))
+        .node("ship", (state, ctx) -> state.withShipped(true))
+        .entry("validate")
+        .edge("validate", "charge", OrderState::valid)
+        .edge("charge", "ship")
+        .terminal("ship")
+        .build();
+
+ExecutionResult<OrderState> result = graph.run(
+        new OrderState("o-1", false, false, false)
+);
+```
+
+## Core Concepts
+
+### Graphs
+
+`Graph<S>` is the main runtime abstraction. You define:
+
+- named nodes
+- directed edges
+- an entry node
+- one or more terminal nodes
+- optional retry, checkpoint, trace, listener, memory, and executor behavior
+
+### Nodes
+
+TraceGraph supports several execution styles:
+
+- synchronous nodes via `node(...)`
+- asynchronous nodes via `asyncNode(...)`
+- parallel branches via `parallel(...)`
+- parallel async branches via `parallelAsync(...)`
+
+### Execution Results
+
+Execution returns an `ExecutionResult<S>` that includes:
+
+- `executionId`
+- `finalState`
+- `path`
+- `status`
+- `error`
+
+This makes the runtime straightforward to test and inspect.
+
+## Runtime Features
+
+### Retries
+
+Retry policies can be applied per-node or as a graph default. The runtime supports fixed and exponential backoff strategies.
+
+### Checkpointing and Resume
+
+Graphs can be wired to a `CheckpointStore` and resumed later by execution ID:
+
+```java
+graph.resume("execution-123");
+```
+
+The `langgraph-runtime` module includes an `InMemoryCheckpointStore`, and the extension points are designed for external durable stores.
+
+### Memory
+
+The memory SPI supports scoped key-value persistence for agent-style workflows. Current implementations include:
+
+- `InMemoryMemoryStore`
+- `FileMemoryStore`
+
+### Observability and Replay
+
+The observability module includes:
+
+- OpenTelemetry node listeners
+- state rendering hooks
+- trace recording
+- in-memory and JSON file trace stores
+- replay and trace diff utilities
+
+This is useful for post-run inspection, debugging, and deterministic replay workflows.
+
+### Spring Boot Integration
+
+The Spring Boot starter auto-configures default beans for:
+
+- `NodeListener`
+- `CheckpointStore`
+- `TraceRecorder`
+- `MemoryStore`
+
+That gives applications a clean way to override infrastructure concerns while keeping graph code simple.
+
+## Build and Test
+
+Useful local commands:
 
 ```bash
 mvn test
+mvn verify
 ```
+
+The build uses strict compiler settings, including warnings-as-errors via the Maven compiler plugin.
 
 ## CI/CD
 
 GitHub Actions is configured for:
 
-- CI on pushes to `main`/`master` and all pull requests using `mvn verify` on Ubuntu and Windows
-- Failure artifact upload for Maven test reports
-- Dependency graph submission for GitHub dependency insights
-- Weekly Dependabot updates for Maven and GitHub Actions
-- Security automation with dependency review on pull requests and scheduled CodeQL analysis
-- Release drafting on mainline changes
-- Release publishing on `v*` tags or manual dispatch to GitHub Packages and GitHub Releases
+- cross-platform CI on Ubuntu and Windows
+- pull request security review for dependency changes
+- scheduled and main-branch CodeQL analysis
+- weekly Dependabot updates for Maven and GitHub Actions
+- automated release drafting
+- release publishing to GitHub Packages
+- GitHub Release creation for tagged versions
 
-To consume release publishing, ensure GitHub Packages is enabled for the repository and create version tags such as `v0.1.0`.
+Release tags follow the `v*` convention, for example:
 
-## Sample
-
-```java
-record OrderState(String id, boolean valid, boolean charged, boolean shipped) {
-    OrderState withValid(boolean v)   { return new OrderState(id, v, charged, shipped); }
-    OrderState withCharged(boolean c) { return new OrderState(id, valid, c, shipped); }
-    OrderState withShipped(boolean s) { return new OrderState(id, valid, charged, s); }
-}
-
-Graph<OrderState> graph = Graph.<OrderState>builder()
-    .node("validate", (state, ctx) -> state.withValid(true))
-    .node("charge",   (state, ctx) -> state.withCharged(true))
-    .node("ship",     (state, ctx) -> state.withShipped(true))
-    .entry("validate")
-    .edge("validate", "charge", OrderState::valid)
-    .edge("charge", "ship")
-    .terminal("ship")
-    .build();
-
-ExecutionResult<OrderState> result = graph.run(new OrderState("o-1", false, false, false));
-// result.path()   == ["validate", "charge", "ship"]
-// result.status() == COMPLETED
+```text
+v0.1.0
 ```
+
+## Versioning and Publishing
+
+The project is currently in pre-1.0 development and uses snapshot versions in source control.
+
+Release automation is configured in GitHub Actions. If you are consuming the project before a public package distribution is finalized, the safest option is to build from source and install locally:
+
+```bash
+mvn install
+```
+
+## Roadmap
+
+Near-term priorities are:
+
+- hardening the graph runtime API
+- improving durability and checkpoint integrations
+- expanding observability and replay ergonomics
+- maturing Spring Boot integration
+- stabilizing connector interfaces
+
+## Contributing
+
+Issues and pull requests are welcome.
+
+When contributing:
+
+1. Use JDK 21 and Maven 3.9+.
+2. Run `mvn -B -ntp verify` before opening a pull request.
+3. Keep changes scoped and add or update tests when behavior changes.
+4. Prefer small, reviewable pull requests over broad refactors.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
