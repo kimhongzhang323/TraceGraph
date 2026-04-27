@@ -9,7 +9,8 @@ import java.util.Objects;
 public record ExecutionTrace<S>(String executionId, S initialState, S finalState,
                                 Status status, Throwable error,
                                 List<TraceStep<S>> steps,
-                                Instant startedAt, Instant completedAt) {
+                                Instant startedAt, Instant completedAt,
+                                String forkedFromExecutionId, int forkedFromStepIndex) {
 
     public ExecutionTrace {
         Objects.requireNonNull(executionId, "executionId");
@@ -17,5 +18,16 @@ public record ExecutionTrace<S>(String executionId, S initialState, S finalState
         Objects.requireNonNull(startedAt, "startedAt");
         Objects.requireNonNull(completedAt, "completedAt");
         steps = List.copyOf(steps);
+    }
+
+    public ExecutionTrace(String executionId, S initialState, S finalState,
+                          Status status, Throwable error,
+                          List<TraceStep<S>> steps,
+                          Instant startedAt, Instant completedAt) {
+        this(executionId, initialState, finalState, status, error, steps, startedAt, completedAt, null, -1);
+    }
+
+    public boolean isFork() {
+        return forkedFromExecutionId != null;
     }
 }
