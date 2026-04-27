@@ -108,6 +108,19 @@ class JsonFileTraceStoreTest {
     }
 
     @Test
+    void listIdsReturnsAllPersistedIds(@TempDir Path tmp) {
+        JsonFileTraceStore<String> store = JsonFileTraceStore.of(tmp, String.class);
+        Graph<String> g = Graph.<String>builder()
+                .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        ExecutionResult<String> r1 = g.run("a");
+        ExecutionResult<String> r2 = g.run("b");
+
+        assertThat(store.listIds()).containsExactlyInAnyOrder(r1.executionId(), r2.executionId());
+    }
+
+    @Test
     void rejectsExecutionIdWithPathTraversal(@TempDir Path tmp) {
         JsonFileTraceStore<String> store = JsonFileTraceStore.of(tmp, String.class);
         assertThatThrownBy(() -> store.load("../escape")).isInstanceOf(IllegalArgumentException.class);

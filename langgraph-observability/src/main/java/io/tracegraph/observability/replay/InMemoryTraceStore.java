@@ -1,5 +1,6 @@
 package io.tracegraph.observability.replay;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,11 @@ public final class InMemoryTraceStore implements TraceStore {
     @Override
     public void delete(String executionId) {
         traces.remove(executionId);
+    }
+
+    @Override
+    public List<String> listIds() {
+        return List.copyOf(traces.keySet());
     }
 
     public int size() {
