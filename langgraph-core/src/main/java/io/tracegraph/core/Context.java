@@ -1,5 +1,6 @@
 package io.tracegraph.core;
 
+import io.tracegraph.core.spi.MemoryStore;
 import org.slf4j.Logger;
 
 public interface Context {
@@ -13,5 +14,9 @@ public interface Context {
 
     default String idempotencyKey() {
         return executionId() + ":" + nodeName() + ":" + attempt();
+    }
+
+    default MemoryStore memory() {
+        return MemoryStore.noop();
     }
 }
