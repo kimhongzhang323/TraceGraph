@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -18,6 +19,11 @@ public class TraceController {
 
     public TraceController(TraceStore store) {
         this.store = store;
+    }
+
+    @GetMapping
+    public List<String> list() {
+        return store.listIds();
     }
 
     @GetMapping("/{id}")

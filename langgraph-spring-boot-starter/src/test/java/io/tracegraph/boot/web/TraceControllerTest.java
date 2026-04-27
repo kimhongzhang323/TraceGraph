@@ -51,6 +51,21 @@ class TraceControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void listsExecutionIds() throws Exception {
+        Graph<String> g = Graph.<String>builder()
+                .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        ExecutionResult<String> r1 = g.run("a");
+        ExecutionResult<String> r2 = g.run("b");
+
+        mockMvc.perform(get("/tracegraph/traces"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@=='" + r1.executionId() + "')]").exists())
+                .andExpect(jsonPath("$[?(@=='" + r2.executionId() + "')]").exists());
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration
     static class TestApp {

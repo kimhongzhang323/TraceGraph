@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class JsonFileTraceStore<S> implements TraceStore {
 
@@ -78,6 +79,21 @@ public final class JsonFileTraceStore<S> implements TraceStore {
             Files.deleteIfExists(pathFor(executionId));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to delete trace " + executionId, e);
+        }
+    }
+
+    @Override
+    public List<String> listIds() {
+        if (!Files.isDirectory(directory)) return List.of();
+        try (Stream<Path> entries = Files.list(directory)) {
+            List<String> out = new ArrayList<>();
+            entries.forEach(p -> {
+                String name = p.getFileName().toString();
+                if (name.endsWith(".json")) out.add(name.substring(0, name.length() - 5));
+            });
+            return List.copyOf(out);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to list traces in " + directory, e);
         }
     }
 

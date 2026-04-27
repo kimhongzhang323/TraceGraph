@@ -28,6 +28,15 @@ class InMemoryTraceStoreTest {
     }
 
     @Test
+    void listIdsReturnsAllStoredExecutionIds() {
+        InMemoryTraceStore store = new InMemoryTraceStore();
+        store.save(new ExecutionTrace<>("a", "i", "o", Status.COMPLETED, null, List.of(), Instant.EPOCH, Instant.EPOCH));
+        store.save(new ExecutionTrace<>("b", "i", "o", Status.COMPLETED, null, List.of(), Instant.EPOCH, Instant.EPOCH));
+
+        assertThat(store.listIds()).containsExactlyInAnyOrder("a", "b");
+    }
+
+    @Test
     void deleteRemovesTrace() {
         InMemoryTraceStore store = new InMemoryTraceStore();
         store.save(new ExecutionTrace<>("e1", "in", "out",

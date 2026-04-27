@@ -1,5 +1,6 @@
 package io.tracegraph.observability.replay;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TraceStore {
@@ -9,6 +10,10 @@ public interface TraceStore {
     Optional<ExecutionTrace<?>> load(String executionId);
 
     void delete(String executionId);
+
+    default List<String> listIds() {
+        return List.of();
+    }
 
     static TraceStore noop() {
         return new TraceStore() {
