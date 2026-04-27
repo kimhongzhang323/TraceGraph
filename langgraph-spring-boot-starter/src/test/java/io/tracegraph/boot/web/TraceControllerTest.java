@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,6 +49,26 @@ class TraceControllerTest {
     @Test
     void returnsNotFoundForUnknownId() throws Exception {
         mockMvc.perform(get("/tracegraph/traces/does-not-exist"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteRemovesTrace() throws Exception {
+        Graph<String> g = Graph.<String>builder()
+                .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        ExecutionResult<String> r = g.run("seed");
+
+        mockMvc.perform(delete("/tracegraph/traces/" + r.executionId()))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/tracegraph/traces/" + r.executionId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteReturnsNotFoundForUnknownId() throws Exception {
+        mockMvc.perform(delete("/tracegraph/traces/never-existed"))
                 .andExpect(status().isNotFound());
     }
 
