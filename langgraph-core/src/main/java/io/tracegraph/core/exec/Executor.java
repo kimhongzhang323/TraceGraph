@@ -7,6 +7,7 @@ import io.tracegraph.core.ExecutionResult;
 import io.tracegraph.core.RetryPolicy;
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
+import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
 import io.tracegraph.core.spi.TraceRecorder;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public final class Executor<S> {
     private final RetryPolicy defaultPolicy;
     private final CheckpointStore checkpointStore;
     private final TraceRecorder traceRecorder;
+    private final MemoryStore memoryStore;
     private final ExecutorService userExecutor;
     private final Sleeper sleeper;
 
@@ -50,9 +52,10 @@ public final class Executor<S> {
                     RetryPolicy defaultPolicy,
                     CheckpointStore checkpointStore,
                     TraceRecorder traceRecorder,
+                    MemoryStore memoryStore,
                     ExecutorService userExecutor) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
-                checkpointStore, traceRecorder, userExecutor, Sleeper.realtime());
+                checkpointStore, traceRecorder, memoryStore, userExecutor, Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -65,6 +68,7 @@ public final class Executor<S> {
              RetryPolicy defaultPolicy,
              CheckpointStore checkpointStore,
              TraceRecorder traceRecorder,
+             MemoryStore memoryStore,
              ExecutorService userExecutor,
              Sleeper sleeper) {
         this.nodes = nodes;
@@ -77,6 +81,7 @@ public final class Executor<S> {
         this.defaultPolicy = defaultPolicy;
         this.checkpointStore = checkpointStore;
         this.traceRecorder = traceRecorder;
+        this.memoryStore = memoryStore;
         this.userExecutor = userExecutor;
         this.sleeper = sleeper;
     }
@@ -193,7 +198,7 @@ public final class Executor<S> {
                                            RetryPolicy policy, ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore);
             try {
                 S next = node.invoke(state, ctx, exec).join();
                 return NodeOutcome.success(next, attempt);
@@ -244,7 +249,8 @@ public final class Executor<S> {
         static <S> NodeOutcome<S> failure(NodeExecutionException ex) { return new NodeOutcome<>(null, 0, ex); }
     }
 
-    private record SimpleContext(String executionId, String nodeName, int attempt) implements Context {
+    private record SimpleContext(String executionId, String nodeName, int attempt, MemoryStore memory)
+            implements Context {
         @Override
         public Logger logger() {
             return LoggerFactory.getLogger("io.tracegraph.node." + nodeName);
