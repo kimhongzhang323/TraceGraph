@@ -48,6 +48,57 @@ class OtelNodeListenerTest {
     }
 
     @Test
+    void emitsStateEventWithDefaultRenderer() {
+        Graph<String> graph = Graph.<String>builder()
+                .node("step", (s, ctx) -> s + ".x")
+                .entry("step").terminal("step")
+                .listener(OtelNodeListener.using(sdk))
+                .build();
+
+        graph.run("seed");
+
+        SpanData span = exporter.getFinishedSpanItems().get(0);
+        assertThat(span.getEvents()).hasSize(1);
+        assertThat(span.getEvents().get(0).getName()).isEqualTo("state");
+        assertThat(span.getEvents().get(0).getAttributes().asMap())
+                .containsEntry(AttributeKey.stringKey("tracegraph.state.before"), "seed")
+                .containsEntry(AttributeKey.stringKey("tracegraph.state.after"), "seed.x");
+    }
+
+    @Test
+    void honorsCustomStateRenderer() {
+        StateRenderer renderer = state -> "R(" + state + ")";
+
+        Graph<String> graph = Graph.<String>builder()
+                .node("step", (s, ctx) -> s + ".x")
+                .entry("step").terminal("step")
+                .listener(OtelNodeListener.using(sdk, renderer))
+                .build();
+
+        graph.run("seed");
+
+        SpanData span = exporter.getFinishedSpanItems().get(0);
+        assertThat(span.getEvents().get(0).getAttributes().asMap())
+                .containsEntry(AttributeKey.stringKey("tracegraph.state.before"), "R(seed)")
+                .containsEntry(AttributeKey.stringKey("tracegraph.state.after"), "R(seed.x)");
+    }
+
+    @Test
+    void failedNodeHasNoStateEvent() {
+        Graph<String> graph = Graph.<String>builder()
+                .node("doomed", (s, ctx) -> { throw new IOException("nope"); })
+                .entry("doomed").terminal("doomed")
+                .listener(OtelNodeListener.using(sdk))
+                .build();
+
+        graph.run("");
+
+        SpanData span = exporter.getFinishedSpanItems().get(0);
+        assertThat(span.getEvents()).noneSatisfy(ev ->
+                assertThat(ev.getName()).isEqualTo("state"));
+    }
+
+    @Test
     void singleNodeProducesOneSpan() {
         Graph<String> graph = Graph.<String>builder()
                 .node("validate", (s, ctx) -> "ok")
@@ -127,9 +178,8 @@ class OtelNodeListenerTest {
         assertThat(spans).hasSize(1);
         SpanData span = spans.get(0);
         assertThat(span.getStatus().getStatusCode()).isEqualTo(StatusCode.OK);
-        assertThat(span.getEvents()).hasSize(2);
-        assertThat(span.getEvents()).allSatisfy(ev ->
-                assertThat(ev.getName()).isEqualTo("retry"));
+        assertThat(span.getEvents()).extracting(ev -> ev.getName())
+                .containsExactly("retry", "retry", "state");
         assertThat(span.getAttributes().asMap())
                 .containsEntry(AttributeKey.longKey("tracegraph.attempt"), 3L);
     }

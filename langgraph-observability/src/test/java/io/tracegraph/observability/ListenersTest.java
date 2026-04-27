@@ -55,6 +55,34 @@ class ListenersTest {
     }
 
     @Test
+    void onStatePropagatesInOrder() {
+        List<String> events = new ArrayList<>();
+        NodeListener a = recordingListener("a", events);
+        NodeListener b = recordingListener("b", events);
+
+        NodeListener composed = Listeners.compose(a, b);
+        composed.onState("n", "before", "after");
+
+        assertThat(events).containsExactly("a:state:n:before->after", "b:state:n:before->after");
+    }
+
+    @Test
+    void onStateExceptionInOneDoesNotStopOthers() {
+        List<String> events = new ArrayList<>();
+        NodeListener throwing = new NodeListener() {
+            @Override public void onState(String n, Object before, Object after) {
+                throw new RuntimeException("boom");
+            }
+        };
+        NodeListener good = recordingListener("good", events);
+
+        NodeListener composed = Listeners.compose(throwing, good);
+        composed.onState("n", "x", "y");
+
+        assertThat(events).containsExactly("good:state:n:x->y");
+    }
+
+    @Test
     void retryAndErrorPropagate() {
         List<String> events = new ArrayList<>();
         NodeListener a = recordingListener("a", events);
@@ -76,6 +104,9 @@ class ListenersTest {
             @Override public void onExit(String n, Object s)   { events.add(tag + ":exit:" + n); }
             @Override public void onError(String n, Throwable t) { events.add(tag + ":error:" + n); }
             @Override public void onRetry(String n, int a, Throwable t) { events.add(tag + ":retry:" + n + ":" + a); }
+            @Override public void onState(String n, Object before, Object after) {
+                events.add(tag + ":state:" + n + ":" + before + "->" + after);
+            }
         };
     }
 }

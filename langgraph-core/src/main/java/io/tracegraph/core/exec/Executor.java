@@ -124,12 +124,14 @@ public final class Executor<S> {
             path.add(current);
 
             listener.onEnter(current, state);
+            S before = state;
             NodeOutcome<S> outcome = invokeWithRetry(node, state, current, executionId, policy, exec);
             if (outcome.failure != null) {
                 listener.onError(current, outcome.failure.getCause() != null ? outcome.failure.getCause() : outcome.failure);
                 return new ExecutionResult<>(executionId, state, path, Status.FAILED, outcome.failure);
             }
             state = outcome.state;
+            listener.onState(current, before, state);
             checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now()));
             listener.onExit(current, state);
 

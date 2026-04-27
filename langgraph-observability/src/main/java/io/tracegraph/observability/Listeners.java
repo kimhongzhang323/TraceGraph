@@ -34,6 +34,11 @@ public final class Listeners {
         }
 
         @Override
+        public void onState(String nodeName, Object before, Object after) {
+            for (NodeListener l : delegates) safe(l, "onState", () -> l.onState(nodeName, before, after));
+        }
+
+        @Override
         public void onError(String nodeName, Throwable error) {
             for (NodeListener l : delegates) safe(l, "onError", () -> l.onError(nodeName, error));
         }

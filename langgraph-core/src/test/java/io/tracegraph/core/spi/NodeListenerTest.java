@@ -3,6 +3,7 @@ package io.tracegraph.core.spi;
 import io.tracegraph.core.ExecutionResult;
 import io.tracegraph.core.Graph;
 import io.tracegraph.core.Status;
+import io.tracegraph.core.Merger;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -58,5 +59,82 @@ class NodeListenerTest {
         graph.run("");
 
         assertThat(events).containsExactly("enter:boom", "error:boom");
+    }
+
+    @Test
+    void firesOnStateOncePerSuccessfulNodeWithBeforeAndAfter() {
+        List<String> events = new ArrayList<>();
+        NodeListener listener = new NodeListener() {
+            @Override public void onState(String name, Object before, Object after) {
+                events.add("state:" + name + ":" + before + "->" + after);
+            }
+        };
+
+        Graph<String> graph = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .node("b", (s, ctx) -> s + ".b")
+                .entry("a")
+                .edge("a", "b")
+                .terminal("b")
+                .listener(listener)
+                .build();
+
+        graph.run("seed");
+
+        assertThat(events).containsExactly(
+                "state:a:seed->seed.a",
+                "state:b:seed.a->seed.a.b"
+        );
+    }
+
+    @Test
+    void doesNotFireOnStateForFailingNode() {
+        List<String> events = new ArrayList<>();
+        NodeListener listener = new NodeListener() {
+            @Override public void onState(String name, Object before, Object after) {
+                events.add("state:" + name);
+            }
+            @Override public void onError(String name, Throwable t) {
+                events.add("error:" + name);
+            }
+        };
+
+        Graph<String> graph = Graph.<String>builder()
+                .node("ok",   (s, ctx) -> s + ".ok")
+                .node("boom", (s, ctx) -> { throw new RuntimeException("x"); })
+                .entry("ok")
+                .edge("ok", "boom")
+                .terminal("boom")
+                .listener(listener)
+                .build();
+
+        graph.run("");
+
+        assertThat(events).containsExactly("state:ok", "error:boom");
+    }
+
+    @Test
+    void firesOnStateOnceForParallelNotForBranches() {
+        List<String> events = new ArrayList<>();
+        NodeListener listener = new NodeListener() {
+            @Override public void onState(String name, Object before, Object after) {
+                events.add("state:" + name + ":" + before + "->" + after);
+            }
+        };
+
+        Merger<String> merge = (input, results) -> input + "[" + String.join("+", results) + "]";
+
+        Graph<String> graph = Graph.<String>builder()
+                .parallel("fan", List.of(
+                        (s, ctx) -> s + ".x",
+                        (s, ctx) -> s + ".y"), merge)
+                .entry("fan")
+                .terminal("fan")
+                .listener(listener)
+                .build();
+
+        graph.run("in");
+
+        assertThat(events).containsExactly("state:fan:in->in[in.x+in.y]");
     }
 }
