@@ -21,6 +21,15 @@ Requires JDK 21 + Maven 3.9+.
 mvn test
 ```
 
+## CI/CD
+
+GitHub Actions is configured for:
+
+- CI on pushes to `main`/`master` and all pull requests using `mvn verify` on Ubuntu and Windows
+- Release publishing on `v*` tags or manual dispatch to GitHub Packages
+
+To consume release publishing, ensure GitHub Packages is enabled for the repository and create version tags such as `v0.1.0`.
+
 ## Sample
 
 ```java
