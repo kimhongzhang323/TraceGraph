@@ -31,6 +31,8 @@ categories:
 
 change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
 change-title-escapes: '\<*_&'
+history-limit: 10
+initial-commits-since: "2026-04-27T00:00:00Z"
 version-resolver:
   major:
     labels:

@@ -30,7 +30,7 @@ public final class OpenAiLlmClient implements LlmClient {
         this.httpClient = b.httpClient != null ? b.httpClient
                 : HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.requestTimeout = b.requestTimeout;
-        this.mapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.mapper = new ObjectMapper().setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
     }
 
     public static Builder builder() {
