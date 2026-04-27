@@ -15,6 +15,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
 
     private final TraceStore store;
     private final ConcurrentMap<String, Builder> active = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ForkLineage> pendingLineage = new ConcurrentHashMap<>();
 
     public RecordingTraceRecorder(TraceStore store) {
         this.store = Objects.requireNonNull(store, "store");
@@ -24,7 +25,9 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     @SuppressWarnings("unchecked")
     public void recordStart(String executionId, Object initialState) {
         Builder b = new Builder(executionId, initialState, Instant.now());
-        store.load(executionId).ifPresent(prior -> b.steps.addAll((List) prior.steps()));
+        if (!pendingLineage.containsKey(executionId)) {
+            store.load(executionId).ifPresent(prior -> b.steps.addAll((List) prior.steps()));
+        }
         active.put(executionId, b);
     }
 
@@ -56,13 +59,23 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     public void recordComplete(String executionId, Status status, Object finalState) {
         Builder b = active.remove(executionId);
         if (b == null) return;
+        ForkLineage lineage = pendingLineage.remove(executionId);
+        String forkedFromId = lineage == null ? null : lineage.parentExecutionId();
+        int forkedFromIdx = lineage == null ? -1 : lineage.parentStepIndex();
         ExecutionTrace<?> trace = new ExecutionTrace(
                 b.executionId, b.initialState, finalState,
                 status, b.error,
                 List.copyOf(b.steps),
-                b.startedAt, Instant.now());
+                b.startedAt, Instant.now(),
+                forkedFromId, forkedFromIdx);
         store.save(trace);
     }
+
+    void stageForkLineage(String executionId, String parentExecutionId, int parentStepIndex) {
+        pendingLineage.put(executionId, new ForkLineage(parentExecutionId, parentStepIndex));
+    }
+
+    private record ForkLineage(String parentExecutionId, int parentStepIndex) {}
 
     private static final class Builder {
         final String executionId;

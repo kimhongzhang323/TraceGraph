@@ -88,6 +88,16 @@ public final class Executor<S> {
         return result;
     }
 
+    public ExecutionResult<S> runFrom(String startNode, S seed, String executionId) {
+        if (!nodes.containsKey(startNode)) {
+            throw new GraphValidationException("Start node '" + startNode + "' is not declared");
+        }
+        traceRecorder.recordStart(executionId, seed);
+        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec));
+        traceRecorder.recordComplete(executionId, result.status(), result.finalState());
+        return result;
+    }
+
     @SuppressWarnings("unchecked")
     public ExecutionResult<S> resume(String executionId) {
         var maybe = checkpointStore.latest(executionId);

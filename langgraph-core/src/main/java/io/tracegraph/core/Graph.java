@@ -79,6 +79,16 @@ public final class Graph<S> {
         return Optional.ofNullable(result);
     }
 
+    public ExecutionResult<S> runFrom(String startNode, S seed, String executionId) {
+        Objects.requireNonNull(startNode, "startNode");
+        Objects.requireNonNull(executionId, "executionId");
+        return executor().runFrom(startNode, seed, executionId);
+    }
+
+    public TraceRecorder traceRecorder() {
+        return traceRecorder;
+    }
+
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
                 nodePolicies, defaultPolicy, checkpointStore, traceRecorder, userExecutor);
