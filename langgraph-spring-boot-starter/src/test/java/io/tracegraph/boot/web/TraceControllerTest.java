@@ -52,6 +52,48 @@ class TraceControllerTest {
     }
 
     @Test
+    void diffReturnsTraceDiffJson() throws Exception {
+        Graph<String> g1 = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .node("b", (s, ctx) -> s + ".b")
+                .entry("a").edge("a", "b").terminal("b")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        Graph<String> g2 = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .node("c", (s, ctx) -> s + ".c")
+                .entry("a").edge("a", "c").terminal("c")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        ExecutionResult<String> r1 = g1.run("seed");
+        ExecutionResult<String> r2 = g2.run("seed");
+
+        mockMvc.perform(get("/tracegraph/traces/" + r1.executionId() + "/diff/" + r2.executionId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.leftExecutionId").value(r1.executionId()))
+                .andExpect(jsonPath("$.rightExecutionId").value(r2.executionId()))
+                .andExpect(jsonPath("$.divergenceIndex").value(1))
+                .andExpect(jsonPath("$.commonPrefix.length()").value(1))
+                .andExpect(jsonPath("$.leftRemainder[0].nodeName").value("b"))
+                .andExpect(jsonPath("$.rightRemainder[0].nodeName").value("c"))
+                .andExpect(jsonPath("$.sameFinalState").value(false));
+    }
+
+    @Test
+    void diffReturnsNotFoundIfEitherTraceMissing() throws Exception {
+        Graph<String> g = Graph.<String>builder()
+                .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        ExecutionResult<String> r = g.run("seed");
+
+        mockMvc.perform(get("/tracegraph/traces/" + r.executionId() + "/diff/missing"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/tracegraph/traces/missing/diff/" + r.executionId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void listsExecutionIds() throws Exception {
         Graph<String> g = Graph.<String>builder()
                 .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")

@@ -1,6 +1,7 @@
 package io.tracegraph.boot.web;
 
 import io.tracegraph.observability.replay.ExecutionTrace;
+import io.tracegraph.observability.replay.TraceDiff;
 import io.tracegraph.observability.replay.TraceStore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,5 +32,17 @@ public class TraceController {
         Optional<ExecutionTrace<?>> trace = store.load(id);
         return trace.<ResponseEntity<ExecutionTrace<?>>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{a}/diff/{b}")
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public ResponseEntity<TraceDiff<?>> diff(@PathVariable("a") String a, @PathVariable("b") String b) {
+        Optional<ExecutionTrace<?>> left = store.load(a);
+        Optional<ExecutionTrace<?>> right = store.load(b);
+        if (left.isEmpty() || right.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        TraceDiff diff = TraceDiff.between((ExecutionTrace) left.get(), (ExecutionTrace) right.get());
+        return ResponseEntity.ok(diff);
     }
 }
