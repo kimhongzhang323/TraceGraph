@@ -4,6 +4,9 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Build
+- Maven Central publishing scaffold: `release` Maven profile attaches sources + javadoc jars, signs with GPG, and uploads via `central-publishing-maven-plugin`. Parent POM now declares `<licenses>`, `<developers>`, `<scm>`, `<url>`, `<issueManagement>`. See `RELEASING.md` for the publish runbook.
+
 ### Added
 - **Spring Boot starter** — `TraceGraphAutoConfiguration` registers no-op beans for the four SPIs (`NodeListener`, `CheckpointStore`, `TraceRecorder`, `MemoryStore`), each `@ConditionalOnMissingBean`. `TraceWebAutoConfiguration` registers `TraceController` exposing:
   - `GET /tracegraph/traces?limit&offset` — list executionIds with `X-Total-Count` header
