@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -24,8 +25,18 @@ public class TraceController {
     }
 
     @GetMapping
-    public List<String> list() {
-        return store.listIds();
+    public ResponseEntity<List<String>> list(
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "offset", defaultValue = "0") int offset) {
+        if (offset < 0 || (limit != null && limit < 0)) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<String> all = store.listIds();
+        int from = Math.min(offset, all.size());
+        int to = limit == null ? all.size() : Math.min(from + limit, all.size());
+        return ResponseEntity.ok()
+                .header("X-Total-Count", Integer.toString(all.size()))
+                .body(all.subList(from, to));
     }
 
     @GetMapping("/{id}")
