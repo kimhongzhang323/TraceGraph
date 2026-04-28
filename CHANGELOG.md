@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Build
+- **Maven groupId is `site.tracegraph`** (reverse-DNS of the verified `tracegraph.site` Sonatype namespace). Java package names — `io.tracegraph.core.*`, etc. — are independent of the Maven groupId and remain unchanged.
 - Maven Central publishing scaffold: `release` Maven profile attaches sources + javadoc jars, signs with GPG, and uploads via `central-publishing-maven-plugin`. Parent POM now declares `<licenses>`, `<developers>`, `<scm>`, `<url>`, `<issueManagement>`. See `RELEASING.md` for the publish runbook.
 
 ### Added
