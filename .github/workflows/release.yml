@@ -1,14 +1,14 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: Release version label to use in the GitHub Release title
-        required: false
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v0.2.0)"
+        required: true
 
 concurrency:
   group: release-${{ github.ref }}
@@ -16,16 +16,18 @@ concurrency:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   publish:
-    name: Publish packages
+    name: Publish to Maven Central
     runs-on: ubuntu-latest
+    environment: maven-central
 
     steps:
-      - name: Check out repository
+      - name: Check out tag
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Set up Temurin JDK 21
         uses: actions/setup-java@v5
@@ -33,27 +35,43 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-          server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Publish to GitHub Packages
+      - name: Refuse to release a SNAPSHOT
+        shell: bash
+        run: |
+          VERSION=$(mvn -B -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          echo "Releasing version: $VERSION"
+          if [[ "$VERSION" == *-SNAPSHOT ]]; then
+            echo "::error::Refusing to release a SNAPSHOT version ($VERSION). Bump the POM versions first."
+            exit 1
+          fi
+
+      - name: Deploy to Maven Central
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >
-          mvn -B -ntp -DskipTests deploy
-          -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: mvn -B -ntp -P release -DskipTests deploy
 
       - name: Collect release artifacts
         shell: bash
         run: |
           mkdir -p release-artifacts
-          find . -path "*/target/*.jar" -type f -exec cp {} release-artifacts/ \;
-          find . -path "*/target/*.pom" -type f -exec cp {} release-artifacts/ \;
+          find . -path "*/target/*-${VERSION_NO_V}*.jar" -o -path "*/target/*-${VERSION_NO_V}*.pom" 2>/dev/null \
+            | xargs -I{} cp {} release-artifacts/ || true
+          ls -la release-artifacts/ || true
+        env:
+          VERSION_NO_V: ${{ github.event.inputs.tag && github.event.inputs.tag || github.ref_name }}
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           generate_release_notes: true
           files: release-artifacts/*

@@ -4,6 +4,9 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Build
+- **Release from CI.** `Release` GitHub Actions workflow now publishes to Maven Central on tag push (`v*`), replacing the prior GitHub Packages flow. Imports the GPG key from `MAVEN_GPG_PRIVATE_KEY`, signs, deploys via the `release` Maven profile, and drafts a GitHub Release with auto-generated notes. Refuses to deploy `-SNAPSHOT` versions. Required environment secrets: `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE`. See `RELEASING.md`.
+
 ## [0.1.0] - 2026-04-28
 
 ### Build
