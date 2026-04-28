@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -112,6 +113,29 @@ class TraceControllerTest {
                 .andExpect(status().isNotFound());
         mockMvc.perform(get("/tracegraph/traces/missing/diff/" + r.executionId()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listRespectsLimitAndOffsetWithTotalCountHeader() throws Exception {
+        Graph<String> g = Graph.<String>builder()
+                .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        for (int i = 0; i < 5; i++) g.run("seed-" + i);
+
+        int total = store.listIds().size();
+        mockMvc.perform(get("/tracegraph/traces").param("limit", "2").param("offset", "1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Total-Count", Integer.toString(total)))
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void listRejectsNegativePagination() throws Exception {
+        mockMvc.perform(get("/tracegraph/traces").param("offset", "-1"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/tracegraph/traces").param("limit", "-5"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
