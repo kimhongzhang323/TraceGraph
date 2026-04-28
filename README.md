@@ -1,5 +1,8 @@
 # TraceGraph
 
+[![Maven Central](https://img.shields.io/maven-central/v/site.tracegraph/langgraph-core?label=Maven%20Central)](https://central.sonatype.com/artifact/site.tracegraph/langgraph-core)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 TraceGraph is a JVM-native agent runtime for building typed execution graphs with durable state, retries, checkpoints, memory, and observability hooks.
 
 The project is aimed at teams that want graph-style orchestration on the JVM without giving up strong typing, testability, or production control. It is not trying to be a line-by-line clone of LangGraph. The focus here is reliability, debuggability, and clean integration with Java and Spring ecosystems.
@@ -89,6 +92,82 @@ ExecutionResult<OrderState> result = graph.run(
         new OrderState("o-1", false, false, false)
 );
 ```
+
+## Retries
+
+Attach a `RetryPolicy` per node, or set a graph default. The executor handles backoff and emits `NodeListener.onRetry`.
+
+```java
+RetryPolicy policy = RetryPolicy.builder()
+        .maxAttempts(3)
+        .backoff(BackoffStrategy.exponential(Duration.ofMillis(100)))
+        .build();
+
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        .node("charge", chargeNode, policy)
+        .entry("charge").terminal("charge")
+        .build();
+```
+
+`Error` and `InterruptedException` always short-circuit retries. Use `ctx.idempotencyKey()` inside the node for your own dedup.
+
+## Replay
+
+Plug in a `TraceRecorder` and replay any past execution step-by-step.
+
+```java
+TraceStore store = new InMemoryTraceStore();    // or JsonFileTraceStore / JdbcTraceStore
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        /* ... */
+        .traceRecorder(new RecordingTraceRecorder(store))
+        .build();
+
+ExecutionResult<OrderState> r = graph.run(seed);
+
+ExecutionTrace<OrderState> trace =
+        (ExecutionTrace<OrderState>) store.load(r.executionId()).orElseThrow();
+
+Replayer<OrderState> replay = Replayer.of(trace);
+for (int i = 0; i < replay.stepCount(); i++) {
+    TraceStep<OrderState> step = replay.stepAt(i);
+    System.out.printf("%d %s : %s -> %s%n",
+            step.index(), step.nodeName(), step.before(), step.after());
+}
+
+// Re-execute from a chosen step against a (possibly modified) graph
+ReplayRunner<OrderState> runner = ReplayRunner.of(trace, graph);
+ExecutionResult<OrderState> fork = runner.reRunFrom(1);
+// fork.executionId() != r.executionId(); the new trace records forkedFromExecutionId/forkedFromStepIndex
+```
+
+## Async + parallel
+
+```java
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        .asyncNode("score", (state, ctx) -> CompletableFuture.supplyAsync(() -> score(state)))
+        .parallel("enrich",
+                List.of(
+                        (s, ctx) -> withCustomerProfile(s),
+                        (s, ctx) -> withFraudCheck(s),
+                        (s, ctx) -> withInventory(s)
+                ),
+                Merger.fold(OrderState::merge))
+        .entry("score").edge("score", "enrich").terminal("enrich")
+        .build();
+```
+
+The default executor is virtual-thread-per-task, lazily created per `run` and shut down on completion. First-by-declaration-order failure wins inside `parallel(...)`.
+
+## Observability (OpenTelemetry)
+
+```java
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        /* ... */
+        .listener(OtelNodeListener.usingGlobal())
+        .build();
+```
+
+One span per node, retries as span events on the same span, errors set `StatusCode.ERROR`. State diffs flow as `state` span events with rendered before/after attributes (renderer is pluggable via `StateRenderer`). Compose multiple listeners with `Listeners.compose(...)`.
 
 ## Core Concepts
 
