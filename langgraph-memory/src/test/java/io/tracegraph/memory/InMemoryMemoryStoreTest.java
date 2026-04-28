@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.CountDownLatch;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class InMemoryMemoryStoreTest {
 
@@ -69,5 +70,27 @@ class InMemoryMemoryStoreTest {
         for (int i = 0; i < n; i++) {
             assertThat(store.get("scope", "key-" + i)).contains(i);
         }
+    }
+
+    @Test
+    void pagedKeysReturnsSortedSliceWithDefaultImplementation() {
+        InMemoryMemoryStore store = new InMemoryMemoryStore();
+        store.put("s", "delta", 1);
+        store.put("s", "alpha", 1);
+        store.put("s", "charlie", 1);
+        store.put("s", "bravo", 1);
+
+        assertThat(store.pagedKeys("s", 0, 2)).containsExactly("alpha", "bravo");
+        assertThat(store.pagedKeys("s", 2, 2)).containsExactly("charlie", "delta");
+        assertThat(store.pagedKeys("s", 4, 10)).isEmpty();
+    }
+
+    @Test
+    void pagedKeysRejectsNegativeArgs() {
+        InMemoryMemoryStore store = new InMemoryMemoryStore();
+        assertThatThrownBy(() -> store.pagedKeys("s", -1, 5))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> store.pagedKeys("s", 0, -1))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -2,8 +2,11 @@ package io.tracegraph.core.spi;
 
 import io.tracegraph.core.exec.NoopMemoryStoreAccess;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 public interface MemoryStore {
 
@@ -14,6 +17,15 @@ public interface MemoryStore {
     boolean delete(String scope, String key);
 
     Set<String> keys(String scope);
+
+    default List<String> pagedKeys(String scope, int offset, int limit) {
+        if (offset < 0) throw new IllegalArgumentException("offset must be >= 0");
+        if (limit < 0) throw new IllegalArgumentException("limit must be >= 0");
+        List<String> sorted = new ArrayList<>(new TreeSet<>(keys(scope)));
+        int from = Math.min(offset, sorted.size());
+        int to = Math.min(from + limit, sorted.size());
+        return List.copyOf(sorted.subList(from, to));
+    }
 
     static MemoryStore noop() {
         return NoopMemoryStoreAccess.instance();
