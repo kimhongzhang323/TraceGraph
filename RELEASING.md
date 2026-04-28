@@ -4,7 +4,7 @@ This document describes how to publish a TraceGraph release to Maven Central via
 
 ## One-time setup
 
-1. **Sonatype Central account** — register at https://central.sonatype.com and verify the `io.tracegraph` namespace (DNS or GitHub-based verification).
+1. **Sonatype Central account** — register at https://central.sonatype.com and verify the `site.tracegraph` namespace (DNS verification on `tracegraph.site`). Maven groupId is reverse-DNS, so verifying the `tracegraph.site` domain unlocks publishing under `site.tracegraph.*`. Java package names (`io.tracegraph.core.*`) are independent of the Maven groupId and stay unchanged.
 2. **GPG key** — generate one (`gpg --gen-key`) and publish it to a keyserver:
    ```bash
    gpg --keyserver keys.openpgp.org --send-keys <KEY_ID>
@@ -70,7 +70,7 @@ Use the `release-version` skill or follow this manually.
 
 - **GPG hangs in CI** — set `GPG_TTY` and pass `--pinentry-mode loopback` (already configured in the `release` profile). Provide the passphrase via `MAVEN_GPG_PASSPHRASE`.
 - **`401 Unauthorized` on upload** — token, not password. Regenerate at central.sonatype.com.
-- **Namespace not verified** — Central Portal blocks `io.tracegraph` until DNS/GitHub verification completes.
+- **Namespace not verified** — Central Portal blocks `site.tracegraph` until DNS verification on `tracegraph.site` completes.
 
 ## Smoke-test the release profile locally (no upload)
 
