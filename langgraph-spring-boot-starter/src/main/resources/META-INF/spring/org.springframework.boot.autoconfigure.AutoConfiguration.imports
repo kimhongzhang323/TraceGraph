@@ -1,2 +1,3 @@
 io.tracegraph.boot.TraceGraphAutoConfiguration
+io.tracegraph.boot.memory.MemoryAutoConfiguration
 io.tracegraph.boot.web.TraceWebAutoConfiguration
