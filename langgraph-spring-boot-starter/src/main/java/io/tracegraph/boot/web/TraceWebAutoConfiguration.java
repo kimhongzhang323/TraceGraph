@@ -1,12 +1,14 @@
 package io.tracegraph.boot.web;
 
 import io.tracegraph.boot.TraceGraphAutoConfiguration;
+import io.tracegraph.core.Graph;
 import io.tracegraph.observability.replay.TraceStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -22,5 +24,12 @@ public class TraceWebAutoConfiguration {
     @ConditionalOnMissingBean
     public TraceController traceController(TraceStore store) {
         return new TraceController(store);
+    }
+
+    @Bean
+    @ConditionalOnSingleCandidate(Graph.class)
+    @ConditionalOnMissingBean
+    public TraceReplayController traceReplayController(TraceStore store, Graph<?> graph) {
+        return new TraceReplayController(store, graph);
     }
 }

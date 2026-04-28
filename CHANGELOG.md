@@ -5,9 +5,8 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **`POST /tracegraph/traces/{id}/replay`** — REST endpoint that re-executes a saved trace from a chosen step. Optional `step` query param (default `-1`, meaning replay from entry). Auto-registered when both a `TraceStore` and a single `Graph<?>` bean are present (`@ConditionalOnSingleCandidate(Graph.class)`). Response carries the new `executionId`, lineage (`forkedFromExecutionId`, `forkedFromStepIndex`), and final status. 404 if the parent trace is unknown; 400 if the step is out of range.
 - **`MemoryStore.pagedKeys(scope, offset, limit)`** — paginate over keys without materializing the full set. Default impl sorts and slices on top of `keys(scope)`; `JdbcMemoryStore` overrides with `ORDER BY key_name LIMIT ? OFFSET ?` for backend pagination. Negative arguments throw `IllegalArgumentException`. Backwards-compatible (default method on the SPI).
-
-### Added
 - **Spring Boot auto-config for `JdbcMemoryStore`.** New `MemoryAutoConfiguration` (`io.tracegraph.boot.memory`) auto-wires a `JdbcMemoryStore` when a `DataSource` bean is present and Jackson + `JdbcMemoryStore` are on the classpath. Runs `initSchema()` by default. Properties: `tracegraph.memory.jdbc.enabled` (default `true`), `tracegraph.memory.jdbc.init-schema` (default `true`), `tracegraph.memory.jdbc.table` (override default `tracegraph_memory`). User-defined `MemoryStore` beans still win via `@ConditionalOnMissingBean`. `langgraph-memory` and `jackson-databind` are `<optional>` starter deps. `JdbcCheckpointStore` / `JdbcTraceStore` need user-supplied `Class<S>` so they stay manual `@Bean` declarations.
 
 ### Build
