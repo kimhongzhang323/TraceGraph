@@ -9,8 +9,6 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ### Added
 - **`JdbcCheckpointStore`** (`langgraph-runtime`) — durable checkpoints backed by any JDBC `DataSource`. Single table (default `tracegraph_checkpoint`), portable upsert via UPDATE-then-INSERT in a transaction, idempotent `initSchema()`, configurable table name. Constructed via `JdbcCheckpointStore.of(dataSource, mapper, stateType[, table])`. Jackson is an `<optional>` dep; persistence failures surface as `CheckpointPersistenceException`.
-
-### Added
 - **Spring Boot starter** — `TraceGraphAutoConfiguration` registers no-op beans for the four SPIs (`NodeListener`, `CheckpointStore`, `TraceRecorder`, `MemoryStore`), each `@ConditionalOnMissingBean`. `TraceWebAutoConfiguration` registers `TraceController` exposing:
   - `GET /tracegraph/traces?limit&offset` — list executionIds with `X-Total-Count` header
   - `GET /tracegraph/traces/{id}` — full trace JSON (404 if unknown)
