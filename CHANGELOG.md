@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **Spring Boot auto-config for `LlmClient`.** New `LlmAutoConfiguration` (`io.tracegraph.boot.llm`) wires an `OpenAiLlmClient` or `AnthropicLlmClient` from properties when the connectors module is on the classpath. Provider selected via `tracegraph.llm.provider=openai|anthropic`; `tracegraph.llm.api-key`, `tracegraph.llm.endpoint`, `tracegraph.llm.request-timeout`, `tracegraph.llm.anthropic-version` configure the chosen client. No bean is registered when `provider` is unset or `tracegraph.llm.enabled=false`. User-defined `LlmClient` beans win via `@ConditionalOnMissingBean`. `langgraph-connectors` is an `<optional>` starter dep.
 - **Spring Boot auto-config for `JdbcMemoryStore`.** New `MemoryAutoConfiguration` (`io.tracegraph.boot.memory`) auto-wires a `JdbcMemoryStore` when a `DataSource` bean is present and Jackson + `JdbcMemoryStore` are on the classpath. Runs `initSchema()` by default. Properties: `tracegraph.memory.jdbc.enabled` (default `true`), `tracegraph.memory.jdbc.init-schema` (default `true`), `tracegraph.memory.jdbc.table` (override default `tracegraph_memory`). User-defined `MemoryStore` beans still win via `@ConditionalOnMissingBean`. `langgraph-memory` and `jackson-databind` are `<optional>` starter deps. `JdbcCheckpointStore` / `JdbcTraceStore` need user-supplied `Class<S>` so they stay manual `@Bean` declarations.
 
 ### Build
