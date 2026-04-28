@@ -97,6 +97,20 @@ class JdbcMemoryStoreTest {
     }
 
     @Test
+    void pagedKeysReturnsSortedSliceFromSql() {
+        JdbcMemoryStore store = JdbcMemoryStore.of(dataSource);
+        store.initSchema();
+        store.put("s", "delta", 1);
+        store.put("s", "alpha", 1);
+        store.put("s", "charlie", 1);
+        store.put("s", "bravo", 1);
+
+        assertThat(store.pagedKeys("s", 0, 2)).containsExactly("alpha", "bravo");
+        assertThat(store.pagedKeys("s", 2, 2)).containsExactly("charlie", "delta");
+        assertThat(store.pagedKeys("s", 0, 100)).containsExactly("alpha", "bravo", "charlie", "delta");
+    }
+
+    @Test
     void scopeAndKeyAreIndependentOfTableName() {
         JdbcMemoryStore store = JdbcMemoryStore.of(dataSource, "my_memory");
         store.initSchema();
