@@ -2,6 +2,8 @@
 
 All notable changes to TraceGraph are recorded here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project follows [Semantic Versioning](https://semver.org/) — strictly once we hit 1.0.0, with documented breaks allowed in `0.x` minors.
 
+## [Unreleased]
+
 ## [0.1.0] - 2026-04-28
 
 ### Build
