@@ -4,6 +4,9 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+- **Spring Boot auto-config for `JdbcMemoryStore`.** New `MemoryAutoConfiguration` (`io.tracegraph.boot.memory`) auto-wires a `JdbcMemoryStore` when a `DataSource` bean is present and Jackson + `JdbcMemoryStore` are on the classpath. Runs `initSchema()` by default. Properties: `tracegraph.memory.jdbc.enabled` (default `true`), `tracegraph.memory.jdbc.init-schema` (default `true`), `tracegraph.memory.jdbc.table` (override default `tracegraph_memory`). User-defined `MemoryStore` beans still win via `@ConditionalOnMissingBean`. `langgraph-memory` and `jackson-databind` are `<optional>` starter deps. `JdbcCheckpointStore` / `JdbcTraceStore` need user-supplied `Class<S>` so they stay manual `@Bean` declarations.
+
 ### Build
 - **Release from CI.** `Release` GitHub Actions workflow now publishes to Maven Central on tag push (`v*`), replacing the prior GitHub Packages flow. Imports the GPG key from `MAVEN_GPG_PRIVATE_KEY`, signs, deploys via the `release` Maven profile, and drafts a GitHub Release with auto-generated notes. Refuses to deploy `-SNAPSHOT` versions. Required environment secrets: `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE`. See `RELEASING.md`.
 
