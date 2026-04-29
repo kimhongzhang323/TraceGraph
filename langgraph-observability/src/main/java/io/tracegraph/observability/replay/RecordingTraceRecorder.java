@@ -47,6 +47,17 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     }
 
     @Override
+    public void recordExitWithChildren(String executionId, String nodeName, int attempts,
+                                       Object before, Object after, long durationNanos, List<?> childrenSteps) {
+        Builder b = active.get(executionId);
+        if (b == null) return;
+        @SuppressWarnings("unchecked")
+        List<TraceStep<Object>> children = (List<TraceStep<Object>>) childrenSteps;
+        b.steps.add(new TraceStep<>(b.steps.size(), nodeName, attempts, before, after,
+                Duration.ofNanos(durationNanos), null, children));
+    }
+
+    @Override
     public void recordError(String executionId, String nodeName, Throwable error) {
         Builder b = active.get(executionId);
         if (b == null) return;

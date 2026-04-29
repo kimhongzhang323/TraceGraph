@@ -4,10 +4,13 @@ import io.tracegraph.core.Checkpoint;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Edge;
 import io.tracegraph.core.ExecutionResult;
+import io.tracegraph.core.Graph;
 import io.tracegraph.core.Merger;
 import io.tracegraph.core.NodeResult;
 import io.tracegraph.core.RetryPolicy;
+import io.tracegraph.core.RoutingNode;
 import io.tracegraph.core.Send;
+
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
@@ -43,6 +46,8 @@ public final class Executor<S> {
     private final TraceRecorder traceRecorder;
     private final MemoryStore memoryStore;
     private final ExecutorService userExecutor;
+    private final Set<String> interruptBefore;
+    private final Set<String> interruptAfter;
     private final Sleeper sleeper;
 
     public Executor(Map<String, NodeKind<S>> nodes,
@@ -56,9 +61,12 @@ public final class Executor<S> {
                     CheckpointStore checkpointStore,
                     TraceRecorder traceRecorder,
                     MemoryStore memoryStore,
-                    ExecutorService userExecutor) {
+                    ExecutorService userExecutor,
+                    Set<String> interruptBefore,
+                    Set<String> interruptAfter) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
-                checkpointStore, traceRecorder, memoryStore, userExecutor, Sleeper.realtime());
+                checkpointStore, traceRecorder, memoryStore, userExecutor, interruptBefore, interruptAfter,
+                Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -73,6 +81,8 @@ public final class Executor<S> {
              TraceRecorder traceRecorder,
              MemoryStore memoryStore,
              ExecutorService userExecutor,
+             Set<String> interruptBefore,
+             Set<String> interruptAfter,
              Sleeper sleeper) {
         this.nodes = nodes;
         this.edgesByFrom = edgesByFrom;
@@ -86,12 +96,14 @@ public final class Executor<S> {
         this.traceRecorder = traceRecorder;
         this.memoryStore = memoryStore;
         this.userExecutor = userExecutor;
+        this.interruptBefore = interruptBefore;
+        this.interruptAfter = interruptAfter;
         this.sleeper = sleeper;
     }
 
     public ExecutionResult<S> run(S initial, String executionId) {
         traceRecorder.recordStart(executionId, initial);
-        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec));
+        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec, false));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
     }
@@ -101,7 +113,7 @@ public final class Executor<S> {
             throw new GraphValidationException("Start node '" + startNode + "' is not declared");
         }
         traceRecorder.recordStart(executionId, seed);
-        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec));
+        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec, false));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
     }
@@ -114,18 +126,26 @@ public final class Executor<S> {
         Checkpoint<S> cp = (Checkpoint<S>) maybe.get();
         S state = cp.state();
         String last = cp.lastCompletedNode();
+        boolean skipFirstInterruptBefore = cp.interruptPending();
 
         traceRecorder.recordStart(executionId, state);
 
         ExecutionResult<S> result;
-        if (terminals.contains(last)) {
+        if (!skipFirstInterruptBefore && terminals.contains(last)) {
             result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+        } else if (skipFirstInterruptBefore) {
+            String next = last.isEmpty() ? entry : pickNext(last, state);
+            if (next == null) {
+                result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+            } else {
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true));
+            }
         } else {
             String next = pickNext(last, state);
             if (next == null) {
                 result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
             } else {
-                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec));
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false));
             }
         }
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
@@ -141,10 +161,12 @@ public final class Executor<S> {
         }
     }
 
-    private ExecutionResult<S> loop(String executionId, S initial, String startNode, List<String> path, ExecutorService exec) {
+    private ExecutionResult<S> loop(String executionId, S initial, String startNode, List<String> path,
+                                    ExecutorService exec, boolean skipFirstInterruptBefore) {
         S state = initial;
         String current = startNode;
         int steps = 0;
+        boolean firstNode = true;
 
         while (current != null) {
             if (steps++ >= maxSteps) {
@@ -156,32 +178,74 @@ public final class Executor<S> {
             RetryPolicy policy = nodePolicies.getOrDefault(current, defaultPolicy);
             path.add(current);
 
+            if (interruptBefore.contains(current) && !(firstNode && skipFirstInterruptBefore)) {
+                String lastCompleted = path.size() >= 2 ? path.get(path.size() - 2) : "";
+                checkpointStore.save(new Checkpoint<>(executionId, lastCompleted, state, Instant.now(), true));
+                return new ExecutionResult<>(executionId, state, path.subList(0, path.size() - 1), Status.INTERRUPTED, null);
+            }
+            firstNode = false;
+
             listener.onEnter(current, state);
             traceRecorder.recordEnter(executionId, current, 1, state);
             S before = state;
             long startNanos = System.nanoTime();
-            NodeOutcome<S> outcome = invokeWithRetry(node, state, current, executionId, policy, exec);
+
+            String routingTarget = null;
+            java.util.List<?> subgraphChildren = null;
+            NodeOutcome<S> outcome;
+            if (node instanceof NodeKind.Subgraph<S> subgraphKind) {
+                SubgraphOutcome<S> so = invokeSubgraphWithRetry(
+                        subgraphKind.inner(), state, current, executionId, policy);
+                if (so.failure != null) {
+                    outcome = NodeOutcome.failure(so.failure);
+                } else {
+                    outcome = NodeOutcome.success(so.state, so.attempts, null);
+                    subgraphChildren = so.childSteps;
+                }
+            } else if (node instanceof NodeKind.Routing<S> routingKind) {
+                RoutingNodeOutcome<S> ro = invokeRoutingNodeWithRetry(
+                        routingKind.node(), state, current, executionId, policy, exec);
+                if (ro.failure() != null) {
+                    outcome = NodeOutcome.failure(ro.failure());
+                } else if (ro.sendAll() != null) {
+                    outcome = NodeOutcome.sendAllResult(ro.state(), ro.attempts(), ro.sendAll());
+                } else {
+                    outcome = NodeOutcome.success(ro.state(), ro.attempts(), ro.goToTarget());
+                }
+            } else {
+                outcome = invokeWithRetry(node, state, current, executionId, policy, exec);
+            }
+
             long durationNanos = System.nanoTime() - startNanos;
-            if (outcome.failure != null) {
-                Throwable err = outcome.failure.getCause() != null ? outcome.failure.getCause() : outcome.failure;
+            if (outcome.failure() != null) {
+                Throwable err = outcome.failure().getCause() != null ? outcome.failure().getCause() : outcome.failure();
                 listener.onError(current, err);
                 traceRecorder.recordError(executionId, current, err);
-                return new ExecutionResult<>(executionId, state, path, Status.FAILED, outcome.failure);
+                return new ExecutionResult<>(executionId, state, path, Status.FAILED, outcome.failure());
             }
-            state = outcome.state;
+            state = outcome.state();
             listener.onState(current, before, state);
-            traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
+            if (subgraphChildren != null) {
+                traceRecorder.recordExitWithChildren(executionId, current, outcome.attempts(), before, state,
+                        durationNanos, subgraphChildren);
+            } else {
+                traceRecorder.recordExit(executionId, current, outcome.attempts(), before, state, durationNanos);
+            }
             checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now(), false));
             listener.onExit(current, state);
+
+            if (interruptAfter.contains(current)) {
+                return new ExecutionResult<>(executionId, state, path, Status.INTERRUPTED, null);
+            }
 
             if (terminals.contains(current)) {
                 return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
             }
 
             // Handle SendAll fan-out
-            if (outcome.sendAll != null) {
+            if (outcome.sendAll() != null) {
                 try {
-                    state = executeSendAll(outcome.sendAll, state, executionId, exec);
+                    state = executeSendAll(outcome.sendAll(), state, executionId, exec);
                 } catch (Throwable t) {
                     listener.onError(current, t);
                     traceRecorder.recordError(executionId, current, t);
@@ -196,20 +260,23 @@ public final class Executor<S> {
                 continue;
             }
 
-            if (outcome.routingTarget != null) {
-                String target = outcome.routingTarget;
+            String next;
+            if (outcome.routingTarget() != null) {
+                String target = outcome.routingTarget();
                 if (!nodes.containsKey(target)) {
                     NodeExecutionException ex = new NodeExecutionException(current,
-                            new IllegalArgumentException("Routing node '" + current + "' targeted unknown node '" + target + "'"));
+                            new IllegalArgumentException("Routing node '" + current
+                                    + "' targeted unknown node '" + target + "'"));
+                    listener.onError(current, ex);
+                    traceRecorder.recordError(executionId, current, ex);
                     return new ExecutionResult<>(executionId, state, path, Status.FAILED, ex);
                 }
-                current = target;
-                continue;
-            }
-
-            String next = pickNext(current, state);
-            if (next == null) {
-                return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
+                next = target;
+            } else {
+                next = pickNext(current, state);
+                if (next == null) {
+                    return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
+                }
             }
             current = next;
         }
@@ -277,6 +344,82 @@ public final class Executor<S> {
         return NodeOutcome.failure(new NodeExecutionException(name, last));
     }
 
+    private SubgraphOutcome<S> invokeSubgraphWithRetry(Graph<S> inner, S state, String name,
+                                                        String executionId, RetryPolicy policy) {
+        Throwable last = null;
+        for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
+            try {
+                String childEid = executionId + ":" + name;
+                ExecutionResult<S> result = inner.run(state, childEid);
+                if (result.status() != Status.COMPLETED) {
+                    Throwable cause = result.error() != null ? result.error()
+                            : new RuntimeException("subgraph '" + name + "' ended with " + result.status());
+                    last = cause;
+                    if (!policy.shouldRetry(attempt, cause)) {
+                        return SubgraphOutcome.failure(new NodeExecutionException(name, cause));
+                    }
+                } else {
+                    return SubgraphOutcome.success(result.finalState(), attempt);
+                }
+            } catch (Throwable t) {
+                if (t instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    return SubgraphOutcome.failure(new NodeExecutionException(name, t));
+                }
+                last = t;
+                if (!policy.shouldRetry(attempt, t)) {
+                    return SubgraphOutcome.failure(new NodeExecutionException(name, t));
+                }
+            }
+            listener.onRetry(name, attempt, last);
+            traceRecorder.recordRetry(executionId, name, attempt, last);
+            Duration delay = policy.backoff().delayFor(attempt);
+            try {
+                sleeper.sleep(delay);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return SubgraphOutcome.failure(new NodeExecutionException(name, ie));
+            }
+        }
+        return SubgraphOutcome.failure(new NodeExecutionException(name, last));
+    }
+
+    private RoutingNodeOutcome<S> invokeRoutingNodeWithRetry(RoutingNode<S> routingNode, S state, String name,
+                                                              String executionId, RetryPolicy policy,
+                                                              ExecutorService exec) {
+        Throwable last = null;
+        for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore);
+            try {
+                NodeResult<S> result = routingNode.apply(state, ctx);
+                if (result instanceof NodeResult.SendAll<S> sa) {
+                    return RoutingNodeOutcome.sendAllResult(result.state(), attempt, sa);
+                }
+                String goToTarget = result instanceof NodeResult.GoTo<S> goTo ? goTo.nodeName() : null;
+                return RoutingNodeOutcome.success(result.state(), attempt, goToTarget);
+            } catch (Throwable t) {
+                if (t instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    return RoutingNodeOutcome.failure(new NodeExecutionException(name, t));
+                }
+                last = t;
+                if (!policy.shouldRetry(attempt, t)) {
+                    return RoutingNodeOutcome.failure(new NodeExecutionException(name, t));
+                }
+                listener.onRetry(name, attempt, t);
+                traceRecorder.recordRetry(executionId, name, attempt, t);
+                Duration delay = policy.backoff().delayFor(attempt);
+                try {
+                    sleeper.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return RoutingNodeOutcome.failure(new NodeExecutionException(name, ie));
+                }
+            }
+        }
+        return RoutingNodeOutcome.failure(new NodeExecutionException(name, last));
+    }
+
     public static String newExecutionId() {
         return UUID.randomUUID().toString();
     }
@@ -314,6 +457,28 @@ public final class Executor<S> {
         List<S> results = new ArrayList<>(futures.size());
         for (var f : futures) results.add(f.join());
         return merger.merge(base, java.util.Collections.unmodifiableList(results));
+    }
+
+    private record RoutingNodeOutcome<S>(S state, int attempts, String goToTarget, NodeExecutionException failure, NodeResult.SendAll<S> sendAll) {
+        static <S> RoutingNodeOutcome<S> success(S state, int attempts, String goToTarget) {
+            return new RoutingNodeOutcome<>(state, attempts, goToTarget, null, null);
+        }
+        static <S> RoutingNodeOutcome<S> sendAllResult(S state, int attempts, NodeResult.SendAll<S> sendAll) {
+            return new RoutingNodeOutcome<>(state, attempts, null, null, sendAll);
+        }
+        static <S> RoutingNodeOutcome<S> failure(NodeExecutionException ex) {
+            return new RoutingNodeOutcome<>(null, 0, null, ex, null);
+        }
+    }
+
+    private record SubgraphOutcome<S>(S state, int attempts, java.util.List<?> childSteps,
+                                      NodeExecutionException failure) {
+        static <S> SubgraphOutcome<S> success(S state, int attempts) {
+            return new SubgraphOutcome<>(state, attempts, java.util.List.of(), null);
+        }
+        static <S> SubgraphOutcome<S> failure(NodeExecutionException ex) {
+            return new SubgraphOutcome<>(null, 0, java.util.List.of(), ex);
+        }
     }
 
     private record SimpleContext(String executionId, String nodeName, int attempt, MemoryStore memory)

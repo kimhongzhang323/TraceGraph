@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Predicate;
 
@@ -43,6 +42,8 @@ public final class Graph<S> {
     private final TraceRecorder traceRecorder;
     private final MemoryStore memoryStore;
     private final ExecutorService userExecutor;
+    private final Set<String> interruptBefore;
+    private final Set<String> interruptAfter;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -64,6 +65,8 @@ public final class Graph<S> {
         this.traceRecorder = b.traceRecorder == null ? TraceRecorder.noop() : b.traceRecorder;
         this.memoryStore = b.memoryStore == null ? MemoryStore.noop() : b.memoryStore;
         this.userExecutor = b.userExecutor;
+        this.interruptBefore = Set.copyOf(b.interruptBefore);
+        this.interruptAfter = Set.copyOf(b.interruptAfter);
     }
 
     public static <S> Builder<S> builder() {
@@ -97,13 +100,20 @@ public final class Graph<S> {
 
     public Flow.Publisher<NodeEvent<S>> stream(S initial, String executionId) {
         Objects.requireNonNull(executionId, "executionId");
-        SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>(
-                ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+        java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(1);
+        SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>() {
+            @Override
+            public void subscribe(Flow.Subscriber<? super NodeEvent<S>> subscriber) {
+                super.subscribe(subscriber);
+                ready.countDown();
+            }
+        };
         NodeListener streamingListener = new StreamingNodeListener<>(executionId, pub);
         NodeListener composed = composeListeners(this.listener, streamingListener);
         Graph<S> withStream = withListener(composed);
         Thread.startVirtualThread(() -> {
             try {
+                ready.await();
                 ExecutionResult<S> r = withStream.run(initial, executionId);
                 if (r.error() != null) {
                     List<String> path = r.path();
@@ -158,6 +168,8 @@ public final class Graph<S> {
         b.traceRecorder = this.traceRecorder;
         b.memoryStore = this.memoryStore;
         b.userExecutor = this.userExecutor;
+        b.interruptBefore.addAll(this.interruptBefore);
+        b.interruptAfter.addAll(this.interruptAfter);
         return new Graph<>(b);
     }
 
@@ -171,7 +183,8 @@ public final class Graph<S> {
 
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
-                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, userExecutor);
+                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, userExecutor,
+                interruptBefore, interruptAfter);
     }
 
     public Set<String> nodeNames() {
@@ -190,6 +203,11 @@ public final class Graph<S> {
         return terminals;
     }
 
+    public Optional<Graph<S>> subgraph(String nodeName) {
+        NodeKind<S> kind = nodes.get(nodeName);
+        if (kind instanceof NodeKind.Subgraph<S> sg) return Optional.of(sg.inner());
+        return Optional.empty();
+    }
     public String toMermaid() {
         return io.tracegraph.core.viz.MermaidRenderer.render(this);
     }
@@ -203,6 +221,8 @@ public final class Graph<S> {
         private final List<Edge<S>> edges = new ArrayList<>();
         private final Set<String> terminals = new HashSet<>();
         private final Map<String, RetryPolicy> nodePolicies = new HashMap<>();
+        private final Set<String> interruptBefore = new HashSet<>();
+        private final Set<String> interruptAfter = new HashSet<>();
         private String entry;
         private NodeListener listener;
         private int maxSteps = DEFAULT_MAX_STEPS;
@@ -342,6 +362,35 @@ public final class Graph<S> {
             return this;
         }
 
+
+
+        /**
+         * Embeds a compiled graph as a node. The inner graph runs to completion as a single step
+         * in the outer graph. Both graphs must share the same state type {@code <S>}.
+         *
+         * <p>Mid-subgraph crash semantics: the entire subgraph re-runs from its start on resume.
+         * Resuming a parent execution into the middle of a subgraph is not supported.
+         */
+        public Builder<S> subgraph(String name, Graph<S> inner) {
+            return subgraph(name, inner, null);
+        }
+
+        public Builder<S> subgraph(String name, Graph<S> inner, RetryPolicy retryPolicy) {
+            Objects.requireNonNull(inner, "inner");
+            register(name, NodeKind.subgraph(inner), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> interruptBefore(String... names) {
+            for (String n : names) interruptBefore.add(Objects.requireNonNull(n, "interruptBefore name"));
+            return this;
+        }
+
+        public Builder<S> interruptAfter(String... names) {
+            for (String n : names) interruptAfter.add(Objects.requireNonNull(n, "interruptAfter name"));
+            return this;
+        }
+
         public Graph<S> build() {
             validate();
             return new Graph<>(this);
@@ -365,6 +414,16 @@ public final class Graph<S> {
             for (String t : terminals) {
                 if (!nodes.containsKey(t)) {
                     throw new GraphValidationException("Terminal node '" + t + "' is not declared");
+                }
+            }
+            for (String n : interruptBefore) {
+                if (!nodes.containsKey(n)) {
+                    throw new GraphValidationException("interruptBefore references unknown node: '" + n + "'");
+                }
+            }
+            for (String n : interruptAfter) {
+                if (!nodes.containsKey(n)) {
+                    throw new GraphValidationException("interruptAfter references unknown node: '" + n + "'");
                 }
             }
             assertReachable();
