@@ -7,6 +7,16 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+/**
+ * {@link Node} adapter that bridges any {@link LlmClient} to a graph state type {@code S}.
+ * A {@code requestBuilder} turns the current state into an {@link LlmRequest}; a
+ * {@code responseFolder} merges the {@link LlmResponse} back into the next state — keeping the
+ * bridge between LLM and graph state explicit and testable.
+ *
+ * <p>Construct via {@link #of(LlmClient, java.util.function.Function, java.util.function.BiFunction)}.
+ *
+ * @param <S> the graph's state type
+ */
 public final class ChatNode<S> implements Node<S> {
 
     private final LlmClient client;

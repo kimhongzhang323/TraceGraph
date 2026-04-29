@@ -6,6 +6,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Captured trace of a single execution: initial/final state, status, ordered {@link TraceStep}s,
+ * timestamps, and (if produced by a {@code ReplayRunner}) lineage back to the parent trace.
+ * One {@code ExecutionTrace} per executionId — resume appends to the prior trace.
+ *
+ * <p>Persisted via {@code TraceStore}; walked via {@code Replayer}; re-executed via {@code
+ * ReplayRunner}; compared via {@link TraceDiff}.
+ *
+ * @param <S> the graph's state type
+ */
 public record ExecutionTrace<S>(String executionId, S initialState, S finalState,
                                 Status status, Throwable error,
                                 List<TraceStep<S>> steps,
