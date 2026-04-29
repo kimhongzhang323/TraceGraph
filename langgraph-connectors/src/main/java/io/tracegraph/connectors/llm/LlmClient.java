@@ -1,17 +1,9 @@
 package io.tracegraph.connectors.llm;
 
-<<<<<<< HEAD
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
 
-/**
- * SPI for invoking LLM completions.
- * <p>
- * Implementations must be thread-safe. The {@link #stream(LlmRequest)} method has a
- * default implementation that wraps {@link #complete(LlmRequest)} into a single-chunk
- * publisher; providers with native streaming support should override it.
-=======
 /**
  * Vendor-neutral interface for chat-completion LLM calls. Takes an {@link LlmRequest} and returns
  * an {@link LlmResponse}; covers the lowest common denominator across chat-LLM APIs (messages,
@@ -20,7 +12,11 @@ import java.util.concurrent.SubmissionPublisher;
  * <p>Ships with {@code OpenAiLlmClient} (OpenAI-compatible endpoints) and {@code AnthropicLlmClient}
  * (Anthropic Messages API), plus {@code MockLlmClient} for tests. Adapt to a graph node via
  * {@code ChatNode}. Streaming and embeddings are deferred slices.
->>>>>>> 55f9606bb806c3028941d338ba0cb5632dc396b9
+ *
+ * <p>
+ * Implementations must be thread-safe. The {@link #stream(LlmRequest)} method has a
+ * default implementation that wraps {@link #complete(LlmRequest)} into a single-chunk
+ * publisher; providers with native streaming support should override it.
  */
 @FunctionalInterface
 public interface LlmClient {
