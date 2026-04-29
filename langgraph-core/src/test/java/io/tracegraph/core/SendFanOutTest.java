@@ -3,6 +3,7 @@ package io.tracegraph.core;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import io.tracegraph.core.exec.NodeExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -62,5 +63,69 @@ class SendFanOutTest {
         Send<String> s = Send.to("node_a", "payload");
         assertThat(s.target()).isEqualTo("node_a");
         assertThat(s.payload()).isEqualTo("payload");
+    }
+
+    @Test
+    void sendAllToUnknownNodeFails() {
+        Graph<Integer> g = Graph.<Integer>builder()
+                .routingNode("split", (state, ctx) ->
+                        NodeResult.sendAll(
+                                List.of(Send.to("unknown_node", 1)),
+                                (base, results) -> base,
+                                state))
+                .node("done", (s, ctx) -> s)
+                .entry("split").terminal("done")
+                .edge("split", "done")
+                .build();
+
+        ExecutionResult<Integer> result = g.run(0);
+
+        assertThat(result.status()).isEqualTo(Status.FAILED);
+        assertThat(result.error()).isInstanceOf(NodeExecutionException.class);
+        assertThat(result.error().getMessage()).contains("unknown_node");
+    }
+
+    @Test
+    void sendAllWithEmptyListFails() {
+        Graph<Integer> g = Graph.<Integer>builder()
+                .routingNode("split", (state, ctx) ->
+                        NodeResult.sendAll(
+                                List.of(), // Empty list
+                                (base, results) -> base + results.size(),
+                                state))
+                .node("done", (s, ctx) -> s)
+                .entry("split").terminal("done")
+                .edge("split", "done")
+                .build();
+
+        ExecutionResult<Integer> result = g.run(42);
+
+        assertThat(result.status()).isEqualTo(Status.FAILED);
+        assertThat(result.error()).isInstanceOf(NodeExecutionException.class);
+        assertThat(result.error().getCause()).isInstanceOf(IllegalArgumentException.class);
+        assertThat(result.error().getCause().getMessage()).isEqualTo("sends must not be empty");
+    }
+
+    @Test
+    void sendAllToFailingNodePropagatesError() {
+        Graph<Integer> g = Graph.<Integer>builder()
+                .routingNode("split", (state, ctx) ->
+                        NodeResult.sendAll(
+                                List.of(Send.to("fail_node", 1)),
+                                (base, results) -> base,
+                                state))
+                .node("fail_node", (s, ctx) -> {
+                    throw new RuntimeException("Simulated failure in fan-out");
+                })
+                .node("done", (s, ctx) -> s)
+                .entry("split").terminal("done").terminal("fail_node")
+                .edge("split", "done")
+                .build();
+
+        ExecutionResult<Integer> result = g.run(0);
+
+        assertThat(result.status()).isEqualTo(Status.FAILED);
+        assertThat(result.error()).isInstanceOf(NodeExecutionException.class);
+        assertThat(result.error().getMessage()).contains("Simulated failure in fan-out");
     }
 }

@@ -85,4 +85,23 @@ class LlmStreamingTest {
         assertThat(lastWithDelta.delta()).isEqualTo("world");
         assertThat(lastWithDelta.finishReason()).isEqualTo(LlmResponse.FinishReason.LENGTH);
     }
+    @Test
+    void defaultStreamPropagatesErrorFromComplete() throws Exception {
+        LlmClient client = req -> {
+            throw new RuntimeException("simulated failure in complete");
+        };
+        LlmRequest req = LlmRequest.builder()
+                .model("test").messages(List.of(ChatMessage.user("hi"))).build();
+
+        CollectingSubscriber sub = new CollectingSubscriber();
+        client.stream(req).subscribe(sub);
+        
+        try {
+            sub.result.get(5, TimeUnit.SECONDS);
+            org.junit.jupiter.api.Assertions.fail("Expected exception");
+        } catch (java.util.concurrent.ExecutionException e) {
+            assertThat(e.getCause()).isInstanceOf(RuntimeException.class);
+            assertThat(e.getCause().getMessage()).isEqualTo("simulated failure in complete");
+        }
+    }
 }
