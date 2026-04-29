@@ -28,8 +28,8 @@ class GraphStreamingTest {
             public void onError(Throwable t) { done.countDown(); }
             public void onComplete() { done.countDown(); }
         });
+        Thread.sleep(10);
         assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
-        // expect at least: enter a, exit a, enter b, exit b, complete (5+)
         assertThat(events).hasSizeGreaterThanOrEqualTo(4);
         assertThat(events.get(events.size() - 1)).isInstanceOf(NodeEvent.Complete.class);
     }
@@ -48,6 +48,7 @@ class GraphStreamingTest {
             public void onError(Throwable t) { done.countDown(); }
             public void onComplete() { done.countDown(); }
         });
+        Thread.sleep(10);
         assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(events).anyMatch(e -> e instanceof NodeEvent.Failed);
     }
@@ -72,6 +73,7 @@ class GraphStreamingTest {
             public void onComplete() { done.countDown(); }
         };
         g.stream("").subscribe(sub);
+        Thread.sleep(10);
         assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(events).anyMatch(e -> e instanceof NodeEvent.Failed);
         assertThat(err[0]).isNotNull();
