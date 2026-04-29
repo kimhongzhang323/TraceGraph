@@ -82,34 +82,36 @@ public final class MockLlmClient implements LlmClient {
         if (!simulateStreaming) {
             return LlmClient.super.stream(request);
         }
-        calls.add(request);
-        LlmResponse full = responder.apply(request);
-        SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
-                ForkJoinPool.commonPool(), Flow.defaultBufferSize());
-        Thread.startVirtualThread(() -> {
-            try {
-                // Emit word-by-word for realistic streaming simulation
-                String[] words = full.content().split("(?<=\\s)");
-                for (int i = 0; i < words.length; i++) {
-                    if (i == words.length - 1) {
-                        pub.submit(LlmStreamChunk.done(words[i], full.finish()));
-                    } else {
-                        pub.submit(LlmStreamChunk.content(words[i]));
+        return subscriber -> {
+            calls.add(request);
+            LlmResponse full = responder.apply(request);
+            SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
+                    ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+            pub.subscribe(subscriber);
+            Thread.startVirtualThread(() -> {
+                try {
+                    // Emit word-by-word for realistic streaming simulation
+                    String[] words = full.content().split("(?<=\\s)");
+                    for (int i = 0; i < words.length; i++) {
+                        if (i == words.length - 1) {
+                            pub.submit(LlmStreamChunk.done(words[i], full.finish()));
+                        } else {
+                            pub.submit(LlmStreamChunk.content(words[i]));
+                        }
                     }
+                    if (words.length == 0) {
+                        pub.submit(LlmStreamChunk.done(full.finish()));
+                    }
+                    Thread.sleep(10);
+                    pub.close();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    pub.closeExceptionally(e);
+                } catch (Throwable t) {
+                    pub.closeExceptionally(t);
                 }
-                if (words.length == 0) {
-                    pub.submit(LlmStreamChunk.done(full.finish()));
-                }
-                Thread.sleep(10);
-                pub.close();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                pub.closeExceptionally(e);
-            } catch (Throwable t) {
-                pub.closeExceptionally(t);
-            }
-        });
-        return pub;
+            });
+        };
     }
 
     public List<LlmRequest> calls() {

@@ -35,25 +35,25 @@ public interface LlmClient {
      * @return a publisher of streaming chunks
      */
     default Flow.Publisher<LlmStreamChunk> stream(LlmRequest request) {
-        // Use Executors.newSingleThreadExecutor as the publisher's executor
-        // to ensure submit() and close() are serialized with onNext/onComplete
-        SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
-                ForkJoinPool.commonPool(), Flow.defaultBufferSize());
-        Thread.startVirtualThread(() -> {
-            try {
-                LlmResponse full = complete(request);
-                // submit() guarantees delivery to all subscribers
-                pub.submit(LlmStreamChunk.done(full.content(), full.finish()));
-                // Allow time for subscriber onNext processing before close triggers onComplete
-                Thread.sleep(10);
-                pub.close();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                pub.closeExceptionally(e);
-            } catch (Throwable t) {
-                pub.closeExceptionally(t);
-            }
-        });
-        return pub;
+        return subscriber -> {
+            SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
+                    ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+            pub.subscribe(subscriber);
+            Thread.startVirtualThread(() -> {
+                try {
+                    LlmResponse full = complete(request);
+                    // submit() guarantees delivery to all subscribers
+                    pub.submit(LlmStreamChunk.done(full.content(), full.finish()));
+                    // Allow time for subscriber onNext processing before close triggers onComplete
+                    Thread.sleep(10);
+                    pub.close();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    pub.closeExceptionally(e);
+                } catch (Throwable t) {
+                    pub.closeExceptionally(t);
+                }
+            });
+        };
     }
 }
