@@ -51,4 +51,29 @@ class GraphStreamingTest {
         assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(events).anyMatch(e -> e instanceof NodeEvent.Failed);
     }
+
+    @Test
+    void failingNodeSurfacesAsFailedEventThenError() throws Exception {
+        Graph<String> g = Graph.<String>builder()
+                .node("boom", (s, ctx) -> { throw new RuntimeException("nope"); })
+                .entry("boom").terminal("boom")
+                .build();
+        List<NodeEvent<String>> events = new ArrayList<>();
+        CountDownLatch done = new CountDownLatch(1);
+        Throwable[] err = new Throwable[1];
+        Flow.Subscriber<NodeEvent<String>> sub = new Flow.Subscriber<>() {
+            private Flow.Subscription subscription;
+            public void onSubscribe(Flow.Subscription s) { this.subscription = s; s.request(Long.MAX_VALUE); }
+            public void onNext(NodeEvent<String> e) {
+                events.add(e);
+                subscription.request(1);
+            }
+            public void onError(Throwable t) { err[0] = t; done.countDown(); }
+            public void onComplete() { done.countDown(); }
+        };
+        g.stream("").subscribe(sub);
+        assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(events).anyMatch(e -> e instanceof NodeEvent.Failed);
+        assertThat(err[0]).isNotNull();
+    }
 }

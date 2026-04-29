@@ -105,10 +105,23 @@ public final class Graph<S> {
         Thread.startVirtualThread(() -> {
             try {
                 ExecutionResult<S> r = withStream.run(initial, executionId);
-                List<String> path = r.path();
-                String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
-                pub.submit(new NodeEvent.Complete<>(executionId, lastNode, r));
-                pub.close();
+                if (r.error() != null) {
+                    List<String> path = r.path();
+                    String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
+                    int result = pub.submit(new NodeEvent.Failed<>(executionId, lastNode, r.error()));
+                    if (result < 0) {
+                        for (int i = 0; i < 100 && result < 0; i++) {
+                            Thread.sleep(1);
+                            result = pub.submit(new NodeEvent.Failed<>(executionId, lastNode, r.error()));
+                        }
+                    }
+                    pub.closeExceptionally(r.error());
+                } else {
+                    List<String> path = r.path();
+                    String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
+                    pub.submit(new NodeEvent.Complete<>(executionId, lastNode, r));
+                    pub.close();
+                }
             } catch (Throwable t) {
                 pub.closeExceptionally(t);
             }
@@ -120,6 +133,7 @@ public final class Graph<S> {
         if (a == NodeListener.NOOP) return b;
         return new NodeListener() {
             @Override public void onEnter(String n, Object s) { a.onEnter(n, s); b.onEnter(n, s); }
+            @Override public void onExit(String n, Object s) { a.onExit(n, s); b.onExit(n, s); }
             @Override public void onState(String n, Object before, Object after) { a.onState(n, before, after); b.onState(n, before, after); }
             @Override public void onRetry(String n, int att, Throwable c) { a.onRetry(n, att, c); b.onRetry(n, att, c); }
             @Override public void onError(String n, Throwable c) { a.onError(n, c); b.onError(n, c); }
