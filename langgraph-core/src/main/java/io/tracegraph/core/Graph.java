@@ -191,6 +191,14 @@ public final class Graph<S> {
         return Optional.empty();
     }
 
+    public String toMermaid() {
+        return io.tracegraph.core.viz.MermaidRenderer.render(this);
+    }
+
+    public String toPlantUml() {
+        return io.tracegraph.core.viz.PlantUmlRenderer.render(this);
+    }
+
     public static final class Builder<S> {
         private final Map<String, NodeKind<S>> nodes = new LinkedHashMap<>();
         private final List<Edge<S>> edges = new ArrayList<>();
