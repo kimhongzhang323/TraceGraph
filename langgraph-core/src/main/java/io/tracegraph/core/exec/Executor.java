@@ -4,6 +4,7 @@ import io.tracegraph.core.Checkpoint;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Edge;
 import io.tracegraph.core.ExecutionResult;
+import io.tracegraph.core.Graph;
 import io.tracegraph.core.NodeResult;
 import io.tracegraph.core.RetryPolicy;
 import io.tracegraph.core.RoutingNode;
@@ -187,8 +188,18 @@ public final class Executor<S> {
             long startNanos = System.nanoTime();
 
             String routingTarget = null;
+            java.util.List<?> subgraphChildren = null;
             NodeOutcome<S> outcome;
-            if (node instanceof NodeKind.Routing<S> routingKind) {
+            if (node instanceof NodeKind.Subgraph<S> subgraphKind) {
+                SubgraphOutcome<S> so = invokeSubgraphWithRetry(
+                        subgraphKind.inner(), state, current, executionId, policy);
+                if (so.failure != null) {
+                    outcome = NodeOutcome.failure(so.failure);
+                } else {
+                    outcome = NodeOutcome.success(so.state, so.attempts);
+                    subgraphChildren = so.childSteps;
+                }
+            } else if (node instanceof NodeKind.Routing<S> routingKind) {
                 RoutingNodeOutcome<S> ro = invokeRoutingNodeWithRetry(
                         routingKind.node(), state, current, executionId, policy, exec);
                 if (ro.failure != null) {
@@ -210,7 +221,12 @@ public final class Executor<S> {
             }
             state = outcome.state;
             listener.onState(current, before, state);
-            traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
+            if (subgraphChildren != null) {
+                traceRecorder.recordExitWithChildren(executionId, current, outcome.attempts, before, state,
+                        durationNanos, subgraphChildren);
+            } else {
+                traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
+            }
             checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now(), false));
             listener.onExit(current, state);
 
@@ -300,6 +316,46 @@ public final class Executor<S> {
         return NodeOutcome.failure(new NodeExecutionException(name, last));
     }
 
+    private SubgraphOutcome<S> invokeSubgraphWithRetry(Graph<S> inner, S state, String name,
+                                                        String executionId, RetryPolicy policy) {
+        Throwable last = null;
+        for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
+            try {
+                String childEid = executionId + ":" + name;
+                ExecutionResult<S> result = inner.run(state, childEid);
+                if (result.status() != Status.COMPLETED) {
+                    Throwable cause = result.error() != null ? result.error()
+                            : new RuntimeException("subgraph '" + name + "' ended with " + result.status());
+                    last = cause;
+                    if (!policy.shouldRetry(attempt, cause)) {
+                        return SubgraphOutcome.failure(new NodeExecutionException(name, cause));
+                    }
+                } else {
+                    return SubgraphOutcome.success(result.finalState(), attempt);
+                }
+            } catch (Throwable t) {
+                if (t instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    return SubgraphOutcome.failure(new NodeExecutionException(name, t));
+                }
+                last = t;
+                if (!policy.shouldRetry(attempt, t)) {
+                    return SubgraphOutcome.failure(new NodeExecutionException(name, t));
+                }
+            }
+            listener.onRetry(name, attempt, last);
+            traceRecorder.recordRetry(executionId, name, attempt, last);
+            Duration delay = policy.backoff().delayFor(attempt);
+            try {
+                sleeper.sleep(delay);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return SubgraphOutcome.failure(new NodeExecutionException(name, ie));
+            }
+        }
+        return SubgraphOutcome.failure(new NodeExecutionException(name, last));
+    }
+
     private RoutingNodeOutcome<S> invokeRoutingNodeWithRetry(RoutingNode<S> routingNode, S state, String name,
                                                               String executionId, RetryPolicy policy,
                                                               ExecutorService exec) {
@@ -348,6 +404,16 @@ public final class Executor<S> {
         }
         static <S> RoutingNodeOutcome<S> failure(NodeExecutionException ex) {
             return new RoutingNodeOutcome<>(null, 0, null, ex);
+        }
+    }
+
+    private record SubgraphOutcome<S>(S state, int attempts, java.util.List<?> childSteps,
+                                      NodeExecutionException failure) {
+        static <S> SubgraphOutcome<S> success(S state, int attempts) {
+            return new SubgraphOutcome<>(state, attempts, java.util.List.of(), null);
+        }
+        static <S> SubgraphOutcome<S> failure(NodeExecutionException ex) {
+            return new SubgraphOutcome<>(null, 0, java.util.List.of(), ex);
         }
     }
 

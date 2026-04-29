@@ -2,6 +2,7 @@ package io.tracegraph.core.exec;
 
 import io.tracegraph.core.AsyncNode;
 import io.tracegraph.core.Context;
+import io.tracegraph.core.Graph;
 import io.tracegraph.core.Merger;
 import io.tracegraph.core.Node;
 import io.tracegraph.core.NodeResult;
@@ -13,7 +14,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Internal uniform handle for sync nodes, async nodes, parallel composites, and routing nodes.
+ * Internal uniform handle for sync nodes, async nodes, parallel composites, routing nodes, and subgraphs.
  * The executor only sees this — translation happens in the static factories.
  */
 public sealed interface NodeKind<S> {
@@ -34,6 +35,10 @@ public sealed interface NodeKind<S> {
 
     static <S> NodeKind<S> routing(RoutingNode<S> node) {
         return new Routing<>(node);
+    }
+
+    static <S> NodeKind<S> subgraph(Graph<S> inner) {
+        return new Subgraph<>(inner);
     }
 
     record Sync<S>(Node<S> node) implements NodeKind<S> {
@@ -97,6 +102,19 @@ public sealed interface NodeKind<S> {
             try {
                 NodeResult<S> result = node.apply(state, ctx);
                 return CompletableFuture.completedFuture(result.state());
+            } catch (Throwable t) {
+                CompletableFuture<S> failed = new CompletableFuture<>();
+                failed.completeExceptionally(t);
+                return failed;
+            }
+        }
+    }
+
+    record Subgraph<S>(Graph<S> inner) implements NodeKind<S> {
+        @Override
+        public CompletableFuture<S> invoke(S state, Context ctx, ExecutorService executor) {
+            try {
+                return CompletableFuture.completedFuture(inner.run(state).finalState());
             } catch (Throwable t) {
                 CompletableFuture<S> failed = new CompletableFuture<>();
                 failed.completeExceptionally(t);
