@@ -32,4 +32,12 @@ public class TraceWebAutoConfiguration {
     public TraceReplayController traceReplayController(TraceStore store, Graph<?> graph) {
         return new TraceReplayController(store, graph);
     }
+
+    @Bean
+    @ConditionalOnSingleCandidate(Graph.class)
+    @ConditionalOnMissingBean(TraceStreamController.class)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public TraceStreamController traceStreamController(Graph<?> graph) {
+        return new TraceStreamController(graph);
+    }
 }
