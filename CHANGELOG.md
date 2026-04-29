@@ -4,6 +4,9 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Breaking
+- `TraceStep<S>` gained a trailing `children` record component for subgraph support. Positional constructor consumers must update; `TraceStep.leaf(...)` is a convenience for the common case.
+
 ### Added
 - **Spring Boot auto-config for `LlmClient`.** New `LlmAutoConfiguration` (`io.tracegraph.boot.llm`) wires an `OpenAiLlmClient` or `AnthropicLlmClient` from properties when the connectors module is on the classpath. Provider selected via `tracegraph.llm.provider=openai|anthropic`; `tracegraph.llm.api-key`, `tracegraph.llm.endpoint`, `tracegraph.llm.request-timeout`, `tracegraph.llm.anthropic-version` configure the chosen client. No bean is registered when `provider` is unset or `tracegraph.llm.enabled=false`. User-defined `LlmClient` beans win via `@ConditionalOnMissingBean`. `langgraph-connectors` is an `<optional>` starter dep.
 - **`POST /tracegraph/traces/{id}/replay`** — REST endpoint that re-executes a saved trace from a chosen step. Optional `step` query param (default `-1`, meaning replay from entry). Auto-registered when both a `TraceStore` and a single `Graph<?>` bean are present (`@ConditionalOnSingleCandidate(Graph.class)`). Response carries the new `executionId`, lineage (`forkedFromExecutionId`, `forkedFromStepIndex`), and final status. 404 if the parent trace is unknown; 400 if the step is out of range.
