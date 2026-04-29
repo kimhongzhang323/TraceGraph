@@ -42,7 +42,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
                            Object before, Object after, long durationNanos) {
         Builder b = active.get(executionId);
         if (b == null) return;
-        b.steps.add(new TraceStep<>(b.steps.size(), nodeName, attempts, before, after,
+        b.steps.add(TraceStep.leaf(b.steps.size(), nodeName, attempts, before, after,
                 Duration.ofNanos(durationNanos), null));
     }
 
@@ -50,7 +50,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     public void recordError(String executionId, String nodeName, Throwable error) {
         Builder b = active.get(executionId);
         if (b == null) return;
-        b.steps.add(new TraceStep<>(b.steps.size(), nodeName, 1, null, null, Duration.ZERO, error));
+        b.steps.add(TraceStep.leaf(b.steps.size(), nodeName, 1, null, null, Duration.ZERO, error));
         b.error = error;
     }
 

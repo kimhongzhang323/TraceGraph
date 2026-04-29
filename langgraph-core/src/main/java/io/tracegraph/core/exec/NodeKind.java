@@ -4,19 +4,21 @@ import io.tracegraph.core.AsyncNode;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Merger;
 import io.tracegraph.core.Node;
+import io.tracegraph.core.NodeResult;
+import io.tracegraph.core.RoutingNode;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 
-/**
- * Internal uniform handle for sync nodes, async nodes, and parallel composites.
- * The executor only sees this — translation happens in the static factories.
- */
 public sealed interface NodeKind<S> {
 
     CompletableFuture<S> invoke(S state, Context ctx, ExecutorService executor);
+
+    default CompletableFuture<NodeResult<S>> invokeRouting(S state, Context ctx, ExecutorService executor) {
+        return invoke(state, ctx, executor).thenApply(NodeResult::of);
+    }
 
     static <S> NodeKind<S> sync(Node<S> node) {
         return new Sync<>(node);
@@ -28,6 +30,10 @@ public sealed interface NodeKind<S> {
 
     static <S> NodeKind<S> parallel(List<NodeKind<S>> branches, Merger<S> merger) {
         return new Parallel<>(branches, merger);
+    }
+
+    static <S> NodeKind<S> routing(RoutingNode<S> node) {
+        return new Routing<>(node);
     }
 
     record Sync<S>(Node<S> node) implements NodeKind<S> {
@@ -82,6 +88,30 @@ public sealed interface NodeKind<S> {
                 for (CompletableFuture<S> f : futures) results.add(f.join());
                 return merger.merge(state, java.util.Collections.unmodifiableList(results));
             });
+        }
+    }
+
+    record Routing<S>(RoutingNode<S> node) implements NodeKind<S> {
+        @Override
+        public CompletableFuture<S> invoke(S state, Context ctx, ExecutorService executor) {
+            try {
+                return CompletableFuture.completedFuture(node.apply(state, ctx).state());
+            } catch (Throwable t) {
+                CompletableFuture<S> failed = new CompletableFuture<>();
+                failed.completeExceptionally(t);
+                return failed;
+            }
+        }
+
+        @Override
+        public CompletableFuture<NodeResult<S>> invokeRouting(S state, Context ctx, ExecutorService executor) {
+            try {
+                return CompletableFuture.completedFuture(node.apply(state, ctx));
+            } catch (Throwable t) {
+                CompletableFuture<NodeResult<S>> failed = new CompletableFuture<>();
+                failed.completeExceptionally(t);
+                return failed;
+            }
         }
     }
 

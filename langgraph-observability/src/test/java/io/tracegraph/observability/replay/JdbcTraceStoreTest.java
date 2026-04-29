@@ -111,7 +111,7 @@ class JdbcTraceStoreTest {
         Instant t = Instant.parse("2026-04-28T12:00:00Z");
         ExecutionTrace<String> fork = new ExecutionTrace<>(
                 "fork-1", "s0", "s1", Status.COMPLETED, null,
-                List.of(new TraceStep<>(0, "n", 1, "s0", "s1", Duration.ofMillis(5), null)),
+                List.of(TraceStep.leaf(0, "n", 1, "s0", "s1", Duration.ofMillis(5), null)),
                 t, t.plusSeconds(1), "parent-99", 2);
         store.save(fork);
 
@@ -150,7 +150,7 @@ class JdbcTraceStoreTest {
         String prev = initial;
         for (int i = 0; i < steps; i++) {
             String next = (i == steps - 1) ? finalState : prev + "." + i;
-            stepList.add(new TraceStep<>(i, "n" + i, 1, prev, next, Duration.ofMillis(1), null));
+            stepList.add(TraceStep.leaf(i, "n" + i, 1, prev, next, Duration.ofMillis(1), null));
             prev = next;
         }
         return new ExecutionTrace<>(id, initial, finalState, status, null,

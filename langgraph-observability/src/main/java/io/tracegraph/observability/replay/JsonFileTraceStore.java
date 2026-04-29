@@ -135,7 +135,7 @@ public final class JsonFileTraceStore<S> implements TraceStore {
                     s.before(), s.after(), s.duration().toNanos(), ErrorDto.from(s.error()));
         }
         TraceStep<S> toStep() {
-            return new TraceStep<>(index, nodeName, attempts, before, after,
+            return TraceStep.leaf(index, nodeName, attempts, before, after,
                     Duration.ofNanos(durationNanos), ErrorDto.toThrowable(error));
         }
     }
