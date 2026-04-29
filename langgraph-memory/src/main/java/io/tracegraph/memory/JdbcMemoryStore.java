@@ -15,7 +15,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -163,6 +165,28 @@ public final class JdbcMemoryStore implements MemoryStore {
             }
         } catch (SQLException e) {
             throw new MemoryPersistenceException("failed to list memory keys for " + scope, e);
+        }
+    }
+
+    @Override
+    public List<String> pagedKeys(String scope, int offset, int limit) {
+        Objects.requireNonNull(scope, "scope");
+        if (offset < 0) throw new IllegalArgumentException("offset must be >= 0");
+        if (limit < 0) throw new IllegalArgumentException("limit must be >= 0");
+        String sql = "SELECT key_name FROM " + table
+                + " WHERE scope = ? ORDER BY key_name LIMIT ? OFFSET ?";
+        try (Connection c = dataSource.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, scope);
+            ps.setInt(2, limit);
+            ps.setInt(3, offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<String> out = new ArrayList<>();
+                while (rs.next()) out.add(rs.getString(1));
+                return List.copyOf(out);
+            }
+        } catch (SQLException e) {
+            throw new MemoryPersistenceException("failed to page memory keys for " + scope, e);
         }
     }
 }
