@@ -200,6 +200,20 @@ public final class Graph<S> {
         return terminals;
     }
 
+    public Optional<Graph<S>> subgraph(String nodeName) {
+        NodeKind<S> kind = nodes.get(nodeName);
+        if (kind instanceof NodeKind.Subgraph<S> sg) return Optional.of(sg.inner());
+        return Optional.empty();
+    }
+
+    public String toMermaid() {
+        return io.tracegraph.core.viz.MermaidRenderer.render(this);
+    }
+
+    public String toPlantUml() {
+        return io.tracegraph.core.viz.PlantUmlRenderer.render(this);
+    }
+
     public static final class Builder<S> {
         private final Map<String, NodeKind<S>> nodes = new LinkedHashMap<>();
         private final List<Edge<S>> edges = new ArrayList<>();
@@ -344,6 +358,23 @@ public final class Graph<S> {
         public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
             Objects.requireNonNull(node, "node");
             register(name, NodeKind.routing(node), retryPolicy);
+            return this;
+        }
+
+        /**
+         * Embeds a compiled graph as a node. The inner graph runs to completion as a single step
+         * in the outer graph. Both graphs must share the same state type {@code <S>}.
+         *
+         * <p>Mid-subgraph crash semantics: the entire subgraph re-runs from its start on resume.
+         * Resuming a parent execution into the middle of a subgraph is not supported.
+         */
+        public Builder<S> subgraph(String name, Graph<S> inner) {
+            return subgraph(name, inner, null);
+        }
+
+        public Builder<S> subgraph(String name, Graph<S> inner, RetryPolicy retryPolicy) {
+            Objects.requireNonNull(inner, "inner");
+            register(name, NodeKind.subgraph(inner), retryPolicy);
             return this;
         }
 

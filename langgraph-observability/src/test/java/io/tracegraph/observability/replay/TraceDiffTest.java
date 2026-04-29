@@ -101,7 +101,7 @@ class TraceDiffTest {
     }
 
     private static TraceStep<String> step(int idx, String name, String before, String after) {
-        return new TraceStep<>(idx, name, 1, before, after, java.time.Duration.ZERO, null);
+        return TraceStep.leaf(idx, name, 1, before, after, java.time.Duration.ZERO, null);
     }
 
     private static ExecutionTrace<String> trace(String id, String in, String out, List<TraceStep<String>> steps) {

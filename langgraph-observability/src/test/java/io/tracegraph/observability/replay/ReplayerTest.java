@@ -17,8 +17,8 @@ class ReplayerTest {
         ExecutionTrace<String> trace = new ExecutionTrace<>("e1", "seed", "seed.a.b",
                 Status.COMPLETED, null,
                 List.of(
-                        new TraceStep<>(0, "a", 1, "seed", "seed.a", Duration.ZERO, null),
-                        new TraceStep<>(1, "b", 1, "seed.a", "seed.a.b", Duration.ZERO, null)),
+                        TraceStep.leaf(0, "a", 1, "seed", "seed.a", Duration.ZERO, null),
+                        TraceStep.leaf(1, "b", 1, "seed.a", "seed.a.b", Duration.ZERO, null)),
                 Instant.EPOCH, Instant.EPOCH);
 
         Replayer<String> r = Replayer.of(trace);

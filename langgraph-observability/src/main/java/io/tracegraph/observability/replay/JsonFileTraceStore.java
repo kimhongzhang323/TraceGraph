@@ -129,14 +129,20 @@ public final class JsonFileTraceStore<S> implements TraceStore {
     }
 
     record StepDto<S>(int index, String nodeName, int attempts,
-                      S before, S after, long durationNanos, ErrorDto error) {
+                      S before, S after, long durationNanos, ErrorDto error,
+                      List<StepDto<S>> children) {
         static <S> StepDto<S> from(TraceStep<S> s) {
+            List<StepDto<S>> childDtos = new ArrayList<>(s.children().size());
+            for (TraceStep<S> c : s.children()) childDtos.add(StepDto.from(c));
             return new StepDto<>(s.index(), s.nodeName(), s.attempts(),
-                    s.before(), s.after(), s.duration().toNanos(), ErrorDto.from(s.error()));
+                    s.before(), s.after(), s.duration().toNanos(), ErrorDto.from(s.error()),
+                    childDtos.isEmpty() ? null : childDtos);
         }
         TraceStep<S> toStep() {
+            List<TraceStep<S>> childSteps = new ArrayList<>();
+            if (children != null) for (StepDto<S> c : children) childSteps.add(c.toStep());
             return new TraceStep<>(index, nodeName, attempts, before, after,
-                    Duration.ofNanos(durationNanos), ErrorDto.toThrowable(error));
+                    Duration.ofNanos(durationNanos), ErrorDto.toThrowable(error), childSteps);
         }
     }
 

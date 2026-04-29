@@ -24,6 +24,12 @@ public interface TraceRecorder {
     default void recordExit(String executionId, String nodeName, int attempts,
                             Object before, Object after, long durationNanos) {}
 
+    default void recordExitWithChildren(String executionId, String nodeName, int attempts,
+                                        Object before, Object after, long durationNanos,
+                                        java.util.List<?> childrenSteps) {
+        recordExit(executionId, nodeName, attempts, before, after, durationNanos);
+    }
+
     default void recordError(String executionId, String nodeName, Throwable error) {}
 
     default void recordComplete(String executionId, Status status, Object finalState) {}
