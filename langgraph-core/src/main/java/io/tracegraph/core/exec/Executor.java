@@ -4,7 +4,9 @@ import io.tracegraph.core.Checkpoint;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Edge;
 import io.tracegraph.core.ExecutionResult;
+import io.tracegraph.core.NodeResult;
 import io.tracegraph.core.RetryPolicy;
+import io.tracegraph.core.RoutingNode;
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
@@ -183,7 +185,22 @@ public final class Executor<S> {
             traceRecorder.recordEnter(executionId, current, 1, state);
             S before = state;
             long startNanos = System.nanoTime();
-            NodeOutcome<S> outcome = invokeWithRetry(node, state, current, executionId, policy, exec);
+
+            String routingTarget = null;
+            NodeOutcome<S> outcome;
+            if (node instanceof NodeKind.Routing<S> routingKind) {
+                RoutingNodeOutcome<S> ro = invokeRoutingNodeWithRetry(
+                        routingKind.node(), state, current, executionId, policy, exec);
+                if (ro.failure != null) {
+                    outcome = NodeOutcome.failure(ro.failure);
+                } else {
+                    outcome = NodeOutcome.success(ro.state, ro.attempts);
+                    routingTarget = ro.goToTarget;
+                }
+            } else {
+                outcome = invokeWithRetry(node, state, current, executionId, policy, exec);
+            }
+
             long durationNanos = System.nanoTime() - startNanos;
             if (outcome.failure != null) {
                 Throwable err = outcome.failure.getCause() != null ? outcome.failure.getCause() : outcome.failure;
@@ -205,9 +222,22 @@ public final class Executor<S> {
                 return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
             }
 
-            String next = pickNext(current, state);
-            if (next == null) {
-                return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
+            String next;
+            if (routingTarget != null) {
+                if (!nodes.containsKey(routingTarget)) {
+                    NodeExecutionException ex = new NodeExecutionException(current,
+                            new IllegalArgumentException("Routing node '" + current
+                                    + "' targeted unknown node '" + routingTarget + "'"));
+                    listener.onError(current, ex);
+                    traceRecorder.recordError(executionId, current, ex);
+                    return new ExecutionResult<>(executionId, state, path, Status.FAILED, ex);
+                }
+                next = routingTarget;
+            } else {
+                next = pickNext(current, state);
+                if (next == null) {
+                    return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
+                }
             }
             current = next;
         }
@@ -270,6 +300,39 @@ public final class Executor<S> {
         return NodeOutcome.failure(new NodeExecutionException(name, last));
     }
 
+    private RoutingNodeOutcome<S> invokeRoutingNodeWithRetry(RoutingNode<S> routingNode, S state, String name,
+                                                              String executionId, RetryPolicy policy,
+                                                              ExecutorService exec) {
+        Throwable last = null;
+        for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore);
+            try {
+                NodeResult<S> result = routingNode.apply(state, ctx);
+                String goToTarget = result instanceof NodeResult.GoTo<S> goTo ? goTo.nodeName() : null;
+                return RoutingNodeOutcome.success(result.state(), attempt, goToTarget);
+            } catch (Throwable t) {
+                if (t instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    return RoutingNodeOutcome.failure(new NodeExecutionException(name, t));
+                }
+                last = t;
+                if (!policy.shouldRetry(attempt, t)) {
+                    return RoutingNodeOutcome.failure(new NodeExecutionException(name, t));
+                }
+                listener.onRetry(name, attempt, t);
+                traceRecorder.recordRetry(executionId, name, attempt, t);
+                Duration delay = policy.backoff().delayFor(attempt);
+                try {
+                    sleeper.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return RoutingNodeOutcome.failure(new NodeExecutionException(name, ie));
+                }
+            }
+        }
+        return RoutingNodeOutcome.failure(new NodeExecutionException(name, last));
+    }
+
     public static String newExecutionId() {
         return UUID.randomUUID().toString();
     }
@@ -277,6 +340,15 @@ public final class Executor<S> {
     private record NodeOutcome<S>(S state, int attempts, NodeExecutionException failure) {
         static <S> NodeOutcome<S> success(S state, int attempts) { return new NodeOutcome<>(state, attempts, null); }
         static <S> NodeOutcome<S> failure(NodeExecutionException ex) { return new NodeOutcome<>(null, 0, ex); }
+    }
+
+    private record RoutingNodeOutcome<S>(S state, int attempts, String goToTarget, NodeExecutionException failure) {
+        static <S> RoutingNodeOutcome<S> success(S state, int attempts, String goToTarget) {
+            return new RoutingNodeOutcome<>(state, attempts, goToTarget, null);
+        }
+        static <S> RoutingNodeOutcome<S> failure(NodeExecutionException ex) {
+            return new RoutingNodeOutcome<>(null, 0, null, ex);
+        }
     }
 
     private record SimpleContext(String executionId, String nodeName, int attempt, MemoryStore memory)

@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Predicate;
 
@@ -101,13 +100,20 @@ public final class Graph<S> {
 
     public Flow.Publisher<NodeEvent<S>> stream(S initial, String executionId) {
         Objects.requireNonNull(executionId, "executionId");
-        SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>(
-                ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+        java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(1);
+        SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>() {
+            @Override
+            public void subscribe(Flow.Subscriber<? super NodeEvent<S>> subscriber) {
+                super.subscribe(subscriber);
+                ready.countDown();
+            }
+        };
         NodeListener streamingListener = new StreamingNodeListener<>(executionId, pub);
         NodeListener composed = composeListeners(this.listener, streamingListener);
         Graph<S> withStream = withListener(composed);
         Thread.startVirtualThread(() -> {
             try {
+                ready.await();
                 ExecutionResult<S> r = withStream.run(initial, executionId);
                 List<String> path = r.path();
                 String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
@@ -313,6 +319,16 @@ public final class Graph<S> {
 
         public Builder<S> executor(ExecutorService executor) {
             this.userExecutor = Objects.requireNonNull(executor, "executor");
+            return this;
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node) {
+            return routingNode(name, node, null);
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
+            Objects.requireNonNull(node, "node");
+            register(name, NodeKind.routing(node), retryPolicy);
             return this;
         }
 
