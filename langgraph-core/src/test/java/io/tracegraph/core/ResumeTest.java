@@ -155,7 +155,7 @@ class ResumeTest {
         assertThat(store.latest("exec-edge").get().lastCompletedNode()).isEqualTo("b");
 
         store.delete("exec-edge");
-        store.save(new Checkpoint<>("exec-edge", "a", "seed.a", java.time.Instant.now()));
+        store.save(new Checkpoint<>("exec-edge", "a", "seed.a", java.time.Instant.now(), false));
         globalSwitch.set(1);
 
         Optional<ExecutionResult<String>> resumed = graph.resume("exec-edge");

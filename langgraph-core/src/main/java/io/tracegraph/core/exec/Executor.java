@@ -4,6 +4,7 @@ import io.tracegraph.core.Checkpoint;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Edge;
 import io.tracegraph.core.ExecutionResult;
+import io.tracegraph.core.NodeResult;
 import io.tracegraph.core.RetryPolicy;
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
@@ -168,7 +169,7 @@ public final class Executor<S> {
             state = outcome.state;
             listener.onState(current, before, state);
             traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
-            checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now()));
+            checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now(), false));
             listener.onExit(current, state);
 
             if (terminals.contains(current)) {
