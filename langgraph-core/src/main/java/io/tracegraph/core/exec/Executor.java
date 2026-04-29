@@ -4,8 +4,10 @@ import io.tracegraph.core.Checkpoint;
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Edge;
 import io.tracegraph.core.ExecutionResult;
+import io.tracegraph.core.Merger;
 import io.tracegraph.core.NodeResult;
 import io.tracegraph.core.RetryPolicy;
+import io.tracegraph.core.Send;
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
@@ -176,6 +178,35 @@ public final class Executor<S> {
                 return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
             }
 
+            // Handle SendAll fan-out
+            if (outcome.sendAll != null) {
+                try {
+                    state = executeSendAll(outcome.sendAll, state, executionId, exec);
+                } catch (Throwable t) {
+                    listener.onError(current, t);
+                    traceRecorder.recordError(executionId, current, t);
+                    return new ExecutionResult<>(executionId, state, path, Status.FAILED,
+                            new NodeExecutionException(current, t));
+                }
+                String next = pickNext(current, state);
+                if (next == null) {
+                    return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
+                }
+                current = next;
+                continue;
+            }
+
+            if (outcome.routingTarget != null) {
+                String target = outcome.routingTarget;
+                if (!nodes.containsKey(target)) {
+                    NodeExecutionException ex = new NodeExecutionException(current,
+                            new IllegalArgumentException("Routing node '" + current + "' targeted unknown node '" + target + "'"));
+                    return new ExecutionResult<>(executionId, state, path, Status.FAILED, ex);
+                }
+                current = target;
+                continue;
+            }
+
             String next = pickNext(current, state);
             if (next == null) {
                 return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
@@ -195,14 +226,19 @@ public final class Executor<S> {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     private NodeOutcome<S> invokeWithRetry(NodeKind<S> node, S state, String name, String executionId,
                                            RetryPolicy policy, ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
             Context ctx = new SimpleContext(executionId, name, attempt, memoryStore);
             try {
-                S next = node.invoke(state, ctx, exec).join();
-                return NodeOutcome.success(next, attempt);
+                NodeResult<S> result = node.invokeRouting(state, ctx, exec).join();
+                if (result instanceof NodeResult.SendAll<S> sa) {
+                    return NodeOutcome.sendAllResult(result.state(), attempt, sa);
+                }
+                String target = result instanceof NodeResult.GoTo<S> g ? g.nodeName() : null;
+                return NodeOutcome.success(result.state(), attempt, target);
             } catch (CompletionException ce) {
                 Throwable cause = ce.getCause() != null ? ce.getCause() : ce;
                 if (cause instanceof InterruptedException) {
@@ -245,9 +281,39 @@ public final class Executor<S> {
         return UUID.randomUUID().toString();
     }
 
-    private record NodeOutcome<S>(S state, int attempts, NodeExecutionException failure) {
-        static <S> NodeOutcome<S> success(S state, int attempts) { return new NodeOutcome<>(state, attempts, null); }
-        static <S> NodeOutcome<S> failure(NodeExecutionException ex) { return new NodeOutcome<>(null, 0, ex); }
+    private record NodeOutcome<S>(S state, int attempts, NodeExecutionException failure,
+                                   String routingTarget, NodeResult.SendAll<S> sendAll) {
+        static <S> NodeOutcome<S> success(S state, int attempts, String routingTarget) {
+            return new NodeOutcome<>(state, attempts, null, routingTarget, null);
+        }
+        static <S> NodeOutcome<S> failure(NodeExecutionException ex) {
+            return new NodeOutcome<>(null, 0, ex, null, null);
+        }
+        static <S> NodeOutcome<S> sendAllResult(S state, int attempts, NodeResult.SendAll<S> sendAll) {
+            return new NodeOutcome<>(state, attempts, null, null, sendAll);
+        }
+    }
+
+    private S executeSendAll(NodeResult.SendAll<S> sendAll, S base, String executionId,
+                             ExecutorService exec) {
+        List<Send<S>> sends = sendAll.sends();
+        Merger<S> merger = sendAll.merger();
+        List<java.util.concurrent.CompletableFuture<S>> futures = new ArrayList<>(sends.size());
+        for (Send<S> send : sends) {
+            NodeKind<S> target = nodes.get(send.target());
+            if (target == null) {
+                throw new NodeExecutionException(send.target(),
+                        new IllegalArgumentException("Send target '" + send.target() + "' is not declared"));
+            }
+            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore);
+            futures.add(java.util.concurrent.CompletableFuture.supplyAsync(
+                    () -> target.invoke(send.payload(), ctx, exec).join(), exec));
+        }
+        java.util.concurrent.CompletableFuture.allOf(
+                futures.toArray(new java.util.concurrent.CompletableFuture<?>[0])).join();
+        List<S> results = new ArrayList<>(futures.size());
+        for (var f : futures) results.add(f.join());
+        return merger.merge(base, java.util.Collections.unmodifiableList(results));
     }
 
     private record SimpleContext(String executionId, String nodeName, int attempt, MemoryStore memory)

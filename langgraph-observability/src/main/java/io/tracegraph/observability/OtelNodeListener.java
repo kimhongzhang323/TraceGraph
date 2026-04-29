@@ -22,6 +22,14 @@ public final class OtelNodeListener implements NodeListener {
     private static final String ATTR_STATE_BEFORE = "tracegraph.state.before";
     private static final String ATTR_STATE_AFTER = "tracegraph.state.after";
 
+    // LLM usage attributes (following OpenTelemetry Semantic Conventions for GenAI)
+    /** OTel attribute for input tokens consumed. */
+    public static final String ATTR_LLM_INPUT_TOKENS = "llm.usage.input_tokens";
+    /** OTel attribute for output tokens generated. */
+    public static final String ATTR_LLM_OUTPUT_TOKENS = "llm.usage.output_tokens";
+    /** OTel attribute for total tokens. */
+    public static final String ATTR_LLM_TOTAL_TOKENS = "llm.usage.total_tokens";
+
     private static final ThreadLocal<Deque<Active>> STACK = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final Tracer tracer;
@@ -102,6 +110,15 @@ public final class OtelNodeListener implements NodeListener {
                 .put("exception.message", String.valueOf(error.getMessage()))
                 .build());
         a.finalAttempt = attempt + 1;
+    }
+
+    @Override
+    public void onUsage(String nodeName, int promptTokens, int completionTokens) {
+        Active a = STACK.get().peek();
+        if (a == null || !a.nodeName.equals(nodeName)) return;
+        a.span.setAttribute(ATTR_LLM_INPUT_TOKENS, promptTokens);
+        a.span.setAttribute(ATTR_LLM_OUTPUT_TOKENS, completionTokens);
+        a.span.setAttribute(ATTR_LLM_TOTAL_TOKENS, promptTokens + completionTokens);
     }
 
     private static Active popMatching(String nodeName) {

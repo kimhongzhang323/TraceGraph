@@ -3,7 +3,6 @@ package io.tracegraph.core;
 import io.tracegraph.core.exec.Executor;
 import io.tracegraph.core.exec.GraphValidationException;
 import io.tracegraph.core.exec.NodeKind;
-import io.tracegraph.core.RoutingNode;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
@@ -109,13 +108,17 @@ public final class Graph<S> {
                 if (r.error() != null) {
                     List<String> path = r.path();
                     String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
-                    int result = pub.submit(new NodeEvent.Failed<>(executionId, lastNode, r.error()));
-                    if (result < 0) {
-                        for (int i = 0; i < 100 && result < 0; i++) {
-                            Thread.sleep(1);
-                            result = pub.submit(new NodeEvent.Failed<>(executionId, lastNode, r.error()));
+                    NodeEvent<S> failedEvent = new NodeEvent.Failed<>(executionId, lastNode, r.error());
+                    // Use offer with retry to ensure the event is buffered before we close
+                    for (int i = 0; i < 200; i++) {
+                        if (pub.offer(failedEvent, 50, java.util.concurrent.TimeUnit.MILLISECONDS,
+                                (sub, evt) -> false) >= 0) {
+                            break;
                         }
+                        Thread.sleep(1);
                     }
+                    // Small delay to allow subscriber to drain the event
+                    Thread.sleep(50);
                     pub.closeExceptionally(r.error());
                 } else {
                     List<String> path = r.path();
@@ -369,6 +372,7 @@ public final class Graph<S> {
         }
 
         private void assertReachable() {
+            boolean hasRouting = nodes.values().stream().anyMatch(k -> k instanceof NodeKind.Routing<?>);
             Set<String> seen = new HashSet<>();
             Deque<String> stack = new ArrayDeque<>();
             stack.push(entry);
@@ -380,6 +384,9 @@ public final class Graph<S> {
                         stack.push(e.to());
                     }
                 }
+                if (hasRouting && nodes.get(n) instanceof NodeKind.Routing<?>) {
+                    nodes.keySet().forEach(stack::push);
+                }
             }
             for (String n : nodes.keySet()) {
                 if (!seen.contains(n)) {
@@ -389,8 +396,10 @@ public final class Graph<S> {
         }
 
         private void assertNoDeadEnds() {
-            for (String name : nodes.keySet()) {
+            for (Map.Entry<String, NodeKind<S>> entry : nodes.entrySet()) {
+                String name = entry.getKey();
                 if (terminals.contains(name)) continue;
+                if (entry.getValue() instanceof NodeKind.Routing<?>) continue;
                 boolean hasOutgoing = edges.stream().anyMatch(e -> e.from().equals(name));
                 if (!hasOutgoing) {
                     throw new GraphValidationException(

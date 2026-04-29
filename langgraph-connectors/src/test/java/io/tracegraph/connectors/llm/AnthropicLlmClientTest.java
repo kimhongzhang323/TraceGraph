@@ -90,7 +90,7 @@ class AnthropicLlmClientTest {
     }
 
     @Test
-    void mapsUnknownStopReasonToOther() {
+    void mapsToolUseToToolCalls() {
         respond(200, """
                 {"content":[{"type":"text","text":"x"}],
                  "stop_reason":"tool_use",
@@ -100,7 +100,7 @@ class AnthropicLlmClientTest {
         LlmResponse r = client.complete(LlmRequest.builder()
                 .model("m").messages(List.of(ChatMessage.user("x"))).build());
 
-        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.OTHER);
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.TOOL_CALLS);
     }
 
     @Test

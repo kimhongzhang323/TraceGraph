@@ -12,8 +12,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 public final class OpenAiLlmClient implements LlmClient {
@@ -73,20 +75,58 @@ public final class OpenAiLlmClient implements LlmClient {
         }
     }
 
-    private static List<java.util.Map<String, Object>> toMessages(LlmRequest request) {
-        List<java.util.Map<String, Object>> out = new ArrayList<>(request.messages().size());
+    private static List<Map<String, Object>> toMessages(LlmRequest request) {
+        List<Map<String, Object>> out = new ArrayList<>(request.messages().size());
         for (ChatMessage m : request.messages()) {
-            out.add(java.util.Map.of("role", m.role().name().toLowerCase(Locale.ROOT), "content", m.content()));
+            Map<String, Object> msg = new LinkedHashMap<>();
+            msg.put("role", m.role().name().toLowerCase(Locale.ROOT));
+            msg.put("content", m.content());
+
+            // Assistant messages with tool calls
+            if (m.role() == ChatMessage.Role.ASSISTANT && !m.toolCalls().isEmpty()) {
+                List<Map<String, Object>> tcs = new ArrayList<>();
+                for (ToolCall tc : m.toolCalls()) {
+                    Map<String, Object> tcMap = new LinkedHashMap<>();
+                    tcMap.put("id", tc.id());
+                    tcMap.put("type", "function");
+                    tcMap.put("function", Map.of("name", tc.name(), "arguments", tc.arguments()));
+                    tcs.add(tcMap);
+                }
+                msg.put("tool_calls", tcs);
+            }
+
+            // Tool result messages
+            if (m.role() == ChatMessage.Role.TOOL && m.toolCallId() != null) {
+                msg.put("tool_call_id", m.toolCallId());
+            }
+
+            out.add(msg);
         }
         return out;
     }
 
-    private static java.util.Map<String, Object> toRequestBody(LlmRequest request) {
-        java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+    private static Map<String, Object> toRequestBody(LlmRequest request) {
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", request.model());
         body.put("messages", toMessages(request));
         body.put("temperature", request.temperature());
         body.put("max_tokens", request.maxTokens());
+
+        // Include tool definitions if present
+        if (request.hasTools()) {
+            List<Map<String, Object>> tools = new ArrayList<>();
+            for (ToolDefinition td : request.tools()) {
+                Map<String, Object> fn = new LinkedHashMap<>();
+                fn.put("name", td.name());
+                fn.put("description", td.description());
+                if (!td.parametersSchema().isEmpty()) {
+                    fn.put("parameters", td.parametersSchema());
+                }
+                tools.add(Map.of("type", "function", "function", fn));
+            }
+            body.put("tools", tools);
+        }
+
         return body;
     }
 
@@ -96,17 +136,35 @@ public final class OpenAiLlmClient implements LlmClient {
             throw new IllegalStateException("OpenAI response missing 'choices'");
         }
         JsonNode first = choices.get(0);
-        String content = first.path("message").path("content").asText("");
+        JsonNode message = first.path("message");
+        String content = message.path("content").asText("");
         String finishStr = first.path("finish_reason").asText("");
         LlmResponse.FinishReason finish = switch (finishStr) {
             case "stop" -> LlmResponse.FinishReason.STOP;
             case "length" -> LlmResponse.FinishReason.LENGTH;
+            case "tool_calls" -> LlmResponse.FinishReason.TOOL_CALLS;
             default -> LlmResponse.FinishReason.OTHER;
         };
         JsonNode usage = root.path("usage");
         int prompt = usage.path("prompt_tokens").asInt(0);
         int completion = usage.path("completion_tokens").asInt(0);
-        return new LlmResponse(content, finish, new LlmResponse.Usage(prompt, completion));
+
+        // Parse tool calls if present
+        List<ToolCall> toolCalls = List.of();
+        JsonNode toolCallsNode = message.path("tool_calls");
+        if (toolCallsNode.isArray() && !toolCallsNode.isEmpty()) {
+            List<ToolCall> parsed = new ArrayList<>();
+            for (JsonNode tcNode : toolCallsNode) {
+                String id = tcNode.path("id").asText("");
+                JsonNode fn = tcNode.path("function");
+                String name = fn.path("name").asText("");
+                String args = fn.path("arguments").asText("{}");
+                parsed.add(new ToolCall(id, name, args));
+            }
+            toolCalls = List.copyOf(parsed);
+        }
+
+        return new LlmResponse(content, finish, new LlmResponse.Usage(prompt, completion), toolCalls);
     }
 
     public static final class Builder {
