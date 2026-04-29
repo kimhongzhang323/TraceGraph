@@ -115,7 +115,7 @@ public final class JdbcCheckpointStore<S> implements CheckpointStore {
                 String json = rs.getString(2);
                 Instant updatedAt = rs.getTimestamp(3).toInstant();
                 S state = mapper.readValue(json, stateType);
-                return Optional.of(new Checkpoint<>(executionId, node, state, updatedAt));
+                return Optional.of(new Checkpoint<>(executionId, node, state, updatedAt, false));
             }
         } catch (SQLException | RuntimeException e) {
             throw new CheckpointPersistenceException("failed to load checkpoint " + executionId, e);

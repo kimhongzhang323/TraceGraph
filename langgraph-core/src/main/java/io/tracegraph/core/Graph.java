@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Predicate;
 
 /**
@@ -55,6 +57,8 @@ public final class Graph<S> {
     private final TraceRecorder traceRecorder;
     private final MemoryStore memoryStore;
     private final ExecutorService userExecutor;
+    private final Set<String> interruptBefore;
+    private final Set<String> interruptAfter;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -76,6 +80,8 @@ public final class Graph<S> {
         this.traceRecorder = b.traceRecorder == null ? TraceRecorder.noop() : b.traceRecorder;
         this.memoryStore = b.memoryStore == null ? MemoryStore.noop() : b.memoryStore;
         this.userExecutor = b.userExecutor;
+        this.interruptBefore = Set.copyOf(b.interruptBefore);
+        this.interruptAfter = Set.copyOf(b.interruptAfter);
     }
 
     public static <S> Builder<S> builder() {
@@ -103,6 +109,67 @@ public final class Graph<S> {
         return executor().runFrom(startNode, seed, executionId);
     }
 
+    public Flow.Publisher<NodeEvent<S>> stream(S initial) {
+        return stream(initial, Executor.newExecutionId());
+    }
+
+    public Flow.Publisher<NodeEvent<S>> stream(S initial, String executionId) {
+        Objects.requireNonNull(executionId, "executionId");
+        java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(1);
+        SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>() {
+            @Override
+            public void subscribe(Flow.Subscriber<? super NodeEvent<S>> subscriber) {
+                super.subscribe(subscriber);
+                ready.countDown();
+            }
+        };
+        NodeListener streamingListener = new StreamingNodeListener<>(executionId, pub);
+        NodeListener composed = composeListeners(this.listener, streamingListener);
+        Graph<S> withStream = withListener(composed);
+        Thread.startVirtualThread(() -> {
+            try {
+                ready.await();
+                ExecutionResult<S> r = withStream.run(initial, executionId);
+                List<String> path = r.path();
+                String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
+                pub.submit(new NodeEvent.Complete<>(executionId, lastNode, r));
+                pub.close();
+            } catch (Throwable t) {
+                pub.closeExceptionally(t);
+            }
+        });
+        return pub;
+    }
+
+    private static <S> NodeListener composeListeners(NodeListener a, NodeListener b) {
+        if (a == NodeListener.NOOP) return b;
+        return new NodeListener() {
+            @Override public void onEnter(String n, Object s) { a.onEnter(n, s); b.onEnter(n, s); }
+            @Override public void onState(String n, Object before, Object after) { a.onState(n, before, after); b.onState(n, before, after); }
+            @Override public void onRetry(String n, int att, Throwable c) { a.onRetry(n, att, c); b.onRetry(n, att, c); }
+            @Override public void onError(String n, Throwable c) { a.onError(n, c); b.onError(n, c); }
+        };
+    }
+
+    private Graph<S> withListener(NodeListener l) {
+        Builder<S> b = new Builder<>();
+        b.nodes.putAll(this.nodes);
+        b.edges.addAll(this.edges);
+        b.terminals.addAll(this.terminals);
+        b.entry = this.entry;
+        b.listener = l;
+        b.maxSteps = this.maxSteps;
+        b.nodePolicies.putAll(this.nodePolicies);
+        b.defaultPolicy = this.defaultPolicy;
+        b.checkpointStore = this.checkpointStore;
+        b.traceRecorder = this.traceRecorder;
+        b.memoryStore = this.memoryStore;
+        b.userExecutor = this.userExecutor;
+        b.interruptBefore.addAll(this.interruptBefore);
+        b.interruptAfter.addAll(this.interruptAfter);
+        return new Graph<>(b);
+    }
+
     public TraceRecorder traceRecorder() {
         return traceRecorder;
     }
@@ -113,7 +180,8 @@ public final class Graph<S> {
 
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
-                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, userExecutor);
+                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, userExecutor,
+                interruptBefore, interruptAfter);
     }
 
     public Set<String> nodeNames() {
@@ -137,6 +205,8 @@ public final class Graph<S> {
         private final List<Edge<S>> edges = new ArrayList<>();
         private final Set<String> terminals = new HashSet<>();
         private final Map<String, RetryPolicy> nodePolicies = new HashMap<>();
+        private final Set<String> interruptBefore = new HashSet<>();
+        private final Set<String> interruptAfter = new HashSet<>();
         private String entry;
         private NodeListener listener;
         private int maxSteps = DEFAULT_MAX_STEPS;
@@ -267,6 +337,26 @@ public final class Graph<S> {
             return this;
         }
 
+        public Builder<S> routingNode(String name, RoutingNode<S> node) {
+            return routingNode(name, node, null);
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
+            Objects.requireNonNull(node, "node");
+            register(name, NodeKind.routing(node), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> interruptBefore(String... names) {
+            for (String n : names) interruptBefore.add(Objects.requireNonNull(n, "interruptBefore name"));
+            return this;
+        }
+
+        public Builder<S> interruptAfter(String... names) {
+            for (String n : names) interruptAfter.add(Objects.requireNonNull(n, "interruptAfter name"));
+            return this;
+        }
+
         public Graph<S> build() {
             validate();
             return new Graph<>(this);
@@ -290,6 +380,16 @@ public final class Graph<S> {
             for (String t : terminals) {
                 if (!nodes.containsKey(t)) {
                     throw new GraphValidationException("Terminal node '" + t + "' is not declared");
+                }
+            }
+            for (String n : interruptBefore) {
+                if (!nodes.containsKey(n)) {
+                    throw new GraphValidationException("interruptBefore references unknown node: '" + n + "'");
+                }
+            }
+            for (String n : interruptAfter) {
+                if (!nodes.containsKey(n)) {
+                    throw new GraphValidationException("interruptAfter references unknown node: '" + n + "'");
                 }
             }
             assertReachable();
