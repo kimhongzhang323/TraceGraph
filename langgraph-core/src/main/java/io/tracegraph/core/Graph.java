@@ -3,6 +3,7 @@ package io.tracegraph.core;
 import io.tracegraph.core.exec.Executor;
 import io.tracegraph.core.exec.GraphValidationException;
 import io.tracegraph.core.exec.NodeKind;
+import io.tracegraph.core.RoutingNode;
 import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
@@ -186,6 +187,14 @@ public final class Graph<S> {
         return terminals;
     }
 
+    public String toMermaid() {
+        return io.tracegraph.core.viz.MermaidRenderer.render(this);
+    }
+
+    public String toPlantUml() {
+        return io.tracegraph.core.viz.PlantUmlRenderer.render(this);
+    }
+
     public static final class Builder<S> {
         private final Map<String, NodeKind<S>> nodes = new LinkedHashMap<>();
         private final List<Edge<S>> edges = new ArrayList<>();
@@ -208,6 +217,15 @@ public final class Graph<S> {
 
         public Builder<S> node(String name, Node<S> node, RetryPolicy retryPolicy) {
             register(name, NodeKind.sync(node), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node) {
+            return routingNode(name, node, null);
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
+            register(name, NodeKind.routing(node), retryPolicy);
             return this;
         }
 
