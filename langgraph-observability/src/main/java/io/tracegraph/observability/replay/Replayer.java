@@ -6,6 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Read-only walker over a captured {@link ExecutionTrace}. Step through node-by-node, inspect the
+ * before/after state at any index, recover the path taken, and reach the failure point if the run
+ * terminated abnormally.
+ *
+ * <p>This is the inspection side of replay; for re-execution from a chosen step against a (possibly
+ * modified) graph, see {@code ReplayRunner}. Construct via {@link #of(ExecutionTrace)}.
+ *
+ * @param <S> the graph's state type
+ */
 public final class Replayer<S> {
 
     private final ExecutionTrace<S> trace;

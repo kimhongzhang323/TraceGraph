@@ -3,6 +3,17 @@ package io.tracegraph.observability.replay;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Step-by-step diff between two {@link ExecutionTrace}s: longest common prefix (matched by
+ * nodeName + before/after equality), the divergence index, and per-side remainders.
+ * {@code sameStatus} and {@code sameFinalState} compare the run-level outcomes; {@link #identical()}
+ * is the convenience for "no divergence and matching outcome".
+ *
+ * <p>Build via {@link #between(ExecutionTrace, ExecutionTrace)}. Pure data — no executor or store
+ * coupling.
+ *
+ * @param <S> the graph's state type
+ */
 public record TraceDiff<S>(String leftExecutionId, String rightExecutionId,
                            List<TraceStep<S>> commonPrefix,
                            int divergenceIndex,

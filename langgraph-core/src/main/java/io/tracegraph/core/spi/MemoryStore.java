@@ -8,6 +8,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * Cross-execution key-value store keyed by an explicit {@code scope} per call. Working memory is
+ * the state object itself; this SPI is for data that must outlive a single execution (session
+ * memory, long-term facts, semantic recall).
+ *
+ * <p>Wired into a graph via {@code Graph.Builder.memoryStore(...)}; nodes access it through
+ * {@code ctx.memory()}. Implementations must be thread-safe. The default {@link #noop()} discards
+ * writes and returns empty reads.
+ */
 public interface MemoryStore {
 
     Optional<Object> get(String scope, String key);

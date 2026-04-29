@@ -6,6 +6,15 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+/**
+ * Retry policy attached to a node ({@code .node(name, fn, policy)}) or to a whole graph
+ * ({@code .defaultRetryPolicy(policy)}); per-node beats default. The executor honours
+ * {@link #maxAttempts}, applies the {@link BackoffStrategy} between attempts, and consults
+ * {@link #shouldRetry(int, Throwable)} to decide whether a thrown error is retryable.
+ *
+ * <p>{@link Error} and {@link InterruptedException} always short-circuit retries regardless of
+ * {@code retryOn}. Use {@link #none()}, {@link #fixed}, or {@link #exponential} for common shapes.
+ */
 public record RetryPolicy(int maxAttempts, BackoffStrategy backoff, Predicate<Throwable> retryOn) {
 
     public RetryPolicy {
