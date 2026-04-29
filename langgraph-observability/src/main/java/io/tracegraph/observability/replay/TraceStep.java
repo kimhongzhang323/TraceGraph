@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+<<<<<<< HEAD
  * A single step in a recorded execution trace.
  *
  * @param index     zero-based step index
@@ -16,6 +17,14 @@ import java.util.Objects;
  * @param error     error if the step failed; null otherwise
  * @param children  sub-steps (e.g. for parallel branches)
  * @param usage     optional LLM token usage for this step; null if not an LLM node
+=======
+ * One node's contribution to an {@link ExecutionTrace}: the before/after state, total
+ * {@link #attempts} (retries are folded in, not separate steps), wall-clock {@link #duration}, and
+ * an {@link #error} if the node ultimately failed (in which case {@code after} is null and this is
+ * the trace's last step).
+ *
+ * @param <S> the graph's state type
+>>>>>>> 55f9606bb806c3028941d338ba0cb5632dc396b9
  */
 public record TraceStep<S>(int index, String nodeName, int attempts,
                            S before, S after, Duration duration, Throwable error,

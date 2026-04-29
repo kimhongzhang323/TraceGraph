@@ -3,6 +3,16 @@ package io.tracegraph.core.spi;
 import io.tracegraph.core.Status;
 import io.tracegraph.core.exec.NoopTraceRecorderAccess;
 
+/**
+ * ExecutionId-aware capture SPI fired alongside {@link NodeListener} but with run-level bookends
+ * ({@code recordStart}/{@code recordComplete}) and the executionId on every callback. Designed
+ * for replay-shaped consumers that need to demultiplex concurrent runs into separate traces.
+ *
+ * <p>Plug in via {@code Graph.Builder.traceRecorder(...)}; default is {@link #noop()}. Branches
+ * inside {@code parallel(...)} fire one enter/exit pair on the parallel node, not per branch.
+ * Implementations must be thread-safe. {@code langgraph-observability} ships
+ * {@code RecordingTraceRecorder} bridging this SPI to a {@code TraceStore}.
+ */
 public interface TraceRecorder {
 
     default void recordStart(String executionId, Object initialState) {}

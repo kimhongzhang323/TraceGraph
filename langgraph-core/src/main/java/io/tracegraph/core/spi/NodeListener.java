@@ -1,5 +1,15 @@
 package io.tracegraph.core.spi;
 
+/**
+ * Span-shaped observability hook fired by the executor at node lifecycle boundaries: enter, exit,
+ * state diff (one per successful exit), error, retry. Callbacks are executionId-blind by design —
+ * thread context carries the execution scope. For executionId-aware capture (replay traces) use
+ * {@link TraceRecorder} instead.
+ *
+ * <p>Plug in via {@code Graph.Builder.listener(...)}; compose multiple via {@code Listeners.compose}.
+ * Branches inside {@code parallel(...)} do not fire listener events. Implementations must be
+ * thread-safe — Phase 2 listener calls may come from multiple worker threads.
+ */
 public interface NodeListener {
 
     NodeListener NOOP = new NodeListener() {};

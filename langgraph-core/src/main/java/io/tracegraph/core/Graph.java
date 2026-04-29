@@ -25,6 +25,21 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Predicate;
 
+/**
+ * A typed, immutable graph of {@link Node}s connected by {@link Edge}s. Constructed via the fluent
+ * {@link Graph.Builder}, validated eagerly on {@link Builder#build()}, and safe to share across
+ * threads.
+ *
+ * <p>Three executor entry points: {@link #run(Object)} starts a fresh execution from the entry node,
+ * {@link #resume(String, Object)} continues from the last checkpointed node, and
+ * {@link #runFrom(String, Object, String)} starts at an arbitrary node (used by replay/fork).
+ *
+ * <p>SPIs plug in via the builder: {@link NodeListener} for span-shaped observability,
+ * {@link TraceRecorder} for executionId-aware trace capture, {@link CheckpointStore} for durable
+ * resume, {@link MemoryStore} for cross-execution data.
+ *
+ * @param <S> the state type carried through the graph
+ */
 public final class Graph<S> {
 
     private static final int DEFAULT_MAX_STEPS = 1000;
