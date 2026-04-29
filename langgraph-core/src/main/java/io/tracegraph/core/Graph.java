@@ -21,6 +21,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Predicate;
 
 public final class Graph<S> {
@@ -86,6 +89,58 @@ public final class Graph<S> {
         Objects.requireNonNull(startNode, "startNode");
         Objects.requireNonNull(executionId, "executionId");
         return executor().runFrom(startNode, seed, executionId);
+    }
+
+    public Flow.Publisher<NodeEvent<S>> stream(S initial) {
+        return stream(initial, Executor.newExecutionId());
+    }
+
+    public Flow.Publisher<NodeEvent<S>> stream(S initial, String executionId) {
+        Objects.requireNonNull(executionId, "executionId");
+        SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>(
+                ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+        NodeListener streamingListener = new StreamingNodeListener<>(executionId, pub);
+        NodeListener composed = composeListeners(this.listener, streamingListener);
+        Graph<S> withStream = withListener(composed);
+        Thread.startVirtualThread(() -> {
+            try {
+                ExecutionResult<S> r = withStream.run(initial, executionId);
+                List<String> path = r.path();
+                String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
+                pub.submit(new NodeEvent.Complete<>(executionId, lastNode, r));
+                pub.close();
+            } catch (Throwable t) {
+                pub.closeExceptionally(t);
+            }
+        });
+        return pub;
+    }
+
+    private static <S> NodeListener composeListeners(NodeListener a, NodeListener b) {
+        if (a == NodeListener.NOOP) return b;
+        return new NodeListener() {
+            @Override public void onEnter(String n, Object s) { a.onEnter(n, s); b.onEnter(n, s); }
+            @Override public void onState(String n, Object before, Object after) { a.onState(n, before, after); b.onState(n, before, after); }
+            @Override public void onRetry(String n, int att, Throwable c) { a.onRetry(n, att, c); b.onRetry(n, att, c); }
+            @Override public void onError(String n, Throwable c) { a.onError(n, c); b.onError(n, c); }
+        };
+    }
+
+    private Graph<S> withListener(NodeListener l) {
+        Builder<S> b = new Builder<>();
+        b.nodes.putAll(this.nodes);
+        b.edges.addAll(this.edges);
+        b.terminals.addAll(this.terminals);
+        b.entry = this.entry;
+        b.listener = l;
+        b.maxSteps = this.maxSteps;
+        b.nodePolicies.putAll(this.nodePolicies);
+        b.defaultPolicy = this.defaultPolicy;
+        b.checkpointStore = this.checkpointStore;
+        b.traceRecorder = this.traceRecorder;
+        b.memoryStore = this.memoryStore;
+        b.userExecutor = this.userExecutor;
+        return new Graph<>(b);
     }
 
     public TraceRecorder traceRecorder() {
