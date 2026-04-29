@@ -11,25 +11,37 @@ class CheckpointTest {
 
     @Test
     void rejectsNullExecutionId() {
-        assertThatThrownBy(() -> new Checkpoint<>(null, "n", "s", Instant.now()))
+        assertThatThrownBy(() -> new Checkpoint<>(null, "n", "s", Instant.now(), false))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void rejectsNullNode() {
-        assertThatThrownBy(() -> new Checkpoint<>("e", null, "s", Instant.now()))
+        assertThatThrownBy(() -> new Checkpoint<>("e", null, "s", Instant.now(), false))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void rejectsNullTimestamp() {
-        assertThatThrownBy(() -> new Checkpoint<>("e", "n", "s", null))
+        assertThatThrownBy(() -> new Checkpoint<>("e", "n", "s", null, false))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void allowsNullState() {
-        Checkpoint<String> cp = new Checkpoint<>("e", "n", null, Instant.EPOCH);
+        Checkpoint<String> cp = new Checkpoint<>("e", "n", null, Instant.EPOCH, false);
         assertThat(cp.state()).isNull();
+    }
+
+    @Test
+    void interruptPendingDefaultsFalse() {
+        Checkpoint<String> c = new Checkpoint<>("e", "n", "s", Instant.EPOCH, false);
+        assertThat(c.interruptPending()).isFalse();
+    }
+
+    @Test
+    void interruptPendingCanBeSetTrue() {
+        Checkpoint<String> c = new Checkpoint<>("e", "n", "s", Instant.EPOCH, true);
+        assertThat(c.interruptPending()).isTrue();
     }
 }

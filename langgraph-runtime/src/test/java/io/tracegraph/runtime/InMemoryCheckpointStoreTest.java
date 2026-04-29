@@ -17,7 +17,7 @@ class InMemoryCheckpointStoreTest {
     @Test
     void saveThenLatestReturnsIt() {
         InMemoryCheckpointStore store = new InMemoryCheckpointStore();
-        Checkpoint<String> cp = new Checkpoint<>("e1", "n", "state", Instant.EPOCH);
+        Checkpoint<String> cp = new Checkpoint<>("e1", "n", "state", Instant.EPOCH, false);
 
         store.save(cp);
 
@@ -27,8 +27,8 @@ class InMemoryCheckpointStoreTest {
     @Test
     void saveOverwritesPriorCheckpointForSameExecution() {
         InMemoryCheckpointStore store = new InMemoryCheckpointStore();
-        Checkpoint<String> first = new Checkpoint<>("e1", "a", "v1", Instant.EPOCH);
-        Checkpoint<String> second = new Checkpoint<>("e1", "b", "v2", Instant.EPOCH.plusSeconds(1));
+        Checkpoint<String> first = new Checkpoint<>("e1", "a", "v1", Instant.EPOCH, false);
+        Checkpoint<String> second = new Checkpoint<>("e1", "b", "v2", Instant.EPOCH.plusSeconds(1), false);
 
         store.save(first);
         store.save(second);
@@ -40,7 +40,7 @@ class InMemoryCheckpointStoreTest {
     @Test
     void deleteRemovesEntry() {
         InMemoryCheckpointStore store = new InMemoryCheckpointStore();
-        store.save(new Checkpoint<>("e1", "n", "s", Instant.EPOCH));
+        store.save(new Checkpoint<>("e1", "n", "s", Instant.EPOCH, false));
 
         store.delete("e1");
 
@@ -68,7 +68,7 @@ class InMemoryCheckpointStoreTest {
                     start.await();
                     for (int i = 0; i < perThread; i++) {
                         String id = "exec-" + tid + "-" + i;
-                        store.save(new Checkpoint<>(id, "n", i, Instant.EPOCH));
+                        store.save(new Checkpoint<>(id, "n", i, Instant.EPOCH, false));
                         if (store.latest(id).isEmpty()) errors.incrementAndGet();
                     }
                 } catch (Exception e) {

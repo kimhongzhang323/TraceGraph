@@ -168,7 +168,7 @@ public final class Executor<S> {
             state = outcome.state;
             listener.onState(current, before, state);
             traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
-            checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now()));
+            checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now(), false));
             listener.onExit(current, state);
 
             if (terminals.contains(current)) {

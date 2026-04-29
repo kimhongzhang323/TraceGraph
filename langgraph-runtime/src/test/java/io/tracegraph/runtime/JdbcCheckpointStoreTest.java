@@ -35,7 +35,7 @@ class JdbcCheckpointStoreTest {
         store.initSchema();
 
         Instant t = Instant.parse("2026-04-28T10:15:30Z");
-        store.save(new Checkpoint<>("exec-1", "validate", "seed.validated", t));
+        store.save(new Checkpoint<>("exec-1", "validate", "seed.validated", t, false));
 
         Optional<Checkpoint<?>> loaded = store.latest("exec-1");
         assertThat(loaded).isPresent();
@@ -53,8 +53,8 @@ class JdbcCheckpointStoreTest {
         Instant t1 = Instant.parse("2026-04-28T10:00:00Z");
         Instant t2 = Instant.parse("2026-04-28T11:00:00Z");
 
-        store.save(new Checkpoint<>("exec-1", "validate", "v1", t1));
-        store.save(new Checkpoint<>("exec-1", "charge", "v2", t2));
+        store.save(new Checkpoint<>("exec-1", "validate", "v1", t1, false));
+        store.save(new Checkpoint<>("exec-1", "charge", "v2", t2, false));
 
         Checkpoint<?> cp = store.latest("exec-1").orElseThrow();
         assertThat(cp.lastCompletedNode()).isEqualTo("charge");
@@ -73,7 +73,7 @@ class JdbcCheckpointStoreTest {
     void deleteRemovesCheckpoint() {
         JdbcCheckpointStore<String> store = JdbcCheckpointStore.of(dataSource, mapper, String.class);
         store.initSchema();
-        store.save(new Checkpoint<>("exec-1", "n", "s", Instant.now()));
+        store.save(new Checkpoint<>("exec-1", "n", "s", Instant.now(), false));
 
         store.delete("exec-1");
 
@@ -92,7 +92,7 @@ class JdbcCheckpointStoreTest {
         JdbcCheckpointStore<String> store = JdbcCheckpointStore.of(dataSource, mapper, String.class);
         store.initSchema();
         store.initSchema();
-        store.save(new Checkpoint<>("exec-1", "n", "s", Instant.now()));
+        store.save(new Checkpoint<>("exec-1", "n", "s", Instant.now(), false));
         assertThat(store.latest("exec-1")).isPresent();
     }
 
@@ -104,7 +104,7 @@ class JdbcCheckpointStoreTest {
             @SuppressWarnings("unused")
             Object self = this;
         };
-        assertThatThrownBy(() -> store.save(new Checkpoint<>("exec-1", "n", unserializable, Instant.now())))
+        assertThatThrownBy(() -> store.save(new Checkpoint<>("exec-1", "n", unserializable, Instant.now(), false)))
                 .isInstanceOf(CheckpointPersistenceException.class)
                 .hasMessageContaining("serialize");
     }
