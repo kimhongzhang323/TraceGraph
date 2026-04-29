@@ -40,6 +40,8 @@ public final class Executor<S> {
     private final TraceRecorder traceRecorder;
     private final MemoryStore memoryStore;
     private final ExecutorService userExecutor;
+    private final Set<String> interruptBefore;
+    private final Set<String> interruptAfter;
     private final Sleeper sleeper;
 
     public Executor(Map<String, NodeKind<S>> nodes,
@@ -53,9 +55,12 @@ public final class Executor<S> {
                     CheckpointStore checkpointStore,
                     TraceRecorder traceRecorder,
                     MemoryStore memoryStore,
-                    ExecutorService userExecutor) {
+                    ExecutorService userExecutor,
+                    Set<String> interruptBefore,
+                    Set<String> interruptAfter) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
-                checkpointStore, traceRecorder, memoryStore, userExecutor, Sleeper.realtime());
+                checkpointStore, traceRecorder, memoryStore, userExecutor, interruptBefore, interruptAfter,
+                Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -70,6 +75,8 @@ public final class Executor<S> {
              TraceRecorder traceRecorder,
              MemoryStore memoryStore,
              ExecutorService userExecutor,
+             Set<String> interruptBefore,
+             Set<String> interruptAfter,
              Sleeper sleeper) {
         this.nodes = nodes;
         this.edgesByFrom = edgesByFrom;
@@ -83,12 +90,14 @@ public final class Executor<S> {
         this.traceRecorder = traceRecorder;
         this.memoryStore = memoryStore;
         this.userExecutor = userExecutor;
+        this.interruptBefore = interruptBefore;
+        this.interruptAfter = interruptAfter;
         this.sleeper = sleeper;
     }
 
     public ExecutionResult<S> run(S initial, String executionId) {
         traceRecorder.recordStart(executionId, initial);
-        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec));
+        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec, false));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
     }
@@ -98,7 +107,7 @@ public final class Executor<S> {
             throw new GraphValidationException("Start node '" + startNode + "' is not declared");
         }
         traceRecorder.recordStart(executionId, seed);
-        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec));
+        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec, false));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
     }
@@ -111,18 +120,26 @@ public final class Executor<S> {
         Checkpoint<S> cp = (Checkpoint<S>) maybe.get();
         S state = cp.state();
         String last = cp.lastCompletedNode();
+        boolean skipFirstInterruptBefore = cp.interruptPending();
 
         traceRecorder.recordStart(executionId, state);
 
         ExecutionResult<S> result;
-        if (terminals.contains(last)) {
+        if (!skipFirstInterruptBefore && terminals.contains(last)) {
             result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+        } else if (skipFirstInterruptBefore) {
+            String next = last.isEmpty() ? entry : pickNext(last, state);
+            if (next == null) {
+                result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+            } else {
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true));
+            }
         } else {
             String next = pickNext(last, state);
             if (next == null) {
                 result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
             } else {
-                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec));
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false));
             }
         }
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
@@ -138,10 +155,12 @@ public final class Executor<S> {
         }
     }
 
-    private ExecutionResult<S> loop(String executionId, S initial, String startNode, List<String> path, ExecutorService exec) {
+    private ExecutionResult<S> loop(String executionId, S initial, String startNode, List<String> path,
+                                    ExecutorService exec, boolean skipFirstInterruptBefore) {
         S state = initial;
         String current = startNode;
         int steps = 0;
+        boolean firstNode = true;
 
         while (current != null) {
             if (steps++ >= maxSteps) {
@@ -152,6 +171,13 @@ public final class Executor<S> {
             NodeKind<S> node = nodes.get(current);
             RetryPolicy policy = nodePolicies.getOrDefault(current, defaultPolicy);
             path.add(current);
+
+            if (interruptBefore.contains(current) && !(firstNode && skipFirstInterruptBefore)) {
+                String lastCompleted = path.size() >= 2 ? path.get(path.size() - 2) : "";
+                checkpointStore.save(new Checkpoint<>(executionId, lastCompleted, state, Instant.now(), true));
+                return new ExecutionResult<>(executionId, state, path.subList(0, path.size() - 1), Status.INTERRUPTED, null);
+            }
+            firstNode = false;
 
             listener.onEnter(current, state);
             traceRecorder.recordEnter(executionId, current, 1, state);
@@ -170,6 +196,10 @@ public final class Executor<S> {
             traceRecorder.recordExit(executionId, current, outcome.attempts, before, state, durationNanos);
             checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now(), false));
             listener.onExit(current, state);
+
+            if (interruptAfter.contains(current)) {
+                return new ExecutionResult<>(executionId, state, path, Status.INTERRUPTED, null);
+            }
 
             if (terminals.contains(current)) {
                 return new ExecutionResult<>(executionId, state, path, Status.COMPLETED, null);
