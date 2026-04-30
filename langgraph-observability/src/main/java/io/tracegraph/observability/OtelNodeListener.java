@@ -13,6 +13,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
+/**
+ * NodeListener that maps graph lifecycle events to OpenTelemetry spans.
+ */
 public final class OtelNodeListener implements NodeListener {
 
     static final String INSTRUMENTATION_NAME = "io.tracegraph.observability";

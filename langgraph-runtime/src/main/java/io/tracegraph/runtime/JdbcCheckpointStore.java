@@ -14,6 +14,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * JDBC-backed checkpoint store for durable graph resume.
+ */
 public final class JdbcCheckpointStore<S> implements CheckpointStore {
 
     private static final String DEFAULT_TABLE = "tracegraph_checkpoint";

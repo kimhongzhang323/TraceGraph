@@ -93,6 +93,20 @@ ExecutionResult<OrderState> result = graph.run(
 );
 ```
 
+For the runtime and integration modules, the same graph can be extended with durability and observability:
+
+```java
+Graph<OrderState> durableGraph = Graph.<OrderState>builder()
+        .node("validate", (state, ctx) -> state.withValid(true))
+        .node("charge", (state, ctx) -> state.withCharged(true), RetryPolicy.fixed(3, Duration.ofMillis(100)))
+        .entry("validate")
+        .edge("validate", "charge", OrderState::valid)
+        .terminal("charge")
+        .traceRecorder(new RecordingTraceRecorder(new InMemoryTraceStore()))
+        .listener(OtelNodeListener.usingGlobal())
+        .build();
+```
+
 ## Retries
 
 Attach a `RetryPolicy` per node, or set a graph default. The executor handles backoff and emits `NodeListener.onRetry`.
@@ -225,6 +239,18 @@ The memory SPI supports scoped key-value persistence for agent-style workflows. 
 - `InMemoryMemoryStore`
 - `FileMemoryStore`
 
+```java
+MemoryStore memory = new InMemoryMemoryStore();
+memory.put("session:demo", "customer", Map.of("tier", "gold"));
+```
+
+For durable storage, the JDBC implementation can be created from a `DataSource` and initialized once:
+
+```java
+JdbcMemoryStore store = JdbcMemoryStore.of(dataSource);
+store.initSchema();
+```
+
 ### Observability and Replay
 
 The observability module includes:
@@ -237,6 +263,14 @@ The observability module includes:
 
 This is useful for post-run inspection, debugging, and deterministic replay workflows.
 
+```java
+TraceStore store = new InMemoryTraceStore();
+TraceRecorder recorder = new RecordingTraceRecorder(store);
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        .traceRecorder(recorder)
+        .build();
+```
+
 ### Spring Boot Integration
 
 The Spring Boot starter auto-configures default beans for:
@@ -247,6 +281,40 @@ The Spring Boot starter auto-configures default beans for:
 - `MemoryStore`
 
 That gives applications a clean way to override infrastructure concerns while keeping graph code simple.
+
+```yaml
+tracegraph:
+        web:
+                enabled: true
+        memory:
+                jdbc:
+                        enabled: true
+                        init-schema: true
+        llm:
+                enabled: false
+```
+
+The starter also exposes trace inspection endpoints once the observability module is present:
+
+- `GET /tracegraph/traces`
+- `GET /tracegraph/traces/{id}`
+- `GET /tracegraph/traces/{a}/diff/{b}`
+- `DELETE /tracegraph/traces/{id}`
+
+### LLM Connectors
+
+The connectors module ships thin HTTP adapters for OpenAI-compatible and Anthropic-compatible chat APIs.
+
+```java
+LlmClient client = OpenAiLlmClient.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .build();
+
+LlmResponse response = client.complete(LlmRequest.builder()
+        .model("gpt-4.1-mini")
+        .addMessage(ChatMessage.user("Summarize the graph state"))
+        .build());
+```
 
 ## Build and Test
 

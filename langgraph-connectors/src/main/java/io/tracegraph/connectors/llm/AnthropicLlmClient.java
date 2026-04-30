@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * HTTP adapter for Anthropic Messages API endpoints.
+ */
 public final class AnthropicLlmClient implements LlmClient {
 
     private static final String DEFAULT_VERSION = "2023-06-01";
