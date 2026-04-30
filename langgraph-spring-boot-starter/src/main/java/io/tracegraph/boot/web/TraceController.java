@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * REST controller for listing, inspecting, diffing, and deleting recorded traces.
+ */
 @RestController
 @RequestMapping("/tracegraph/traces")
 public class TraceController {
@@ -24,6 +27,9 @@ public class TraceController {
         this.store = store;
     }
 
+    /**
+     * Lists trace execution IDs with optional pagination.
+     */
     @GetMapping
     public ResponseEntity<List<String>> list(
             @RequestParam(name = "limit", required = false) Integer limit,
@@ -39,6 +45,9 @@ public class TraceController {
                 .body(all.subList(from, to));
     }
 
+    /**
+     * Loads a trace by execution ID.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ExecutionTrace<?>> get(@PathVariable("id") String id) {
         Optional<ExecutionTrace<?>> trace = store.load(id);
@@ -46,6 +55,9 @@ public class TraceController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * Deletes a trace by execution ID.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") String id) {
         if (store.load(id).isEmpty()) {
@@ -55,6 +67,9 @@ public class TraceController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Computes a structural diff between two traces.
+     */
     @GetMapping("/{a}/diff/{b}")
     @SuppressWarnings({"rawtypes", "unchecked"})
     public ResponseEntity<TraceDiff<?>> diff(@PathVariable("a") String a, @PathVariable("b") String b) {

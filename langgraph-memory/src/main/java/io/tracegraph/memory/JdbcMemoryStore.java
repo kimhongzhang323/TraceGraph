@@ -22,6 +22,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * JDBC-backed {@link MemoryStore} that persists scoped key/value entries as JSON.
+ */
 public final class JdbcMemoryStore implements MemoryStore {
 
     private static final String DEFAULT_TABLE = "tracegraph_memory";

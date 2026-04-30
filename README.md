@@ -93,6 +93,62 @@ ExecutionResult<OrderState> result = graph.run(
 );
 ```
 
+For the runtime and integration modules, the same graph can be extended with durability and observability:
+
+```java
+Graph<OrderState> durableGraph = Graph.<OrderState>builder()
+        .node("validate", (state, ctx) -> state.withValid(true))
+        .node("charge", (state, ctx) -> state.withCharged(true), RetryPolicy.fixed(3, Duration.ofMillis(100)))
+        .entry("validate")
+        .edge("validate", "charge", OrderState::valid)
+        .terminal("charge")
+        .traceRecorder(new RecordingTraceRecorder(new InMemoryTraceStore()))
+        .listener(OtelNodeListener.usingGlobal())
+        .build();
+```
+
+## Diagrams
+
+These Mermaid diagrams show the two main viewpoints of TraceGraph: how a run flows through the executor, and how the runtime pieces interact around a single execution.
+
+```mermaid
+flowchart TD
+A[Build Graph<S>] --> B[Graph.run(initial)]
+B --> C[Executor validates graph and starts execution]
+C --> D[Run node]
+D --> E{Node result}
+E -->|next state| F[Resolve outgoing edges]
+E -->|goTo / sendAll| G[Route dynamically]
+F --> H{Terminal?}
+G --> H
+H -->|yes| I[Return ExecutionResult]
+H -->|no| D
+D --> J[Listener events / trace / checkpoint]
+J --> F
+```
+
+```mermaid
+sequenceDiagram
+participant User
+participant Graph
+participant Executor
+participant Node
+participant Listener
+participant TraceStore
+participant CheckpointStore
+
+User->>Graph: run(initial)
+Graph->>Executor: create execution
+Executor->>Listener: onEnter(node, state)
+Executor->>Node: execute(state, ctx)
+Node-->>Executor: next state / error
+Executor->>Listener: onExit or onError
+Executor->>TraceStore: append trace step
+Executor->>CheckpointStore: save checkpoint (if configured)
+Executor-->>Graph: ExecutionResult
+Graph-->>User: result
+```
+
 ## Retries
 
 Attach a `RetryPolicy` per node, or set a graph default. The executor handles backoff and emits `NodeListener.onRetry`.
@@ -225,6 +281,18 @@ The memory SPI supports scoped key-value persistence for agent-style workflows. 
 - `InMemoryMemoryStore`
 - `FileMemoryStore`
 
+```java
+MemoryStore memory = new InMemoryMemoryStore();
+memory.put("session:demo", "customer", Map.of("tier", "gold"));
+```
+
+For durable storage, the JDBC implementation can be created from a `DataSource` and initialized once:
+
+```java
+JdbcMemoryStore store = JdbcMemoryStore.of(dataSource);
+store.initSchema();
+```
+
 ### Observability and Replay
 
 The observability module includes:
@@ -237,6 +305,14 @@ The observability module includes:
 
 This is useful for post-run inspection, debugging, and deterministic replay workflows.
 
+```java
+TraceStore store = new InMemoryTraceStore();
+TraceRecorder recorder = new RecordingTraceRecorder(store);
+Graph<OrderState> graph = Graph.<OrderState>builder()
+        .traceRecorder(recorder)
+        .build();
+```
+
 ### Spring Boot Integration
 
 The Spring Boot starter auto-configures default beans for:
@@ -247,6 +323,40 @@ The Spring Boot starter auto-configures default beans for:
 - `MemoryStore`
 
 That gives applications a clean way to override infrastructure concerns while keeping graph code simple.
+
+```yaml
+tracegraph:
+        web:
+                enabled: true
+        memory:
+                jdbc:
+                        enabled: true
+                        init-schema: true
+        llm:
+                enabled: false
+```
+
+The starter also exposes trace inspection endpoints once the observability module is present:
+
+- `GET /tracegraph/traces`
+- `GET /tracegraph/traces/{id}`
+- `GET /tracegraph/traces/{a}/diff/{b}`
+- `DELETE /tracegraph/traces/{id}`
+
+### LLM Connectors
+
+The connectors module ships thin HTTP adapters for OpenAI-compatible and Anthropic-compatible chat APIs.
+
+```java
+LlmClient client = OpenAiLlmClient.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .build();
+
+LlmResponse response = client.complete(LlmRequest.builder()
+        .model("gpt-4.1-mini")
+        .addMessage(ChatMessage.user("Summarize the graph state"))
+        .build());
+```
 
 ## Build and Test
 

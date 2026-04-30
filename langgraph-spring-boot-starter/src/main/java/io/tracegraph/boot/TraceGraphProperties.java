@@ -3,6 +3,9 @@ package io.tracegraph.boot;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Configuration properties for TraceGraph's Spring Boot integration.
+ */
 @ConfigurationProperties(prefix = "tracegraph")
 public class TraceGraphProperties {
 
@@ -22,6 +25,9 @@ public class TraceGraphProperties {
         return llm;
     }
 
+    /**
+     * LLM client auto-configuration properties.
+     */
     public static class Llm {
         public enum Provider { OPENAI, ANTHROPIC }
 
@@ -51,6 +57,9 @@ public class TraceGraphProperties {
         public void setAnthropicVersion(String anthropicVersion) { this.anthropicVersion = anthropicVersion; }
     }
 
+    /**
+     * Web endpoint toggles.
+     */
     public static class Web {
         private boolean enabled = true;
 
@@ -63,6 +72,9 @@ public class TraceGraphProperties {
         }
     }
 
+    /**
+     * Memory store configuration.
+     */
     public static class Memory {
         private final Jdbc jdbc = new Jdbc();
 
@@ -70,6 +82,9 @@ public class TraceGraphProperties {
             return jdbc;
         }
 
+        /**
+         * JDBC-backed memory store options.
+         */
         public static class Jdbc {
             private boolean enabled = true;
             private boolean initSchema = true;

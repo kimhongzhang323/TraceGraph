@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * HTTP adapter for OpenAI-compatible chat-completions endpoints.
+ */
 public final class OpenAiLlmClient implements LlmClient {
 
     private final URI endpoint;
