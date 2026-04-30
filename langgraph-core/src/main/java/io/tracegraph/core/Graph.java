@@ -130,10 +130,27 @@ public final class Graph<S> {
             try {
                 ready.await();
                 ExecutionResult<S> r = withStream.run(initial, executionId);
-                List<String> path = r.path();
-                String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
-                pub.submit(new NodeEvent.Complete<>(executionId, lastNode, r));
-                pub.close();
+                if (r.error() != null) {
+                    List<String> path = r.path();
+                    String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
+                    NodeEvent<S> failedEvent = new NodeEvent.Failed<>(executionId, lastNode, r.error());
+                    // Use offer with retry to ensure the event is buffered before we close
+                    for (int i = 0; i < 200; i++) {
+                        if (pub.offer(failedEvent, 50, java.util.concurrent.TimeUnit.MILLISECONDS,
+                                (sub, evt) -> false) >= 0) {
+                            break;
+                        }
+                        Thread.sleep(1);
+                    }
+                    // Small delay to allow subscriber to drain the event
+                    Thread.sleep(50);
+                    pub.closeExceptionally(r.error());
+                } else {
+                    List<String> path = r.path();
+                    String lastNode = path.isEmpty() ? "" : path.get(path.size() - 1);
+                    pub.submit(new NodeEvent.Complete<>(executionId, lastNode, r));
+                    pub.close();
+                }
             } catch (Throwable t) {
                 pub.closeExceptionally(t);
             }
@@ -145,6 +162,7 @@ public final class Graph<S> {
         if (a == NodeListener.NOOP) return b;
         return new NodeListener() {
             @Override public void onEnter(String n, Object s) { a.onEnter(n, s); b.onEnter(n, s); }
+            @Override public void onExit(String n, Object s) { a.onExit(n, s); b.onExit(n, s); }
             @Override public void onState(String n, Object before, Object after) { a.onState(n, before, after); b.onState(n, before, after); }
             @Override public void onRetry(String n, int att, Throwable c) { a.onRetry(n, att, c); b.onRetry(n, att, c); }
             @Override public void onError(String n, Throwable c) { a.onError(n, c); b.onError(n, c); }
@@ -205,7 +223,6 @@ public final class Graph<S> {
         if (kind instanceof NodeKind.Subgraph<S> sg) return Optional.of(sg.inner());
         return Optional.empty();
     }
-
     public String toMermaid() {
         return io.tracegraph.core.viz.MermaidRenderer.render(this);
     }
@@ -238,6 +255,15 @@ public final class Graph<S> {
 
         public Builder<S> node(String name, Node<S> node, RetryPolicy retryPolicy) {
             register(name, NodeKind.sync(node), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node) {
+            return routingNode(name, node, null);
+        }
+
+        public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
+            register(name, NodeKind.routing(node), retryPolicy);
             return this;
         }
 
@@ -351,15 +377,7 @@ public final class Graph<S> {
             return this;
         }
 
-        public Builder<S> routingNode(String name, RoutingNode<S> node) {
-            return routingNode(name, node, null);
-        }
 
-        public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
-            Objects.requireNonNull(node, "node");
-            register(name, NodeKind.routing(node), retryPolicy);
-            return this;
-        }
 
         /**
          * Embeds a compiled graph as a node. The inner graph runs to completion as a single step
@@ -428,6 +446,7 @@ public final class Graph<S> {
         }
 
         private void assertReachable() {
+            boolean hasRouting = nodes.values().stream().anyMatch(k -> k instanceof NodeKind.Routing<?>);
             Set<String> seen = new HashSet<>();
             Deque<String> stack = new ArrayDeque<>();
             stack.push(entry);
@@ -439,6 +458,9 @@ public final class Graph<S> {
                         stack.push(e.to());
                     }
                 }
+                if (hasRouting && nodes.get(n) instanceof NodeKind.Routing<?>) {
+                    nodes.keySet().forEach(stack::push);
+                }
             }
             for (String n : nodes.keySet()) {
                 if (!seen.contains(n)) {
@@ -448,8 +470,10 @@ public final class Graph<S> {
         }
 
         private void assertNoDeadEnds() {
-            for (String name : nodes.keySet()) {
+            for (Map.Entry<String, NodeKind<S>> entry : nodes.entrySet()) {
+                String name = entry.getKey();
                 if (terminals.contains(name)) continue;
+                if (entry.getValue() instanceof NodeKind.Routing<?>) continue;
                 boolean hasOutgoing = edges.stream().anyMatch(e -> e.from().equals(name));
                 if (!hasOutgoing) {
                     throw new GraphValidationException(

@@ -219,4 +219,26 @@ class OtelNodeListenerTest {
         assertThat(leaks).hasValue(0);
         assertThat(exporter.getFinishedSpanItems()).hasSize(threads * perThread);
     }
+    @Test
+    void onUsageRecordsLlmTokensToSpan() {
+        OtelNodeListener listener = OtelNodeListener.using(sdk);
+        Graph<String> graph = Graph.<String>builder()
+                .node("llm", (s, ctx) -> {
+                    listener.onUsage("llm", 10, 5);
+                    return "done";
+                })
+                .entry("llm").terminal("llm")
+                .listener(listener)
+                .build();
+
+        graph.run("");
+
+        List<SpanData> spans = exporter.getFinishedSpanItems();
+        assertThat(spans).hasSize(1);
+        SpanData span = spans.get(0);
+        assertThat(span.getAttributes().asMap())
+                .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_INPUT_TOKENS), 10L)
+                .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_OUTPUT_TOKENS), 5L)
+                .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_TOTAL_TOKENS), 15L);
+    }
 }

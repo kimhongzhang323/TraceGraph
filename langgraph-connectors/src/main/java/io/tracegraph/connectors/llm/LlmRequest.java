@@ -3,7 +3,8 @@ package io.tracegraph.connectors.llm;
 import java.util.List;
 import java.util.Objects;
 
-public record LlmRequest(List<ChatMessage> messages, String model, double temperature, int maxTokens) {
+public record LlmRequest(List<ChatMessage> messages, String model, double temperature, int maxTokens,
+                          List<ToolDefinition> tools) {
 
     public LlmRequest {
         Objects.requireNonNull(messages, "messages");
@@ -18,6 +19,17 @@ public record LlmRequest(List<ChatMessage> messages, String model, double temper
             throw new IllegalArgumentException("maxTokens must be > 0, was " + maxTokens);
         }
         messages = List.copyOf(messages);
+        tools = tools == null ? List.of() : List.copyOf(tools);
+    }
+
+    /** Backwards-compatible constructor without tools. */
+    public LlmRequest(List<ChatMessage> messages, String model, double temperature, int maxTokens) {
+        this(messages, model, temperature, maxTokens, List.of());
+    }
+
+    /** Returns {@code true} if this request includes tool definitions. */
+    public boolean hasTools() {
+        return !tools.isEmpty();
     }
 
     public static Builder builder() {
@@ -29,6 +41,7 @@ public record LlmRequest(List<ChatMessage> messages, String model, double temper
         private String model;
         private double temperature = 0.7;
         private int maxTokens = 1024;
+        private List<ToolDefinition> tools = List.of();
 
         private Builder() {}
 
@@ -52,8 +65,13 @@ public record LlmRequest(List<ChatMessage> messages, String model, double temper
             return this;
         }
 
+        public Builder tools(List<ToolDefinition> tools) {
+            this.tools = tools;
+            return this;
+        }
+
         public LlmRequest build() {
-            return new LlmRequest(messages, model, temperature, maxTokens);
+            return new LlmRequest(messages, model, temperature, maxTokens, tools);
         }
     }
 }

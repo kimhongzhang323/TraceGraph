@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -90,7 +91,7 @@ class AnthropicLlmClientTest {
     }
 
     @Test
-    void mapsUnknownStopReasonToOther() {
+    void mapsToolUseToToolCalls() {
         respond(200, """
                 {"content":[{"type":"text","text":"x"}],
                  "stop_reason":"tool_use",
@@ -100,7 +101,7 @@ class AnthropicLlmClientTest {
         LlmResponse r = client.complete(LlmRequest.builder()
                 .model("m").messages(List.of(ChatMessage.user("x"))).build());
 
-        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.OTHER);
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.TOOL_CALLS);
     }
 
     @Test
@@ -156,5 +157,58 @@ class AnthropicLlmClientTest {
                 .isInstanceOf(LlmHttpException.class)
                 .hasMessageContaining("401")
                 .hasMessageContaining("authentication_error");
+    }
+
+    @Test
+    void serializesToolDefinitionsAndCalls() {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        server.createContext("/v1/messages", ex -> {
+            capturedBody.set(new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String body = """
+                    {"content":[{"type":"tool_use","id":"tool_123","name":"get_weather","input":{"location":"SF"}}],
+                     "stop_reason":"tool_use",
+                     "usage":{"input_tokens":0,"output_tokens":0}}""";
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            ex.sendResponseHeaders(200, bytes.length);
+            ex.getResponseBody().write(bytes);
+            ex.close();
+        });
+        server.start();
+
+        AnthropicLlmClient client = AnthropicLlmClient.builder().endpoint(endpoint).build();
+        
+        ToolDefinition toolDef = new ToolDefinition("get_weather", "Get the weather", Map.of("type", "object"));
+        
+        LlmRequest req = LlmRequest.builder()
+                .model("m")
+                .messages(List.of(
+                        ChatMessage.user("weather?"),
+                        ChatMessage.assistantWithToolCalls("", List.of(new ToolCall("tool_000", "some_tool", "{\"a\":1}"))),
+                        ChatMessage.toolResult("tool_000", "tool_result_content")
+                ))
+                .tools(List.of(toolDef))
+                .build();
+
+        LlmResponse r = client.complete(req);
+
+        // Check request body serialization
+        String sentBody = capturedBody.get();
+        assertThat(sentBody)
+                .contains("\"name\":\"get_weather\"") // Tool definition
+                .contains("\"description\":\"Get the weather\"")
+                .contains("\"type\":\"tool_use\"") // Assistant tool call
+                .contains("\"id\":\"tool_000\"")
+                .contains("\"name\":\"some_tool\"")
+                .contains("\"input\":{\"a\":1}")
+                .contains("\"type\":\"tool_result\"") // Tool result
+                .contains("\"tool_use_id\":\"tool_000\"")
+                .contains("\"content\":\"tool_result_content\"");
+
+        // Check response parsing
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.TOOL_CALLS);
+        assertThat(r.toolCalls()).hasSize(1);
+        assertThat(r.toolCalls().get(0).name()).isEqualTo("get_weather");
+        assertThat(r.toolCalls().get(0).id()).isEqualTo("tool_123");
+        assertThat(r.toolCalls().get(0).arguments()).contains("SF");
     }
 }

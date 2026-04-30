@@ -23,4 +23,9 @@ public interface NodeListener {
     default void onError(String nodeName, Throwable error) {}
 
     default void onRetry(String nodeName, int attempt, Throwable error) {}
+
+    /**
+     * Called when a node consumes LLM tokens.
+     */
+    default void onUsage(String nodeName, int promptTokens, int completionTokens) {}
 }

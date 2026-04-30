@@ -90,37 +90,99 @@ public final class AnthropicLlmClient implements LlmClient {
         List<Map<String, Object>> messages = new ArrayList<>(request.messages().size());
         for (ChatMessage m : request.messages()) {
             if (m.role() == ChatMessage.Role.SYSTEM) {
-                if (system.length() > 0) system.append("\n\n");
+                if (!system.isEmpty()) system.append("\n\n");
                 system.append(m.content());
+            } else if (m.role() == ChatMessage.Role.ASSISTANT && !m.toolCalls().isEmpty()) {
+                // Assistant message with tool use blocks
+                List<Map<String, Object>> contentBlocks = new ArrayList<>();
+                if (!m.content().isEmpty()) {
+                    contentBlocks.add(Map.of("type", "text", "text", m.content()));
+                }
+                for (ToolCall tc : m.toolCalls()) {
+                    Map<String, Object> toolUse = new LinkedHashMap<>();
+                    toolUse.put("type", "tool_use");
+                    toolUse.put("id", tc.id());
+                    toolUse.put("name", tc.name());
+                    try {
+                        ObjectMapper om = new ObjectMapper();
+                        toolUse.put("input", om.readValue(tc.arguments(), Map.class));
+                    } catch (IOException e) {
+                        toolUse.put("input", Map.of());
+                    }
+                    contentBlocks.add(toolUse);
+                }
+                messages.add(Map.of("role", "assistant", "content", contentBlocks));
+            } else if (m.role() == ChatMessage.Role.TOOL) {
+                // Tool result
+                Map<String, Object> toolResult = new LinkedHashMap<>();
+                toolResult.put("type", "tool_result");
+                toolResult.put("tool_use_id", m.toolCallId());
+                toolResult.put("content", m.content());
+                messages.add(Map.of("role", "user", "content", List.of(toolResult)));
             } else {
                 messages.add(Map.of("role", m.role().name().toLowerCase(Locale.ROOT), "content", m.content()));
             }
         }
-        if (system.length() > 0) body.put("system", system.toString());
+        if (!system.isEmpty()) body.put("system", system.toString());
         body.put("messages", messages);
+
+        // Include tool definitions
+        if (request.hasTools()) {
+            List<Map<String, Object>> tools = new ArrayList<>();
+            for (ToolDefinition td : request.tools()) {
+                Map<String, Object> tool = new LinkedHashMap<>();
+                tool.put("name", td.name());
+                tool.put("description", td.description());
+                if (!td.parametersSchema().isEmpty()) {
+                    tool.put("input_schema", td.parametersSchema());
+                } else {
+                    tool.put("input_schema", Map.of("type", "object", "properties", Map.of()));
+                }
+                tools.add(tool);
+            }
+            body.put("tools", tools);
+        }
+
         return body;
     }
 
+    @SuppressWarnings("unchecked")
     private static LlmResponse parseResponse(JsonNode root) {
         JsonNode content = root.path("content");
         StringBuilder text = new StringBuilder();
+        List<ToolCall> toolCalls = new ArrayList<>();
+
         if (content.isArray()) {
             for (JsonNode block : content) {
-                if ("text".equals(block.path("type").asText())) {
+                String type = block.path("type").asText();
+                if ("text".equals(type)) {
                     text.append(block.path("text").asText(""));
+                } else if ("tool_use".equals(type)) {
+                    String id = block.path("id").asText("");
+                    String name = block.path("name").asText("");
+                    String args;
+                    JsonNode inputNode = block.path("input");
+                    if (inputNode.isObject()) {
+                        args = inputNode.toString();
+                    } else {
+                        args = "{}";
+                    }
+                    toolCalls.add(new ToolCall(id, name, args));
                 }
             }
         }
+
         String stopReason = root.path("stop_reason").asText("");
         LlmResponse.FinishReason finish = switch (stopReason) {
             case "end_turn", "stop_sequence" -> LlmResponse.FinishReason.STOP;
             case "max_tokens" -> LlmResponse.FinishReason.LENGTH;
+            case "tool_use" -> LlmResponse.FinishReason.TOOL_CALLS;
             default -> LlmResponse.FinishReason.OTHER;
         };
         JsonNode usage = root.path("usage");
         int prompt = usage.path("input_tokens").asInt(0);
         int completion = usage.path("output_tokens").asInt(0);
-        return new LlmResponse(text.toString(), finish, new LlmResponse.Usage(prompt, completion));
+        return new LlmResponse(text.toString(), finish, new LlmResponse.Usage(prompt, completion), toolCalls);
     }
 
     public static final class Builder {

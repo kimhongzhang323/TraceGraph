@@ -19,6 +19,9 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 - **`MemoryStore.pagedKeys(scope, offset, limit)`** — paginate over keys without materializing the full set. Default impl sorts and slices on top of `keys(scope)`; `JdbcMemoryStore` overrides with `ORDER BY key_name LIMIT ? OFFSET ?` for backend pagination. Negative arguments throw `IllegalArgumentException`. Backwards-compatible (default method on the SPI).
 - **Spring Boot auto-config for `JdbcMemoryStore`.** New `MemoryAutoConfiguration` (`io.tracegraph.boot.memory`) auto-wires a `JdbcMemoryStore` when a `DataSource` bean is present and Jackson + `JdbcMemoryStore` are on the classpath. Runs `initSchema()` by default. Properties: `tracegraph.memory.jdbc.enabled` (default `true`), `tracegraph.memory.jdbc.init-schema` (default `true`), `tracegraph.memory.jdbc.table` (override default `tracegraph_memory`). User-defined `MemoryStore` beans still win via `@ConditionalOnMissingBean`. `langgraph-memory` and `jackson-databind` are `<optional>` starter deps. `JdbcCheckpointStore` / `JdbcTraceStore` need user-supplied `Class<S>` so they stay manual `@Bean` declarations.
 
+### Breaking
+- `TraceStep<S>` gained a trailing `children` record component for subgraph support. Use `TraceStep.leaf(...)` for the common leaf case.
+
 ### Build
 - **Release from CI.** `Release` GitHub Actions workflow now publishes to Maven Central on tag push (`v*`), replacing the prior GitHub Packages flow. Imports the GPG key from `MAVEN_GPG_PRIVATE_KEY`, signs, deploys via the `release` Maven profile, and drafts a GitHub Release with auto-generated notes. Refuses to deploy `-SNAPSHOT` versions. Required environment secrets: `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE`. See `RELEASING.md`.
 

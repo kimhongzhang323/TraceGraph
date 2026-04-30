@@ -41,6 +41,10 @@ public final class ChatNode<S> implements Node<S> {
     public S execute(S state, Context ctx) {
         LlmRequest request = requestBuilder.apply(state);
         LlmResponse response = client.complete(request);
+        LlmResponse.Usage u = response.usage();
+        if (u.promptTokens() > 0 || u.completionTokens() > 0) {
+            ctx.reportUsage(u.promptTokens(), u.completionTokens());
+        }
         return responseFolder.apply(state, response);
     }
 }

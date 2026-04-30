@@ -21,6 +21,10 @@ public sealed interface NodeKind<S> {
 
     CompletableFuture<S> invoke(S state, Context ctx, ExecutorService executor);
 
+    default CompletableFuture<NodeResult<S>> invokeRouting(S state, Context ctx, ExecutorService executor) {
+        return invoke(state, ctx, executor).thenApply(NodeResult::of);
+    }
+
     static <S> NodeKind<S> sync(Node<S> node) {
         return new Sync<>(node);
     }
@@ -40,7 +44,6 @@ public sealed interface NodeKind<S> {
     static <S> NodeKind<S> subgraph(Graph<S> inner) {
         return new Subgraph<>(inner);
     }
-
     record Sync<S>(Node<S> node) implements NodeKind<S> {
         @Override
         public CompletableFuture<S> invoke(S state, Context ctx, ExecutorService executor) {
@@ -100,10 +103,20 @@ public sealed interface NodeKind<S> {
         @Override
         public CompletableFuture<S> invoke(S state, Context ctx, ExecutorService executor) {
             try {
-                NodeResult<S> result = node.apply(state, ctx);
-                return CompletableFuture.completedFuture(result.state());
+                return CompletableFuture.completedFuture(node.apply(state, ctx).state());
             } catch (Throwable t) {
                 CompletableFuture<S> failed = new CompletableFuture<>();
+                failed.completeExceptionally(t);
+                return failed;
+            }
+        }
+
+        @Override
+        public CompletableFuture<NodeResult<S>> invokeRouting(S state, Context ctx, ExecutorService executor) {
+            try {
+                return CompletableFuture.completedFuture(node.apply(state, ctx));
+            } catch (Throwable t) {
+                CompletableFuture<NodeResult<S>> failed = new CompletableFuture<>();
                 failed.completeExceptionally(t);
                 return failed;
             }

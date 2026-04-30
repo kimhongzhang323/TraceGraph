@@ -155,4 +155,56 @@ class OpenAiLlmClientTest {
                 .hasMessageContaining("429")
                 .hasMessageContaining("rate limited");
     }
+
+    @Test
+    void serializesToolDefinitionsAndCalls() {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        server.createContext("/v1/chat/completions", ex -> {
+            capturedBody.set(new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String body = """
+                    {"choices":[{"message":{"content":null,"tool_calls":[{"id":"call_abc","type":"function","function":{"name":"get_weather","arguments":"{\\"location\\":\\"SF\\"}"}}]},"finish_reason":"tool_calls"}],
+                     "usage":{"prompt_tokens":0,"completion_tokens":0}}""";
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            ex.sendResponseHeaders(200, bytes.length);
+            ex.getResponseBody().write(bytes);
+            ex.close();
+        });
+        server.start();
+
+        OpenAiLlmClient client = OpenAiLlmClient.builder().endpoint(endpoint).build();
+        
+        ToolDefinition toolDef = new ToolDefinition("get_weather", "Get the weather", java.util.Map.of("type", "object"));
+        
+        LlmRequest req = LlmRequest.builder()
+                .model("m")
+                .messages(List.of(
+                        ChatMessage.user("weather?"),
+                        ChatMessage.assistantWithToolCalls("", List.of(new ToolCall("call_000", "some_tool", "{\"a\":1}"))),
+                        ChatMessage.toolResult("call_000", "tool_result_content")
+                ))
+                .tools(List.of(toolDef))
+                .build();
+
+        LlmResponse r = client.complete(req);
+
+        // Check request body serialization
+        String sentBody = capturedBody.get();
+        assertThat(sentBody)
+                .contains("\"name\":\"get_weather\"") // Tool definition
+                .contains("\"description\":\"Get the weather\"")
+                .contains("\"tool_calls\":[{") // Assistant tool call
+                .contains("\"id\":\"call_000\"")
+                .contains("\"name\":\"some_tool\"")
+                .contains("\"arguments\":\"{\\\"a\\\":1}\"")
+                .contains("\"role\":\"tool\"") // Tool result
+                .contains("\"tool_call_id\":\"call_000\"")
+                .contains("\"content\":\"tool_result_content\"");
+
+        // Check response parsing
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.TOOL_CALLS);
+        assertThat(r.toolCalls()).hasSize(1);
+        assertThat(r.toolCalls().get(0).name()).isEqualTo("get_weather");
+        assertThat(r.toolCalls().get(0).id()).isEqualTo("call_abc");
+        assertThat(r.toolCalls().get(0).arguments()).contains("SF");
+    }
 }
