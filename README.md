@@ -113,17 +113,17 @@ These Mermaid diagrams show the two main viewpoints of TraceGraph: how a run flo
 
 ```mermaid
 flowchart TD
-A[Build Graph<S>] --> B[Graph.run(initial)]
-B --> C[Executor validates graph and starts execution]
-C --> D[Run node]
-D --> E{Node result}
-E -->|next state| F[Resolve outgoing edges]
-E -->|goTo / sendAll| G[Route dynamically]
-F --> H{Terminal?}
+A["Build graph"] --> B["Graph.run(initial)"]
+B --> C["Executor validates graph and starts execution"]
+C --> D["Run node"]
+D --> E{"Node result"}
+E -->|next state| F["Resolve outgoing edges"]
+E -->|goTo / sendAll| G["Route dynamically"]
+F --> H{"Terminal?"}
 G --> H
-H -->|yes| I[Return ExecutionResult]
+H -->|yes| I["Return ExecutionResult"]
 H -->|no| D
-D --> J[Listener events / trace / checkpoint]
+D --> J["Listener events / trace / checkpoint"]
 J --> F
 ```
 
