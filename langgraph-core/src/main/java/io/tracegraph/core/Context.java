@@ -27,4 +27,10 @@ public interface Context {
     default MemoryStore memory() {
         return MemoryStore.noop();
     }
+
+    /**
+     * Report LLM token usage for this node invocation. The executor forwards this to
+     * {@link io.tracegraph.core.spi.NodeListener#onUsage}.
+     */
+    default void reportUsage(int promptTokens, int completionTokens) {}
 }

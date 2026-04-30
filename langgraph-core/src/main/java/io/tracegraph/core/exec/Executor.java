@@ -298,7 +298,7 @@ public final class Executor<S> {
                                            RetryPolicy policy, ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, this.listener);
             try {
                 NodeResult<S> result = node.invokeRouting(state, ctx, exec).join();
                 if (result instanceof NodeResult.SendAll<S> sa) {
@@ -389,7 +389,7 @@ public final class Executor<S> {
                                                               ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, this.listener);
             try {
                 NodeResult<S> result = routingNode.apply(state, ctx);
                 if (result instanceof NodeResult.SendAll<S> sa) {
@@ -448,7 +448,7 @@ public final class Executor<S> {
                 throw new NodeExecutionException(send.target(),
                         new IllegalArgumentException("Send target '" + send.target() + "' is not declared"));
             }
-            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore);
+            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore, this.listener);
             futures.add(java.util.concurrent.CompletableFuture.supplyAsync(
                     () -> target.invoke(send.payload(), ctx, exec).join(), exec));
         }
@@ -481,11 +481,17 @@ public final class Executor<S> {
         }
     }
 
-    private record SimpleContext(String executionId, String nodeName, int attempt, MemoryStore memory)
+    private record SimpleContext(String executionId, String nodeName, int attempt,
+                                 MemoryStore memory, NodeListener listener)
             implements Context {
         @Override
         public Logger logger() {
             return LoggerFactory.getLogger("io.tracegraph.node." + nodeName);
+        }
+
+        @Override
+        public void reportUsage(int promptTokens, int completionTokens) {
+            listener.onUsage(nodeName, promptTokens, completionTokens);
         }
     }
 }
