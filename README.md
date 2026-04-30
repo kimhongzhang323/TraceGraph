@@ -107,6 +107,48 @@ Graph<OrderState> durableGraph = Graph.<OrderState>builder()
         .build();
 ```
 
+## Diagrams
+
+These Mermaid diagrams show the two main viewpoints of TraceGraph: how a run flows through the executor, and how the runtime pieces interact around a single execution.
+
+```mermaid
+flowchart TD
+A[Build Graph<S>] --> B[Graph.run(initial)]
+B --> C[Executor validates graph and starts execution]
+C --> D[Run node]
+D --> E{Node result}
+E -->|next state| F[Resolve outgoing edges]
+E -->|goTo / sendAll| G[Route dynamically]
+F --> H{Terminal?}
+G --> H
+H -->|yes| I[Return ExecutionResult]
+H -->|no| D
+D --> J[Listener events / trace / checkpoint]
+J --> F
+```
+
+```mermaid
+sequenceDiagram
+participant User
+participant Graph
+participant Executor
+participant Node
+participant Listener
+participant TraceStore
+participant CheckpointStore
+
+User->>Graph: run(initial)
+Graph->>Executor: create execution
+Executor->>Listener: onEnter(node, state)
+Executor->>Node: execute(state, ctx)
+Node-->>Executor: next state / error
+Executor->>Listener: onExit or onError
+Executor->>TraceStore: append trace step
+Executor->>CheckpointStore: save checkpoint (if configured)
+Executor-->>Graph: ExecutionResult
+Graph-->>User: result
+```
+
 ## Retries
 
 Attach a `RetryPolicy` per node, or set a graph default. The executor handles backoff and emits `NodeListener.onRetry`.
