@@ -1,0 +1,56 @@
+site_name: TraceGraph
+site_description: Production-grade JVM agent runtime — typed graphs, durable memory, deep observability
+site_url: https://site.tracegraph.io
+repo_url: https://github.com/kimho/TraceGraph
+repo_name: TraceGraph
+docs_dir: docs
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quickstart: getting-started/quickstart.md
+  - Concepts:
+    - Graph & Nodes: concepts/graph-nodes.md
+    - State & Context: concepts/state-context.md
+    - Edges & Routing: concepts/edges-routing.md
+    - Observability: concepts/observability.md
+    - Memory: concepts/memory.md
+    - Connectors: concepts/connectors.md
+    - RAG: concepts/rag.md
+  - Spring Boot: spring-boot.md
+  - Cookbook:
+    - ReAct Agent: cookbook/react-agent.md
+    - RAG Agent: cookbook/rag-agent.md
+    - HITL Approval: cookbook/hitl-approval.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list

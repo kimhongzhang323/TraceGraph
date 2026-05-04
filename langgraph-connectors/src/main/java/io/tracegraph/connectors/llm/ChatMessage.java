@@ -6,22 +6,24 @@ import java.util.Objects;
 /**
  * A chat message in an LLM conversation.
  *
- * @param role       the role of the message sender
- * @param content    textual content of the message
- * @param toolCallId if role is {@link Role#TOOL}, the call ID this result answers; null otherwise
- * @param toolCalls  if role is {@link Role#ASSISTANT}, tool calls the LLM requested; empty otherwise
+ * @param role          the role of the message sender
+ * @param content       textual content of the message
+ * @param toolCallId    if role is {@link Role#TOOL}, the call ID this result answers; null otherwise
+ * @param toolCalls     if role is {@link Role#ASSISTANT}, tool calls the LLM requested; empty otherwise
+ * @param contentBlocks optional multimodal content blocks; empty for text-only messages
  */
-public record ChatMessage(Role role, String content, String toolCallId, List<ToolCall> toolCalls) {
+public record ChatMessage(Role role, String content, String toolCallId, List<ToolCall> toolCalls, List<ContentBlock> contentBlocks) {
 
     public ChatMessage {
         Objects.requireNonNull(role, "role");
         Objects.requireNonNull(content, "content");
         toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+        contentBlocks = contentBlocks == null ? List.of() : List.copyOf(contentBlocks);
     }
 
-    /** Backwards-compatible constructor without tool fields. */
+    /** Backwards-compatible constructor without tool fields or content blocks. */
     public ChatMessage(Role role, String content) {
-        this(role, content, null, List.of());
+        this(role, content, null, List.of(), List.of());
     }
 
     public static ChatMessage system(String content) {
@@ -41,12 +43,17 @@ public record ChatMessage(Role role, String content, String toolCallId, List<Too
      * Used to reconstruct the full conversation history for multi-turn tool calling.
      */
     public static ChatMessage assistantWithToolCalls(String content, List<ToolCall> toolCalls) {
-        return new ChatMessage(Role.ASSISTANT, content == null ? "" : content, null, toolCalls);
+        return new ChatMessage(Role.ASSISTANT, content == null ? "" : content, null, toolCalls, List.of());
     }
 
     /** Tool result message answering a specific tool call. */
     public static ChatMessage toolResult(String callId, String content) {
-        return new ChatMessage(Role.TOOL, content, callId, List.of());
+        return new ChatMessage(Role.TOOL, content, callId, List.of(), List.of());
+    }
+
+    /** User message that includes multimodal content blocks (e.g. images). */
+    public static ChatMessage userWithImages(String text, List<ContentBlock> contentBlocks) {
+        return new ChatMessage(Role.USER, text, null, List.of(), contentBlocks);
     }
 
     public enum Role { SYSTEM, USER, ASSISTANT, TOOL }

@@ -122,6 +122,26 @@ public final class AnthropicLlmClient implements LlmClient {
                 toolResult.put("tool_use_id", m.toolCallId());
                 toolResult.put("content", m.content());
                 messages.add(Map.of("role", "user", "content", List.of(toolResult)));
+            } else if (!m.contentBlocks().isEmpty()) {
+                List<Map<String, Object>> parts = new ArrayList<>(m.contentBlocks().size() + 1);
+                if (!m.content().isEmpty()) {
+                    parts.add(Map.of("type", "text", "text", m.content()));
+                }
+                for (ContentBlock cb : m.contentBlocks()) {
+                    if (cb instanceof ContentBlock.TextBlock tb) {
+                        parts.add(Map.of("type", "text", "text", tb.text()));
+                    } else if (cb instanceof ContentBlock.ImageBlock ib) {
+                        Map<String, Object> source = new LinkedHashMap<>();
+                        source.put("type", "base64");
+                        source.put("media_type", ib.mimeType());
+                        source.put("data", ib.base64Data());
+                        Map<String, Object> imgBlock = new LinkedHashMap<>();
+                        imgBlock.put("type", "image");
+                        imgBlock.put("source", source);
+                        parts.add(imgBlock);
+                    }
+                }
+                messages.add(Map.of("role", m.role().name().toLowerCase(Locale.ROOT), "content", parts));
             } else {
                 messages.add(Map.of("role", m.role().name().toLowerCase(Locale.ROOT), "content", m.content()));
             }

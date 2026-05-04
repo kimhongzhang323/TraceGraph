@@ -50,6 +50,7 @@
         <module>langgraph-observability</module>
         <module>langgraph-spring-boot-starter</module>
         <module>langgraph-connectors</module>
+        <module>langgraph-rag</module>
     </modules>
 
     <properties>
@@ -113,6 +114,11 @@
             <dependency>
                 <groupId>site.tracegraph</groupId>
                 <artifactId>langgraph-connectors</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>langgraph-rag</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
