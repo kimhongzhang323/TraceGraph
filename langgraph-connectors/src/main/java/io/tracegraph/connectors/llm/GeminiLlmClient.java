@@ -20,11 +20,12 @@ import java.util.Objects;
 public final class GeminiLlmClient implements LlmClient {
 
     private static final String DEFAULT_MODEL = "gemini-1.5-flash";
-    private static final String BASE_URL =
+    static final String DEFAULT_BASE_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/";
 
     private final String apiKey;
     private final String model;
+    private final String baseUrl;
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final Duration requestTimeout;
@@ -32,6 +33,7 @@ public final class GeminiLlmClient implements LlmClient {
     private GeminiLlmClient(Builder b) {
         this.apiKey = Objects.requireNonNull(b.apiKey, "apiKey is required for GeminiLlmClient");
         this.model = b.model;
+        this.baseUrl = b.baseUrl;
         this.httpClient = b.httpClient != null ? b.httpClient
                 : HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.requestTimeout = b.requestTimeout;
@@ -49,7 +51,7 @@ public final class GeminiLlmClient implements LlmClient {
                     "Tool calling not yet supported by GeminiLlmClient");
         }
 
-        URI endpoint = URI.create(BASE_URL + model + ":generateContent?key=" + apiKey);
+        URI endpoint = URI.create(baseUrl + model + ":generateContent?key=" + apiKey);
 
         byte[] body;
         try {
@@ -156,6 +158,7 @@ public final class GeminiLlmClient implements LlmClient {
     public static final class Builder {
         private String apiKey;
         private String model = DEFAULT_MODEL;
+        private String baseUrl = DEFAULT_BASE_URL;
         private HttpClient httpClient;
         private Duration requestTimeout;
 
@@ -165,6 +168,9 @@ public final class GeminiLlmClient implements LlmClient {
         public Builder model(String model) { this.model = model; return this; }
         public Builder httpClient(HttpClient httpClient) { this.httpClient = httpClient; return this; }
         public Builder requestTimeout(Duration timeout) { this.requestTimeout = timeout; return this; }
+
+        /** Package-private — for testing only. Override the base URL to point at a local mock server. */
+        Builder baseUrl(String baseUrl) { this.baseUrl = baseUrl; return this; }
 
         public GeminiLlmClient build() { return new GeminiLlmClient(this); }
     }
