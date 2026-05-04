@@ -12,16 +12,16 @@ Thanks for your interest. TraceGraph aims to be a production-grade JVM agent run
 
 ## Module boundaries
 
-`langgraph-core` is SLF4J-only — no Spring, Jackson, or OTel imports there. SPI types live in `core/spi`, implementations live in the downstream modules:
+`tracegraph-core` is SLF4J-only — no Spring, Jackson, or OTel imports there. SPI types live in `core/spi`, implementations live in the downstream modules:
 
 | Concern | Module |
 |---|---|
-| OTel, replay, trace diff | `langgraph-observability` |
-| Memory store implementations | `langgraph-memory` |
-| Spring auto-config and REST | `langgraph-spring-boot-starter` |
-| LLM and vector adapters | `langgraph-connectors` |
+| OTel, replay, trace diff | `tracegraph-observability` |
+| Memory store implementations | `tracegraph-memory` |
+| Spring auto-config and REST | `tracegraph-spring-boot-starter` |
+| LLM and vector adapters | `tracegraph-connectors` |
 
-If a feature would force `langgraph-core` to depend on a heavy library, it belongs in another module.
+If a feature would force `tracegraph-core` to depend on a heavy library, it belongs in another module.
 
 ## API design
 

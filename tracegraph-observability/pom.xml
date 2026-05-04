@@ -6,14 +6,14 @@
     <parent>
         <groupId>site.tracegraph</groupId>
         <artifactId>tracegraph-parent</artifactId>
-        <version>0.2.0-SNAPSHOT</version>
+        <version>0.2.0</version>
     </parent>
-    <artifactId>langgraph-observability</artifactId>
+    <artifactId>tracegraph-observability</artifactId>
     <name>TraceGraph :: Observability</name>
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>
-            <artifactId>langgraph-core</artifactId>
+            <artifactId>tracegraph-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>

@@ -1,6 +1,6 @@
 # TraceGraph
 
-[![Maven Central](https://img.shields.io/maven-central/v/site.tracegraph/langgraph-core?label=Maven%20Central)](https://central.sonatype.com/artifact/site.tracegraph/langgraph-core)
+[![Maven Central](https://img.shields.io/maven-central/v/site.tracegraph/tracegraph-core?label=Maven%20Central)](https://central.sonatype.com/artifact/site.tracegraph/tracegraph-core)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 TraceGraph is a JVM-native agent runtime for building typed execution graphs with durable state, retries, checkpoints, memory, and observability hooks.
@@ -22,9 +22,9 @@ The project is aimed at teams that want graph-style orchestration on the JVM wit
 
 TraceGraph is under active development.
 
-- `langgraph-core` is the most mature module and already covers core graph construction and execution behavior.
-- `langgraph-runtime`, `langgraph-memory`, `langgraph-observability`, and `langgraph-spring-boot-starter` are implemented and tested, but are still evolving.
-- `langgraph-connectors` is intentionally early-stage and should be treated as experimental integration code.
+- `tracegraph-core` is the most mature module and already covers core graph construction and execution behavior.
+- `tracegraph-runtime`, `tracegraph-memory`, `tracegraph-observability`, and `tracegraph-spring-boot-starter` are implemented and tested, but are still evolving.
+- `tracegraph-connectors` is intentionally early-stage and should be treated as experimental integration code.
 
 Until the API settles, expect breaking changes between pre-1.0 releases.
 
@@ -32,12 +32,12 @@ Until the API settles, expect breaking changes between pre-1.0 releases.
 
 | Module | Purpose |
 |---|---|
-| `langgraph-core` | Typed graphs, nodes, edges, execution results, retries, async nodes, and parallel execution primitives |
-| `langgraph-runtime` | Checkpoint store implementations and runtime-oriented resume behavior |
-| `langgraph-memory` | In-memory and file-backed memory store implementations |
-| `langgraph-observability` | OpenTelemetry listeners, trace recording, replay, diffing, and trace store implementations |
-| `langgraph-spring-boot-starter` | Spring Boot auto-configuration and web integration pieces |
-| `langgraph-connectors` | Connector adapters such as OpenAI and Anthropic HTTP clients |
+| `tracegraph-core` | Typed graphs, nodes, edges, execution results, retries, async nodes, and parallel execution primitives |
+| `tracegraph-runtime` | Checkpoint store implementations and runtime-oriented resume behavior |
+| `tracegraph-memory` | In-memory and file-backed memory store implementations |
+| `tracegraph-observability` | OpenTelemetry listeners, trace recording, replay, diffing, and trace store implementations |
+| `tracegraph-spring-boot-starter` | Spring Boot auto-configuration and web integration pieces |
+| `tracegraph-connectors` | Connector adapters such as OpenAI and Anthropic HTTP clients |
 
 ## Requirements
 
@@ -272,7 +272,7 @@ Graphs can be wired to a `CheckpointStore` and resumed later by execution ID:
 graph.resume("execution-123");
 ```
 
-The `langgraph-runtime` module includes an `InMemoryCheckpointStore`, and the extension points are designed for external durable stores.
+The `tracegraph-runtime` module includes an `InMemoryCheckpointStore`, and the extension points are designed for external durable stores.
 
 ### Memory
 

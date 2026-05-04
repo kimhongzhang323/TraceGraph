@@ -10,7 +10,7 @@ import io.tracegraph.core.exec.NoopTraceRecorderAccess;
  *
  * <p>Plug in via {@code Graph.Builder.traceRecorder(...)}; default is {@link #noop()}. Branches
  * inside {@code parallel(...)} fire one enter/exit pair on the parallel node, not per branch.
- * Implementations must be thread-safe. {@code langgraph-observability} ships
+ * Implementations must be thread-safe. {@code tracegraph-observability} ships
  * {@code RecordingTraceRecorder} bridging this SPI to a {@code TraceStore}.
  */
 public interface TraceRecorder {

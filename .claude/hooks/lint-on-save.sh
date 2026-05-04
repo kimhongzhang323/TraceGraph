@@ -19,8 +19,8 @@ fi
 input=$(cat || true)
 case "$input" in
   *"src/main/java"*|*"src/test/java"*|*"pom.xml"*)
-    echo "[lint-on-save] mvn -q -B -pl langgraph-core compile test-compile"
-    mvn -q -B -pl langgraph-core compile test-compile || {
+    echo "[lint-on-save] mvn -q -B -pl tracegraph-core compile test-compile"
+    mvn -q -B -pl tracegraph-core compile test-compile || {
       echo "[lint-on-save] compilation failed" >&2
       exit 2
     }

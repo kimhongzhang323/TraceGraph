@@ -6,14 +6,14 @@
     <parent>
         <groupId>site.tracegraph</groupId>
         <artifactId>tracegraph-parent</artifactId>
-        <version>0.2.0-SNAPSHOT</version>
+        <version>0.2.0</version>
     </parent>
-    <artifactId>langgraph-spring-boot-starter</artifactId>
+    <artifactId>tracegraph-spring-boot-starter</artifactId>
     <name>TraceGraph :: Spring Boot Starter</name>
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>
-            <artifactId>langgraph-core</artifactId>
+            <artifactId>tracegraph-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -22,22 +22,22 @@
 
         <dependency>
             <groupId>site.tracegraph</groupId>
-            <artifactId>langgraph-observability</artifactId>
+            <artifactId>tracegraph-observability</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>site.tracegraph</groupId>
-            <artifactId>langgraph-memory</artifactId>
+            <artifactId>tracegraph-memory</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>site.tracegraph</groupId>
-            <artifactId>langgraph-connectors</artifactId>
+            <artifactId>tracegraph-connectors</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>site.tracegraph</groupId>
-            <artifactId>langgraph-rag</artifactId>
+            <artifactId>tracegraph-rag</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

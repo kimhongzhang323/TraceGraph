@@ -22,7 +22,7 @@ Phase 4 is the smallest set of changes that removes those stop-gates without com
 
 **Goal:** consumer can observe per-node progress as a graph runs, without waiting for `ExecutionResult`.
 
-**API (in `langgraph-core`):**
+**API (in `tracegraph-core`):**
 
 ```java
 public sealed interface NodeEvent<S> {
@@ -70,7 +70,7 @@ Builder<S> interruptAfter(String... nodeNames);
 
 **Goal:** compose a compiled `Graph<S>` as a node inside a parent `Graph<S>`.
 
-**API (in `langgraph-core`):**
+**API (in `tracegraph-core`):**
 
 ```java
 // On Graph.Builder<S>
@@ -123,10 +123,10 @@ String toPlantUml();
 
 ## Module placement
 
-All five features land in `langgraph-core` except where they require existing optional modules:
+All five features land in `tracegraph-core` except where they require existing optional modules:
 - `Flow` streaming → core (JDK-only).
 - Interrupts → core (executor change + checkpoint field).
-- Subgraphs → core; `TraceStep.children` evolution affects `langgraph-observability`.
+- Subgraphs → core; `TraceStep.children` evolution affects `tracegraph-observability`.
 - `goTo` → core.
 - Mermaid/PlantUML → core.
 

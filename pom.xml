@@ -6,7 +6,7 @@
 
     <groupId>site.tracegraph</groupId>
     <artifactId>tracegraph-parent</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
 
     <name>TraceGraph (parent)</name>
@@ -44,13 +44,13 @@
     </issueManagement>
 
     <modules>
-        <module>langgraph-core</module>
-        <module>langgraph-runtime</module>
-        <module>langgraph-memory</module>
-        <module>langgraph-observability</module>
-        <module>langgraph-spring-boot-starter</module>
-        <module>langgraph-connectors</module>
-        <module>langgraph-rag</module>
+        <module>tracegraph-core</module>
+        <module>tracegraph-runtime</module>
+        <module>tracegraph-memory</module>
+        <module>tracegraph-observability</module>
+        <module>tracegraph-spring-boot-starter</module>
+        <module>tracegraph-connectors</module>
+        <module>tracegraph-rag</module>
     </modules>
 
     <properties>
@@ -98,27 +98,27 @@
             </dependency>
             <dependency>
                 <groupId>site.tracegraph</groupId>
-                <artifactId>langgraph-core</artifactId>
+                <artifactId>tracegraph-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>site.tracegraph</groupId>
-                <artifactId>langgraph-observability</artifactId>
+                <artifactId>tracegraph-observability</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>site.tracegraph</groupId>
-                <artifactId>langgraph-memory</artifactId>
+                <artifactId>tracegraph-memory</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>site.tracegraph</groupId>
-                <artifactId>langgraph-connectors</artifactId>
+                <artifactId>tracegraph-connectors</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>site.tracegraph</groupId>
-                <artifactId>langgraph-rag</artifactId>
+                <artifactId>tracegraph-rag</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

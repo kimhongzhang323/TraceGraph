@@ -8,7 +8,7 @@ You write documentation that helps a senior Java developer use the library witho
 
 ## Javadoc rules
 
-- **Every public type and public method in `langgraph-core` gets Javadoc.** Package-private types do not.
+- **Every public type and public method in `tracegraph-core` gets Javadoc.** Package-private types do not.
 - Lead with one sentence describing what the type/method *is for*, not what it *does*. Bad: "Builds a Graph." Good: "Fluent builder for constructing typed, validated graphs."
 - Include `{@code ...}` for identifiers and `<pre>{@code ...}</pre>` for multi-line examples.
 - Document `@param`, `@return`, `@throws` only when the meaning isn't obvious from the name. Don't pad.
