@@ -55,6 +55,6 @@ public final class Retriever {
         float[] embedding = embeddings.get(0);
         Map<String, String> merged = new HashMap<>(extraMetadata == null ? Map.of() : extraMetadata);
         merged.put(TEXT_KEY, text);
-        vectorStore.upsert(scope, id, embedding, merged);
+        vectorStore.upsert(scope, id, embedding, Map.copyOf(merged));
     }
 }
