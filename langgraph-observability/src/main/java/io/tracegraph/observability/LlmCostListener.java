@@ -1,7 +1,9 @@
 package io.tracegraph.observability;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.tracegraph.core.spi.NodeListener;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -9,9 +11,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A {@link NodeListener} that aggregates LLM token usage across an execution.
  * <p>
- * LLM nodes can report usage via {@link #recordUsage(String, int, int)} (called from
- * within a {@code ChatNode} or {@code ReActAgent} response folder). This listener
- * accumulates totals per-execution and per-node, and exposes them via accessors.
+ * Token usage is automatically captured via {@link #onUsage} when wired into a graph
+ * that contains {@code ChatNode} instances. Usage can also be recorded manually via
+ * {@link #recordUsage(String, int, int)} and {@link #recordNodeUsage(String, int, int)}.
+ * <p>
+ * When constructed with a {@link MeterRegistry}, counters are emitted to Micrometer on
+ * every usage event. Consumers without Micrometer on the classpath use the no-arg
+ * constructor — the Micrometer-aware constructor will throw {@link NoClassDefFoundError}
+ * only if Micrometer is absent at runtime.
  * <p>
  * Thread-safe; designed to be composed with other listeners via
  * {@link Listeners#compose(NodeListener...)}.
@@ -20,6 +27,21 @@ public final class LlmCostListener implements NodeListener {
 
     private final ConcurrentMap<String, UsageCounter> executionTotals = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, UsageCounter> nodeTotals = new ConcurrentHashMap<>();
+    private final MeterRegistry meterRegistry;
+
+    /** Creates a listener that accumulates in-memory totals only. */
+    public LlmCostListener() {
+        this.meterRegistry = null;
+    }
+
+    /**
+     * Creates a listener that accumulates in-memory totals and emits Micrometer counters.
+     *
+     * @param registry the Micrometer registry to publish metrics to
+     */
+    public LlmCostListener(MeterRegistry registry) {
+        this.meterRegistry = Objects.requireNonNull(registry, "registry");
+    }
 
     /**
      * Record token usage for a specific execution. Typically called from within
@@ -32,6 +54,12 @@ public final class LlmCostListener implements NodeListener {
     public void recordUsage(String executionId, int promptTokens, int completionTokens) {
         executionTotals.computeIfAbsent(executionId, k -> new UsageCounter())
                 .add(promptTokens, completionTokens);
+        if (meterRegistry != null) {
+            meterRegistry.counter("tracegraph.llm.prompt_tokens", "execution_id", executionId)
+                    .increment(promptTokens);
+            meterRegistry.counter("tracegraph.llm.completion_tokens", "execution_id", executionId)
+                    .increment(completionTokens);
+        }
     }
 
     /**
@@ -44,6 +72,12 @@ public final class LlmCostListener implements NodeListener {
     public void recordNodeUsage(String nodeName, int promptTokens, int completionTokens) {
         nodeTotals.computeIfAbsent(nodeName, k -> new UsageCounter())
                 .add(promptTokens, completionTokens);
+        if (meterRegistry != null) {
+            meterRegistry.counter("tracegraph.llm.node.prompt_tokens", "node", nodeName)
+                    .increment(promptTokens);
+            meterRegistry.counter("tracegraph.llm.node.completion_tokens", "node", nodeName)
+                    .increment(completionTokens);
+        }
     }
 
     /** Get aggregated prompt tokens for an execution. */
@@ -73,6 +107,11 @@ public final class LlmCostListener implements NodeListener {
     public int nodeCompletionTokens(String nodeName) {
         UsageCounter c = nodeTotals.get(nodeName);
         return c == null ? 0 : c.completionTokens.get();
+    }
+
+    @Override
+    public void onUsage(String nodeName, int promptTokens, int completionTokens) {
+        recordNodeUsage(nodeName, promptTokens, completionTokens);
     }
 
     @Override public void onEnter(String nodeName, Object state) {}

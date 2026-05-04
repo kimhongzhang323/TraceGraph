@@ -26,7 +26,6 @@ public final class OllamaLlmClient implements LlmClient {
 
     private final URI endpoint;
     private final String apiKey;
-    private final String defaultModel;
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final Duration requestTimeout;
@@ -34,7 +33,6 @@ public final class OllamaLlmClient implements LlmClient {
     private OllamaLlmClient(Builder b) {
         this.endpoint = Objects.requireNonNull(b.endpoint, "endpoint");
         this.apiKey = b.apiKey;
-        this.defaultModel = b.model;
         this.httpClient = b.httpClient != null ? b.httpClient
                 : HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.requestTimeout = b.requestTimeout;
