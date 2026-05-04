@@ -4,7 +4,7 @@
 
 **Goal:** Close five concrete parity gaps with langgraph4j (streaming, HITL interrupts, subgraphs, dynamic routing, graph visualization) without compromising TraceGraph's minimal-deps core or breaking existing replay/trace contracts.
 
-**Architecture:** All features land in `langgraph-core` except `TraceStep.children` (touches `langgraph-observability`) and the new starter REST endpoints (touches `langgraph-spring-boot-starter`). Streaming uses `java.util.concurrent.Flow` (JDK-only). Interrupts piggyback on the existing checkpoint mechanism. Subgraphs reuse the `Executor` machinery via a new `NodeKind.subgraph(...)` variant. Dynamic routing introduces a sibling `RoutingNode<S>` SAM. Visualization is pure string templating.
+**Architecture:** All features land in `tracegraph-core` except `TraceStep.children` (touches `tracegraph-observability`) and the new starter REST endpoints (touches `tracegraph-spring-boot-starter`). Streaming uses `java.util.concurrent.Flow` (JDK-only). Interrupts piggyback on the existing checkpoint mechanism. Subgraphs reuse the `Executor` machinery via a new `NodeKind.subgraph(...)` variant. Dynamic routing introduces a sibling `RoutingNode<S>` SAM. Visualization is pure string templating.
 
 **Tech Stack:** JDK 21, Maven, JUnit 5, AssertJ, SLF4J. Spring Boot 3.3.5 in starter. No new runtime deps.
 
@@ -14,7 +14,7 @@
 
 ## File map
 
-**`langgraph-core`:**
+**`tracegraph-core`:**
 - Create: `src/main/java/io/tracegraph/core/NodeEvent.java` (sealed event hierarchy)
 - Create: `src/main/java/io/tracegraph/core/NodeResult.java` (sealed; `Continue`/`GoTo`)
 - Create: `src/main/java/io/tracegraph/core/RoutingNode.java` (functional interface)
@@ -26,11 +26,11 @@
 - Modify: `src/main/java/io/tracegraph/core/exec/NodeKind.java` — add `subgraph` variant + `routing` variant
 - Modify: `src/main/java/io/tracegraph/core/exec/Executor.java` — interrupt seams, subgraph dispatch, routing dispatch
 
-**`langgraph-observability`:**
+**`tracegraph-observability`:**
 - Modify: `src/main/java/io/tracegraph/observability/replay/TraceStep.java` — add `children` component
 - Modify: file-based and JDBC trace stores to round-trip `children`
 
-**`langgraph-spring-boot-starter`:**
+**`tracegraph-spring-boot-starter`:**
 - Create: `src/main/java/io/tracegraph/boot/web/TraceStreamController.java` (SSE)
 - Modify: `src/main/java/io/tracegraph/boot/web/TraceController.java` — add `POST /tracegraph/traces/{id}/resume`
 - Modify: `TraceWebAutoConfiguration` to register the new controller(s)
@@ -42,8 +42,8 @@
 ## Task 1: `Status.INTERRUPTED` enum value
 
 **Files:**
-- Modify: `langgraph-core/src/main/java/io/tracegraph/core/Status.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/StatusTest.java`
+- Modify: `tracegraph-core/src/main/java/io/tracegraph/core/Status.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/StatusTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -63,7 +63,7 @@ class StatusTest {
 
 - [ ] **Step 2: Run test (expect FAIL — `INTERRUPTED` not declared)**
 
-`mvn -pl langgraph-core test -Dtest=StatusTest`
+`mvn -pl tracegraph-core test -Dtest=StatusTest`
 
 - [ ] **Step 3: Add the enum value**
 
@@ -74,7 +74,7 @@ Open `Status.java`, add `INTERRUPTED` to the enum list (additive, after `FAILED`
 - [ ] **Step 5: Commit**
 
 ```bash
-git add langgraph-core/src/main/java/io/tracegraph/core/Status.java langgraph-core/src/test/java/io/tracegraph/core/StatusTest.java
+git add tracegraph-core/src/main/java/io/tracegraph/core/Status.java tracegraph-core/src/test/java/io/tracegraph/core/StatusTest.java
 git commit -m "feat(core): add Status.INTERRUPTED for HITL pauses"
 ```
 
@@ -83,8 +83,8 @@ git commit -m "feat(core): add Status.INTERRUPTED for HITL pauses"
 ## Task 2: `NodeEvent<S>` sealed hierarchy
 
 **Files:**
-- Create: `langgraph-core/src/main/java/io/tracegraph/core/NodeEvent.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/NodeEventTest.java`
+- Create: `tracegraph-core/src/main/java/io/tracegraph/core/NodeEvent.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/NodeEventTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -137,7 +137,7 @@ public sealed interface NodeEvent<S> {
 - [ ] **Step 5: Commit**
 
 ```bash
-git add langgraph-core/src/main/java/io/tracegraph/core/NodeEvent.java langgraph-core/src/test/java/io/tracegraph/core/NodeEventTest.java
+git add tracegraph-core/src/main/java/io/tracegraph/core/NodeEvent.java tracegraph-core/src/test/java/io/tracegraph/core/NodeEventTest.java
 git commit -m "feat(core): add NodeEvent sealed hierarchy for streaming"
 ```
 
@@ -146,8 +146,8 @@ git commit -m "feat(core): add NodeEvent sealed hierarchy for streaming"
 ## Task 3: `Graph.stream(initial)` returns `Flow.Publisher<NodeEvent<S>>`
 
 **Files:**
-- Modify: `langgraph-core/src/main/java/io/tracegraph/core/Graph.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/GraphStreamingTest.java`
+- Modify: `tracegraph-core/src/main/java/io/tracegraph/core/Graph.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/GraphStreamingTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -253,7 +253,7 @@ private Graph<S> withListener(NodeListener l) {
 }
 ```
 
-(If `Listeners.compose` doesn't exist yet on the SPI, check `langgraph-core/src/main/java/io/tracegraph/core/spi/`. If absent, implement a 5-line composing wrapper inline instead — fan out to both listeners, swallow nothing.)
+(If `Listeners.compose` doesn't exist yet on the SPI, check `tracegraph-core/src/main/java/io/tracegraph/core/spi/`. If absent, implement a 5-line composing wrapper inline instead — fan out to both listeners, swallow nothing.)
 
 - [ ] **Step 4: Verify `ExecutionResult` exposes `lastCompletedNode()`** — if not, use `r.finalNode()` or whatever accessor exists; otherwise use the empty string. Adjust the test assertion accordingly.
 
@@ -262,7 +262,7 @@ private Graph<S> withListener(NodeListener l) {
 - [ ] **Step 6: Commit**
 
 ```bash
-git add langgraph-core/src/main/java/io/tracegraph/core/Graph.java langgraph-core/src/test/java/io/tracegraph/core/GraphStreamingTest.java
+git add tracegraph-core/src/main/java/io/tracegraph/core/Graph.java tracegraph-core/src/test/java/io/tracegraph/core/GraphStreamingTest.java
 git commit -m "feat(core): Graph.stream() returns Flow.Publisher<NodeEvent>"
 ```
 
@@ -271,7 +271,7 @@ git commit -m "feat(core): Graph.stream() returns Flow.Publisher<NodeEvent>"
 ## Task 4: Streaming error path test
 
 **Files:**
-- Modify: `langgraph-core/src/test/java/io/tracegraph/core/GraphStreamingTest.java`
+- Modify: `tracegraph-core/src/test/java/io/tracegraph/core/GraphStreamingTest.java`
 
 - [ ] **Step 1: Add failing test**
 
@@ -312,12 +312,12 @@ git commit -am "test(core): streaming surfaces Failed event then onError"
 ## Task 5: `Checkpoint.interruptPending` field
 
 **Files:**
-- Modify: `langgraph-core/src/main/java/io/tracegraph/core/Checkpoint.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/CheckpointTest.java` (create or extend)
+- Modify: `tracegraph-core/src/main/java/io/tracegraph/core/Checkpoint.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/CheckpointTest.java` (create or extend)
 
 - [ ] **Step 1: Read current `Checkpoint` definition**
 
-`Read langgraph-core/src/main/java/io/tracegraph/core/Checkpoint.java`
+`Read tracegraph-core/src/main/java/io/tracegraph/core/Checkpoint.java`
 
 - [ ] **Step 2: Write failing test**
 
@@ -337,9 +337,9 @@ Update record declaration. Update any call sites that construct `Checkpoint` (ex
 
 - [ ] **Step 4: Make Jackson tolerant** — confirm the JDBC store's Jackson deserialization accepts old payloads missing `interruptPending`. If `JsonCreator` is used, add `@JsonProperty(... required=false)`; if default constructor binding is used, no change needed (Jackson defaults to `false`).
 
-- [ ] **Step 5: Run all langgraph-core + langgraph-runtime tests, expect PASS**
+- [ ] **Step 5: Run all tracegraph-core + tracegraph-runtime tests, expect PASS**
 
-`mvn -pl langgraph-core,langgraph-runtime test`
+`mvn -pl tracegraph-core,tracegraph-runtime test`
 
 - [ ] **Step 6: Commit**
 
@@ -353,7 +353,7 @@ git commit -am "feat(core): add Checkpoint.interruptPending flag"
 
 **Files:**
 - Modify: `Graph.java` (Builder + Graph fields)
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/GraphInterruptTest.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/GraphInterruptTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -385,7 +385,7 @@ void resumeContinuesPastInterrupt() {
 }
 ```
 
-(`InMemoryCheckpointStore` lives in `langgraph-runtime`; if this test depends on it, place test in `langgraph-runtime` instead, or use a tiny inline test double.)
+(`InMemoryCheckpointStore` lives in `tracegraph-runtime`; if this test depends on it, place test in `tracegraph-runtime` instead, or use a tiny inline test double.)
 
 - [ ] **Step 2: Run, expect compile failure**
 
@@ -434,9 +434,9 @@ git commit -am "feat(core): interruptBefore/After for human-in-the-loop pauses"
 ## Task 7: `NodeResult` + `RoutingNode` SAM
 
 **Files:**
-- Create: `langgraph-core/src/main/java/io/tracegraph/core/NodeResult.java`
-- Create: `langgraph-core/src/main/java/io/tracegraph/core/RoutingNode.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/RoutingNodeTest.java`
+- Create: `tracegraph-core/src/main/java/io/tracegraph/core/NodeResult.java`
+- Create: `tracegraph-core/src/main/java/io/tracegraph/core/RoutingNode.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/RoutingNodeTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -536,9 +536,9 @@ git commit -am "feat(core): RoutingNode + NodeResult.goTo for dynamic routing"
 ## Task 8: Subgraph — `TraceStep.children` evolution
 
 **Files:**
-- Modify: `langgraph-observability/src/main/java/io/tracegraph/observability/replay/TraceStep.java`
+- Modify: `tracegraph-observability/src/main/java/io/tracegraph/observability/replay/TraceStep.java`
 - Modify: `JsonFileTraceStore.java`, `JdbcTraceStore.java` if they have explicit field handling
-- Test: `langgraph-observability/src/test/java/io/tracegraph/observability/replay/TraceStepTest.java`
+- Test: `tracegraph-observability/src/test/java/io/tracegraph/observability/replay/TraceStepTest.java`
 
 - [ ] **Step 1: Read `TraceStep.java`**
 
@@ -580,7 +580,7 @@ public record TraceStep<S>(
 
 - [ ] **Step 4: Update all call sites** that construct `TraceStep` to use `leaf(...)` or pass children explicitly.
 
-`Grep -r "new TraceStep<" langgraph-observability/src` and update each.
+`Grep -r "new TraceStep<" tracegraph-observability/src` and update each.
 
 - [ ] **Step 5: Update `JsonFileTraceStore` / `JdbcTraceStore`** — if Jackson handles records by component order, old JSON missing `children` will fail to deserialize. Configure ObjectMapper with `DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES = false`, OR add `@JsonCreator` with `@JsonProperty(value = "children", required = false, defaultValue = "[]")`. Test with a fixture old-format JSON.
 
@@ -596,7 +596,7 @@ public record TraceStep<S>(
 - [ ] **Step 8: Commit**
 
 ```bash
-git add langgraph-observability/ CHANGELOG.md
+git add tracegraph-observability/ CHANGELOG.md
 git commit -m "feat(observability)!: TraceStep.children for subgraph nesting"
 ```
 
@@ -606,7 +606,7 @@ git commit -m "feat(observability)!: TraceStep.children for subgraph nesting"
 
 **Files:**
 - Modify: `Graph.java`, `NodeKind.java`, `Executor.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/GraphSubgraphTest.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/GraphSubgraphTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -665,9 +665,9 @@ git commit -am "feat(core): Builder.subgraph composes Graph<S> as a node"
 ## Task 10: `Graph.toMermaid()`
 
 **Files:**
-- Create: `langgraph-core/src/main/java/io/tracegraph/core/viz/MermaidRenderer.java`
+- Create: `tracegraph-core/src/main/java/io/tracegraph/core/viz/MermaidRenderer.java`
 - Modify: `Graph.java` to expose `toMermaid()`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/viz/MermaidRendererTest.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/viz/MermaidRendererTest.java`
 
 - [ ] **Step 1: Write failing test (golden-string)**
 
@@ -725,9 +725,9 @@ git commit -am "feat(core): Graph.toMermaid() renders flowchart"
 ## Task 11: `Graph.toPlantUml()`
 
 **Files:**
-- Create: `langgraph-core/src/main/java/io/tracegraph/core/viz/PlantUmlRenderer.java`
+- Create: `tracegraph-core/src/main/java/io/tracegraph/core/viz/PlantUmlRenderer.java`
 - Modify: `Graph.java`
-- Test: `langgraph-core/src/test/java/io/tracegraph/core/viz/PlantUmlRendererTest.java`
+- Test: `tracegraph-core/src/test/java/io/tracegraph/core/viz/PlantUmlRendererTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -791,9 +791,9 @@ git commit -am "feat(core): renderers emit subgraph clusters"
 ## Task 13: Spring Boot starter — `POST /tracegraph/traces/{id}/resume`
 
 **Files:**
-- Modify: `langgraph-spring-boot-starter/.../TraceController.java`
+- Modify: `tracegraph-spring-boot-starter/.../TraceController.java`
 - Modify: `TraceWebAutoConfiguration.java` (only if the controller's bean wiring depends on a new collaborator)
-- Test: `langgraph-spring-boot-starter/.../TraceControllerResumeTest.java`
+- Test: `tracegraph-spring-boot-starter/.../TraceControllerResumeTest.java`
 
 - [ ] **Step 1: Write failing test**
 
@@ -847,7 +847,7 @@ git commit -am "feat(starter): POST /tracegraph/traces/{id}/resume"
 ## Task 14: Spring Boot starter — SSE streaming endpoint
 
 **Files:**
-- Create: `langgraph-spring-boot-starter/.../TraceStreamController.java`
+- Create: `tracegraph-spring-boot-starter/.../TraceStreamController.java`
 - Modify: `TraceWebAutoConfiguration.java`
 - Test: `TraceStreamControllerTest.java`
 
