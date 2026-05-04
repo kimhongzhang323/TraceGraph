@@ -50,6 +50,7 @@
         <module>tracegraph-observability</module>
         <module>tracegraph-spring-boot-starter</module>
         <module>tracegraph-connectors</module>
+        <module>tracegraph-rag</module>
     </modules>
 
     <properties>
@@ -62,14 +63,14 @@
         <assertj.version>3.27.7</assertj.version>
         <opentelemetry.version>1.61.0</opentelemetry.version>
         <spring-boot.version>4.0.6</spring-boot.version>
-        <jackson.version>2.21.2</jackson.version>
+        <jackson.version>2.21.3</jackson.version>
 
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
-        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
-        <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
-        <central-publishing-maven-plugin.version>0.6.0</central-publishing-maven-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -113,6 +114,11 @@
             <dependency>
                 <groupId>site.tracegraph</groupId>
                 <artifactId>tracegraph-connectors</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-rag</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

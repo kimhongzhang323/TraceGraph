@@ -7,6 +7,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Concurrent in-memory {@link MemoryStore} for tests and transient state.
+ */
 public final class InMemoryMemoryStore implements MemoryStore {
 
     private final ConcurrentMap<String, ConcurrentMap<String, Object>> scopes = new ConcurrentHashMap<>();

@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  * threads.
  *
  * <p>Three executor entry points: {@link #run(Object)} starts a fresh execution from the entry node,
- * {@link #resume(String, Object)} continues from the last checkpointed node, and
+ * {@link #resume(String)} continues from the last checkpointed node, and
  * {@link #runFrom(String, Object, String)} starts at an arbitrary node (used by replay/fork).
  *
  * <p>SPIs plug in via the builder: {@link NodeListener} for span-shaped observability,

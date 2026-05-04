@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * HTTP adapter for OpenAI-compatible chat-completions endpoints.
+ */
 public final class OpenAiLlmClient implements LlmClient {
 
     private final URI endpoint;
@@ -80,7 +83,23 @@ public final class OpenAiLlmClient implements LlmClient {
         for (ChatMessage m : request.messages()) {
             Map<String, Object> msg = new LinkedHashMap<>();
             msg.put("role", m.role().name().toLowerCase(Locale.ROOT));
-            msg.put("content", m.content());
+            if (!m.contentBlocks().isEmpty()) {
+                List<Map<String, Object>> parts = new ArrayList<>(m.contentBlocks().size() + 1);
+                if (!m.content().isEmpty()) {
+                    parts.add(Map.of("type", "text", "text", m.content()));
+                }
+                for (ContentBlock cb : m.contentBlocks()) {
+                    if (cb instanceof ContentBlock.TextBlock tb) {
+                        parts.add(Map.of("type", "text", "text", tb.text()));
+                    } else if (cb instanceof ContentBlock.ImageBlock ib) {
+                        parts.add(Map.of("type", "image_url", "image_url",
+                                Map.of("url", "data:" + ib.mimeType() + ";base64," + ib.base64Data())));
+                    }
+                }
+                msg.put("content", parts);
+            } else {
+                msg.put("content", m.content());
+            }
 
             // Assistant messages with tool calls
             if (m.role() == ChatMessage.Role.ASSISTANT && !m.toolCalls().isEmpty()) {
