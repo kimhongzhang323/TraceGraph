@@ -18,17 +18,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-public final class OpenAiLlmClient implements LlmClient {
+public final class OllamaLlmClient implements LlmClient {
+
+    private static final URI DEFAULT_ENDPOINT =
+            URI.create("http://localhost:11434/v1/chat/completions");
+    private static final String DEFAULT_MODEL = "llama3.2";
 
     private final URI endpoint;
     private final String apiKey;
+    private final String defaultModel;
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final Duration requestTimeout;
 
-    private OpenAiLlmClient(Builder b) {
+    private OllamaLlmClient(Builder b) {
         this.endpoint = Objects.requireNonNull(b.endpoint, "endpoint");
         this.apiKey = b.apiKey;
+        this.defaultModel = b.model;
         this.httpClient = b.httpClient != null ? b.httpClient
                 : HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.requestTimeout = b.requestTimeout;
@@ -45,7 +51,7 @@ public final class OpenAiLlmClient implements LlmClient {
         try {
             body = mapper.writeValueAsBytes(toRequestBody(request));
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to serialize OpenAI request", e);
+            throw new UncheckedIOException("Failed to serialize Ollama request", e);
         }
 
         HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
@@ -58,10 +64,10 @@ public final class OpenAiLlmClient implements LlmClient {
         try {
             response = httpClient.send(rb.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException e) {
-            throw new UncheckedIOException("OpenAI request failed", e);
+            throw new UncheckedIOException("Ollama request failed", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("OpenAI request interrupted", e);
+            throw new RuntimeException("Ollama request interrupted", e);
         }
 
         if (response.statusCode() / 100 != 2) {
@@ -71,7 +77,7 @@ public final class OpenAiLlmClient implements LlmClient {
         try {
             return parseResponse(mapper.readTree(response.body()));
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to parse OpenAI response", e);
+            throw new UncheckedIOException("Failed to parse Ollama response", e);
         }
     }
 
@@ -80,25 +86,8 @@ public final class OpenAiLlmClient implements LlmClient {
         for (ChatMessage m : request.messages()) {
             Map<String, Object> msg = new LinkedHashMap<>();
             msg.put("role", m.role().name().toLowerCase(Locale.ROOT));
-            if (!m.contentBlocks().isEmpty()) {
-                List<Map<String, Object>> parts = new ArrayList<>(m.contentBlocks().size() + 1);
-                if (!m.content().isEmpty()) {
-                    parts.add(Map.of("type", "text", "text", m.content()));
-                }
-                for (ContentBlock cb : m.contentBlocks()) {
-                    if (cb instanceof ContentBlock.TextBlock tb) {
-                        parts.add(Map.of("type", "text", "text", tb.text()));
-                    } else if (cb instanceof ContentBlock.ImageBlock ib) {
-                        parts.add(Map.of("type", "image_url", "image_url",
-                                Map.of("url", "data:" + ib.mimeType() + ";base64," + ib.base64Data())));
-                    }
-                }
-                msg.put("content", parts);
-            } else {
-                msg.put("content", m.content());
-            }
+            msg.put("content", m.content());
 
-            // Assistant messages with tool calls
             if (m.role() == ChatMessage.Role.ASSISTANT && !m.toolCalls().isEmpty()) {
                 List<Map<String, Object>> tcs = new ArrayList<>();
                 for (ToolCall tc : m.toolCalls()) {
@@ -111,7 +100,6 @@ public final class OpenAiLlmClient implements LlmClient {
                 msg.put("tool_calls", tcs);
             }
 
-            // Tool result messages
             if (m.role() == ChatMessage.Role.TOOL && m.toolCallId() != null) {
                 msg.put("tool_call_id", m.toolCallId());
             }
@@ -128,7 +116,6 @@ public final class OpenAiLlmClient implements LlmClient {
         body.put("temperature", request.temperature());
         body.put("max_tokens", request.maxTokens());
 
-        // Include tool definitions if present
         if (request.hasTools()) {
             List<Map<String, Object>> tools = new ArrayList<>();
             for (ToolDefinition td : request.tools()) {
@@ -149,7 +136,7 @@ public final class OpenAiLlmClient implements LlmClient {
     private static LlmResponse parseResponse(JsonNode root) {
         JsonNode choices = root.path("choices");
         if (!choices.isArray() || choices.isEmpty()) {
-            throw new IllegalStateException("OpenAI response missing 'choices'");
+            throw new IllegalStateException("Ollama response missing 'choices'");
         }
         JsonNode first = choices.get(0);
         JsonNode message = first.path("message");
@@ -165,7 +152,6 @@ public final class OpenAiLlmClient implements LlmClient {
         int prompt = usage.path("prompt_tokens").asInt(0);
         int completion = usage.path("completion_tokens").asInt(0);
 
-        // Parse tool calls if present
         List<ToolCall> toolCalls = List.of();
         JsonNode toolCallsNode = message.path("tool_calls");
         if (toolCallsNode.isArray() && !toolCallsNode.isEmpty()) {
@@ -184,8 +170,9 @@ public final class OpenAiLlmClient implements LlmClient {
     }
 
     public static final class Builder {
-        private URI endpoint = URI.create("https://api.openai.com/v1/chat/completions");
+        private URI endpoint = DEFAULT_ENDPOINT;
         private String apiKey;
+        private String model = DEFAULT_MODEL;
         private HttpClient httpClient;
         private Duration requestTimeout;
 
@@ -193,9 +180,10 @@ public final class OpenAiLlmClient implements LlmClient {
 
         public Builder endpoint(URI endpoint) { this.endpoint = endpoint; return this; }
         public Builder apiKey(String apiKey) { this.apiKey = apiKey; return this; }
+        public Builder model(String model) { this.model = model; return this; }
         public Builder httpClient(HttpClient httpClient) { this.httpClient = httpClient; return this; }
         public Builder requestTimeout(Duration timeout) { this.requestTimeout = timeout; return this; }
 
-        public OpenAiLlmClient build() { return new OpenAiLlmClient(this); }
+        public OllamaLlmClient build() { return new OllamaLlmClient(this); }
     }
 }
