@@ -52,6 +52,7 @@
         <module>tracegraph-connectors</module>
         <module>tracegraph-rag</module>
         <module>tracegraph-eval</module>
+        <module>tracegraph-a2a</module>
     </modules>
 
     <properties>
