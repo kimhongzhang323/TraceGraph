@@ -1,0 +1,3 @@
+# id: greet-user
+# version: 1.0
+Hello, {{name}}! You are working on {{project}}.

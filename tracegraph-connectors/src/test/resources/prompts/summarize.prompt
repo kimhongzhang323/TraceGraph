@@ -1,0 +1,5 @@
+# id: summarize
+# version: 2.1
+Summarize the following text in {{maxWords}} words or fewer:
+
+{{text}}
