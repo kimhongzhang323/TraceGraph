@@ -4,6 +4,30 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.3.0] - Unreleased
+
+### Added
+- **A2A protocol** (`tracegraph-a2a`): `Agent<S>`, `AgentBus` SPI, `InMemoryAgentBus` with virtual-thread dispatch, `AgentMessage` record with `of()`/`reply()` factories, `AgentTimeoutException`.
+- **A2A HTTP transport**: `A2AHttpClient`, `A2AMessage`, `A2AHttpException` for wire-compatible Google A2A JSON exchange.
+- **Spring Boot A2A auto-config**: `A2AAutoConfiguration` registers `InMemoryAgentBus`; `A2AController` exposes `POST /a2a/messages`.
+- **Eval module** (`tracegraph-eval`): `EvalCase`, `EvalSuite`, `EvalReport`, built-in metrics (`ExactMatch`, `Contains`, `Latency`), Markdown + JUnit XML reporters.
+- **Guardrail SPI** (`tracegraph-core`): `Guardrail<T>` functional interface, `GuardrailVerdict` with ALLOW/BLOCK/TRANSFORM; `andThen()` composition.
+- **Guardrail implementations** (`tracegraph-connectors`): `LengthGuardrail`, `RegexPiiGuardrail` (email/SSN/CC/phone), `JsonSchemaGuardrail`, `LlmRequestGuardrail`.
+- **Prompt templates** (`tracegraph-connectors`): `PromptTemplate` record with Mustache-style `{{var}}` rendering and SHA-256 checksum; `PromptLibrary` for classpath/directory loading.
+- **Structured output** (`tracegraph-connectors`): `StructuredOutput<T>` Jackson-backed extraction from `LlmResponse`.
+- **Annotation-based tool binding** (`tracegraph-connectors`): `@ToolMethod` + `ToolMethodAdapter` — converts Java methods to `Tool`/`ToolDefinition` via reflection.
+- **Multi-vendor embeddings** (`tracegraph-rag`): `OllamaEmbeddingClient`, `GeminiEmbeddingClient`, `CohereEmbeddingClient` joining the existing `OpenAiEmbeddingClient`.
+- **Embedding auto-config**: `EmbeddingAutoConfiguration` in starter selects provider via `tracegraph.rag.embedding.provider` property.
+- **Cost budget listener** (`tracegraph-observability`): `CostBudgetListener` with per-model pricing (`ModelPricing`) and configurable `budgetUsd`; throws `BudgetExceededException` on overrun.
+- **LLM cassette/VCR** (`tracegraph-connectors` test jar): `CassetteLlmClient` for recording and replaying LLM exchanges deterministically.
+- **Provider contract tests**: `LlmClientContractTest` validates 6 behaviors across 5 providers via cassette replay (no live API keys required in CI).
+- **Security CI** (`.github/workflows/security.yml`): OWASP dependency-check (fail CVSS ≥ 7), Gitleaks secrets scanning.
+- **SBOM generation**: CycloneDX JSON SBOM published as a release artifact via `mvn -Psbom package`.
+- **Mutation testing**: Nightly PIT run on `tracegraph-core` via `.github/workflows/mutation.yml`.
+- **macOS CI matrix** and JDK 25-ea allow-fail job added to `.github/workflows/ci.yml`.
+- **JMH benchmark module** (`tracegraph-bench`): graph dispatch and ReAct loop latency benchmarks; not published to Maven Central.
+- **Revapi `api-check` profile**: binary compatibility gate in parent POM; run with `mvn -Papi-check verify`.
+
 ## [0.2.0] - 2026-05-04
 
 ### Breaking
