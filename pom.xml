@@ -54,6 +54,7 @@
         <module>tracegraph-eval</module>
         <module>tracegraph-a2a</module>
         <module>tracegraph-bench</module>
+        <module>tracegraph-e2e</module>
     </modules>
 
     <properties>

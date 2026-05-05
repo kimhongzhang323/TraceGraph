@@ -5,3 +5,4 @@ io.tracegraph.boot.web.TraceWebAutoConfiguration
 io.tracegraph.boot.rag.RagAutoConfiguration
 io.tracegraph.boot.rag.EmbeddingAutoConfiguration
 io.tracegraph.boot.a2a.A2AAutoConfiguration
+io.tracegraph.boot.mcp.McpAutoConfiguration
