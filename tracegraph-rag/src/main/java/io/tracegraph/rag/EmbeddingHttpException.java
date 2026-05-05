@@ -1,7 +1,7 @@
 package io.tracegraph.rag;
 
 /**
- * Thrown by {@link OpenAiEmbeddingClient} when the HTTP response status is not 2xx.
+ * Thrown by embedding clients when the HTTP response status is not 2xx.
  *
  * <p>When {@code statusCode == -1}, the exception was not created from an HTTP response and
  * instead wraps a network or parsing error (see {@link #EmbeddingHttpException(String)},

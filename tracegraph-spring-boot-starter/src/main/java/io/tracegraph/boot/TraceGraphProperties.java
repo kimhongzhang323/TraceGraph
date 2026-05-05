@@ -12,6 +12,7 @@ public class TraceGraphProperties {
     private final Web web = new Web();
     private final Memory memory = new Memory();
     private final Llm llm = new Llm();
+    private final Rag rag = new Rag();
 
     public Web getWeb() {
         return web;
@@ -23,6 +24,10 @@ public class TraceGraphProperties {
 
     public Llm getLlm() {
         return llm;
+    }
+
+    public Rag getRag() {
+        return rag;
     }
 
     /**
@@ -113,6 +118,41 @@ public class TraceGraphProperties {
             public void setTable(String table) {
                 this.table = table;
             }
+        }
+    }
+
+    /**
+     * RAG auto-configuration properties.
+     */
+    public static class Rag {
+        private final Embedding embedding = new Embedding();
+
+        public Embedding getEmbedding() {
+            return embedding;
+        }
+
+        /**
+         * Embedding client selection properties.
+         */
+        public static class Embedding {
+            public enum Provider { OPENAI, OLLAMA, GEMINI, COHERE }
+
+            private Provider provider;
+            private String apiKey;
+            private String model;
+            private String baseUrl;
+
+            public Provider getProvider() { return provider; }
+            public void setProvider(Provider provider) { this.provider = provider; }
+
+            public String getApiKey() { return apiKey; }
+            public void setApiKey(String apiKey) { this.apiKey = apiKey; }
+
+            public String getModel() { return model; }
+            public void setModel(String model) { this.model = model; }
+
+            public String getBaseUrl() { return baseUrl; }
+            public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
         }
     }
 }

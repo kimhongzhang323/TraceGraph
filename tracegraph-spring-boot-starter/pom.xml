@@ -41,6 +41,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>site.tracegraph</groupId>
+            <artifactId>tracegraph-a2a</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <optional>true</optional>
