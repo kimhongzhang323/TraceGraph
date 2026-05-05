@@ -19,6 +19,7 @@ public interface Guardrail<T> {
      * If {@code this} blocks, the block verdict is returned immediately.
      */
     default Guardrail<T> andThen(Guardrail<T> next) {
+        if (next == null) throw new NullPointerException("next guardrail cannot be null");
         return input -> {
             GuardrailVerdict v = this.check(input);
             return v.isBlocked() ? v : next.check(input);

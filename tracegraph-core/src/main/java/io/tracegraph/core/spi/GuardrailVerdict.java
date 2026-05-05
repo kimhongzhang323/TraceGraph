@@ -25,4 +25,6 @@ public record GuardrailVerdict(Action action, String reason) {
     public boolean isAllowed() { return action == Action.ALLOW; }
 
     public boolean isBlocked() { return action == Action.BLOCK; }
+
+    public boolean isTransformed() { return action == Action.TRANSFORM; }
 }
