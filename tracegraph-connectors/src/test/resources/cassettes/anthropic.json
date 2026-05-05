@@ -1,0 +1,17 @@
+[
+  {
+    "request": {
+      "messages": [{"role": "USER", "content": "Hello", "toolCallId": null, "toolCalls": [], "contentBlocks": []}],
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.7,
+      "maxTokens": 100,
+      "tools": []
+    },
+    "response": {
+      "content": "Hello! How can I assist you today?",
+      "finish": "STOP",
+      "usage": {"promptTokens": 12, "completionTokens": 10},
+      "toolCalls": []
+    }
+  }
+]

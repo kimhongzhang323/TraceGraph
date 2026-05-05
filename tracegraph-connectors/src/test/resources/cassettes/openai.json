@@ -1,0 +1,17 @@
+[
+  {
+    "request": {
+      "messages": [{"role": "USER", "content": "Hello", "toolCallId": null, "toolCalls": [], "contentBlocks": []}],
+      "model": "gpt-4o",
+      "temperature": 0.7,
+      "maxTokens": 100,
+      "tools": []
+    },
+    "response": {
+      "content": "Hello! How can I help you today?",
+      "finish": "STOP",
+      "usage": {"promptTokens": 10, "completionTokens": 9},
+      "toolCalls": []
+    }
+  }
+]
