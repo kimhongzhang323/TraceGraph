@@ -25,6 +25,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
+          - macos-latest
 
     steps:
       - name: Check out repository
@@ -49,3 +50,21 @@ jobs:
             **/target/surefire-reports/*
             **/target/failsafe-reports/*
           if-no-files-found: ignore
+
+  jdk25-ea:
+    name: JDK 25 EA (allow-fail)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 25 EA
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25-ea"
+          cache: maven
+
+      - name: Build and test with Maven
+        run: mvn -B -ntp verify -DskipTests
