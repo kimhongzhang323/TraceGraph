@@ -9,7 +9,7 @@ Builds Javadoc for all modules, fails on warnings, and reports gaps.
 
 ## Inputs
 
-- `module` (optional) — limit to a single Maven module (e.g. `langgraph-core`). Default: all modules.
+- `module` (optional) — limit to a single Maven module (e.g. `tracegraph-core`). Default: all modules.
 
 ## Steps
 
@@ -50,6 +50,6 @@ Builds Javadoc for all modules, fails on warnings, and reports gaps.
 
 ## Convention
 
-- Public API in `langgraph-core` MUST have Javadoc (enforced via `failonwarning=true` in CI once added).
+- Public API in `tracegraph-core` MUST have Javadoc (enforced via `failonwarning=true` in CI once added).
 - Package-private types do not need Javadoc.
 - Tests do not need Javadoc.
