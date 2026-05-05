@@ -84,35 +84,83 @@ public final class Graph<S> {
         this.interruptAfter = Set.copyOf(b.interruptAfter);
     }
 
+    /**
+     * Create a new graph builder.
+     *
+     * @param <S> the state type carried through the graph
+     * @return a fresh builder
+     */
     public static <S> Builder<S> builder() {
         return new Builder<>();
     }
 
+    /**
+     * Execute the graph from its configured entry node with a generated execution id.
+     *
+     * @param initial initial state
+     * @return execution result
+     */
     public ExecutionResult<S> run(S initial) {
         return run(initial, Executor.newExecutionId());
     }
 
+    /**
+     * Execute the graph from its configured entry node using a caller-supplied execution id.
+     *
+     * @param initial initial state
+     * @param executionId stable execution id for checkpointing, tracing, and correlation
+     * @return execution result
+     */
     public ExecutionResult<S> run(S initial, String executionId) {
         Objects.requireNonNull(executionId, "executionId");
         return executor().run(initial, executionId);
     }
 
+    /**
+     * Resume a previously checkpointed execution.
+     *
+     * @param executionId execution id to resume
+     * @return resumed execution result when a checkpoint exists, otherwise an empty optional
+     */
     public Optional<ExecutionResult<S>> resume(String executionId) {
         Objects.requireNonNull(executionId, "executionId");
         ExecutionResult<S> result = executor().resume(executionId);
         return Optional.ofNullable(result);
     }
 
+    /**
+     * Start execution at an arbitrary node.
+     *
+     * <p>This is primarily useful for replay, forked execution, and advanced tooling.
+     *
+     * @param startNode node name to begin at
+     * @param seed state to inject at that node
+     * @param executionId execution id to use for the forked run
+     * @return execution result
+     */
     public ExecutionResult<S> runFrom(String startNode, S seed, String executionId) {
         Objects.requireNonNull(startNode, "startNode");
         Objects.requireNonNull(executionId, "executionId");
         return executor().runFrom(startNode, seed, executionId);
     }
 
+    /**
+     * Stream node lifecycle events while executing from the entry node.
+     *
+     * @param initial initial state
+     * @return publisher of execution events
+     */
     public Flow.Publisher<NodeEvent<S>> stream(S initial) {
         return stream(initial, Executor.newExecutionId());
     }
 
+    /**
+     * Stream node lifecycle events while executing with a caller-supplied execution id.
+     *
+     * @param initial initial state
+     * @param executionId execution id for the streamed run
+     * @return publisher of execution events
+     */
     public Flow.Publisher<NodeEvent<S>> stream(S initial, String executionId) {
         Objects.requireNonNull(executionId, "executionId");
         java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(1);
@@ -192,6 +240,11 @@ public final class Graph<S> {
         return traceRecorder;
     }
 
+    /**
+     * Return the memory store configured on the graph.
+     *
+     * @return configured memory store, or the no-op implementation when none was supplied
+     */
     public MemoryStore memoryStore() {
         return memoryStore;
     }
@@ -206,31 +259,72 @@ public final class Graph<S> {
         return nodes.keySet();
     }
 
+    /**
+     * Return all declared edges in builder insertion order.
+     *
+     * @return immutable edge list
+     */
     public List<Edge<S>> edges() {
         return edges;
     }
 
+    /**
+     * Return the configured entry node name.
+     *
+     * @return entry node name
+     */
     public String entry() {
         return entry;
     }
 
+    /**
+     * Return the names of nodes declared terminal.
+     *
+     * @return immutable terminal node set
+     */
     public Set<String> terminals() {
         return terminals;
     }
 
+    /**
+     * Resolve a named embedded subgraph when the node was registered through
+     * {@link Builder#subgraph(String, Graph)}.
+     *
+     * @param nodeName node to inspect
+     * @return embedded subgraph if present
+     */
     public Optional<Graph<S>> subgraph(String nodeName) {
         NodeKind<S> kind = nodes.get(nodeName);
         if (kind instanceof NodeKind.Subgraph<S> sg) return Optional.of(sg.inner());
         return Optional.empty();
     }
+
+    /**
+     * Render this graph as Mermaid flowchart source.
+     *
+     * @return Mermaid source
+     */
     public String toMermaid() {
         return io.tracegraph.core.viz.MermaidRenderer.render(this);
     }
 
+    /**
+     * Render this graph as PlantUML activity-style source.
+     *
+     * @return PlantUML source
+     */
     public String toPlantUml() {
         return io.tracegraph.core.viz.PlantUmlRenderer.render(this);
     }
 
+    /**
+     * Fluent builder for immutable {@link Graph} instances.
+     *
+     * <p>The builder is mutable and not thread-safe. Build once configuration is complete, then
+     * share the resulting graph across threads or executions.
+     *
+     * @param <S> the graph state type
+     */
     public static final class Builder<S> {
         private final Map<String, NodeKind<S>> nodes = new LinkedHashMap<>();
         private final List<Edge<S>> edges = new ArrayList<>();
@@ -249,10 +343,25 @@ public final class Graph<S> {
 
         private Builder() {}
 
+        /**
+         * Register a synchronous node.
+         *
+         * @param name unique node name
+         * @param node node implementation
+         * @return this builder
+         */
         public Builder<S> node(String name, Node<S> node) {
             return node(name, node, null);
         }
 
+        /**
+         * Register a synchronous node with a per-node retry policy.
+         *
+         * @param name unique node name
+         * @param node node implementation
+         * @param retryPolicy retry policy to apply to failures from this node
+         * @return this builder
+         */
         public Builder<S> node(String name, Node<S> node, RetryPolicy retryPolicy) {
             register(name, NodeKind.sync(node), retryPolicy);
             return this;
@@ -262,6 +371,14 @@ public final class Graph<S> {
             return routingNode(name, node, null);
         }
 
+        /**
+         * Register a routing node with a per-node retry policy.
+         *
+         * @param name unique node name
+         * @param node routing node implementation
+         * @param retryPolicy retry policy to apply to failures from this node
+         * @return this builder
+         */
         public Builder<S> routingNode(String name, RoutingNode<S> node, RetryPolicy retryPolicy) {
             register(name, NodeKind.routing(node), retryPolicy);
             return this;
@@ -271,6 +388,14 @@ public final class Graph<S> {
             return asyncNode(name, node, null);
         }
 
+        /**
+         * Register an asynchronous node with a per-node retry policy.
+         *
+         * @param name unique node name
+         * @param node async node implementation
+         * @param retryPolicy retry policy to apply to failures from this node
+         * @return this builder
+         */
         public Builder<S> asyncNode(String name, AsyncNode<S> node, RetryPolicy retryPolicy) {
             register(name, NodeKind.async(node), retryPolicy);
             return this;
@@ -280,6 +405,15 @@ public final class Graph<S> {
             return parallel(name, branches, merger, null);
         }
 
+        /**
+         * Register a synchronous parallel node.
+         *
+         * @param name unique node name
+         * @param branches branches to execute concurrently
+         * @param merger combines branch outputs into the next state
+         * @param retryPolicy retry policy to apply to the whole parallel step
+         * @return this builder
+         */
         public Builder<S> parallel(String name, List<Node<S>> branches, Merger<S> merger, RetryPolicy retryPolicy) {
             Objects.requireNonNull(branches, "branches");
             if (branches.isEmpty()) {
@@ -295,6 +429,15 @@ public final class Graph<S> {
             return parallelAsync(name, branches, merger, null);
         }
 
+        /**
+         * Register an asynchronous parallel node.
+         *
+         * @param name unique node name
+         * @param branches async branches to execute concurrently
+         * @param merger combines branch outputs into the next state
+         * @param retryPolicy retry policy to apply to the whole parallel step
+         * @return this builder
+         */
         public Builder<S> parallelAsync(String name, List<AsyncNode<S>> branches, Merger<S> merger, RetryPolicy retryPolicy) {
             Objects.requireNonNull(branches, "branches");
             if (branches.isEmpty()) {
@@ -322,6 +465,17 @@ public final class Graph<S> {
             return edge(from, to, null);
         }
 
+        /**
+         * Register an outgoing edge between two nodes.
+         *
+         * <p>Edges are evaluated in declaration order. For conditional routing, prefer a routing
+         * node when the destination cannot be described by a small set of predicates.
+         *
+         * @param from source node
+         * @param to destination node
+         * @param condition optional condition that must match for the edge to be taken
+         * @return this builder
+         */
         public Builder<S> edge(String from, String to, Predicate<S> condition) {
             Objects.requireNonNull(from, "from");
             Objects.requireNonNull(to, "to");
@@ -329,21 +483,45 @@ public final class Graph<S> {
             return this;
         }
 
+        /**
+         * Set the graph entry node.
+         *
+         * @param name entry node name
+         * @return this builder
+         */
         public Builder<S> entry(String name) {
             this.entry = Objects.requireNonNull(name, "entry");
             return this;
         }
 
+        /**
+         * Mark a node as terminal.
+         *
+         * @param name terminal node name
+         * @return this builder
+         */
         public Builder<S> terminal(String name) {
             terminals.add(Objects.requireNonNull(name, "terminal"));
             return this;
         }
 
+        /**
+         * Attach a node listener for lifecycle callbacks.
+         *
+         * @param listener listener to attach
+         * @return this builder
+         */
         public Builder<S> listener(NodeListener listener) {
             this.listener = listener;
             return this;
         }
 
+        /**
+         * Set the maximum number of node steps allowed in one execution.
+         *
+         * @param maxSteps positive step limit
+         * @return this builder
+         */
         public Builder<S> maxSteps(int maxSteps) {
             if (maxSteps <= 0) {
                 throw new IllegalArgumentException("maxSteps must be > 0");
@@ -357,21 +535,47 @@ public final class Graph<S> {
             return this;
         }
 
+        /**
+         * Configure checkpoint persistence for resume support.
+         *
+         * @param store checkpoint store
+         * @return this builder
+         */
         public Builder<S> checkpointStore(CheckpointStore store) {
             this.checkpointStore = Objects.requireNonNull(store, "store");
             return this;
         }
 
+        /**
+         * Configure execution trace recording.
+         *
+         * @param recorder trace recorder
+         * @return this builder
+         */
         public Builder<S> traceRecorder(TraceRecorder recorder) {
             this.traceRecorder = Objects.requireNonNull(recorder, "recorder");
             return this;
         }
 
+        /**
+         * Configure shared execution memory.
+         *
+         * @param store memory store
+         * @return this builder
+         */
         public Builder<S> memoryStore(MemoryStore store) {
             this.memoryStore = Objects.requireNonNull(store, "store");
             return this;
         }
 
+        /**
+         * Provide an executor service for async and parallel work.
+         *
+         * <p>When omitted, TraceGraph creates a virtual-thread executor per run.
+         *
+         * @param executor executor service to use
+         * @return this builder
+         */
         public Builder<S> executor(ExecutorService executor) {
             this.userExecutor = Objects.requireNonNull(executor, "executor");
             return this;
@@ -401,11 +605,22 @@ public final class Graph<S> {
             return this;
         }
 
+        /**
+         * Request an interrupt checkpoint after the named nodes complete.
+         *
+         * @param names node names
+         * @return this builder
+         */
         public Builder<S> interruptAfter(String... names) {
             for (String n : names) interruptAfter.add(Objects.requireNonNull(n, "interruptAfter name"));
             return this;
         }
 
+        /**
+         * Validate the configured graph and create an immutable runtime instance.
+         *
+         * @return compiled graph
+         */
         public Graph<S> build() {
             validate();
             return new Graph<>(this);
