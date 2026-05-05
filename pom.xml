@@ -51,6 +51,7 @@
         <module>tracegraph-spring-boot-starter</module>
         <module>tracegraph-connectors</module>
         <module>tracegraph-rag</module>
+        <module>tracegraph-eval</module>
     </modules>
 
     <properties>
