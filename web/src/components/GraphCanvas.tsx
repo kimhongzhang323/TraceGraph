@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -46,8 +46,7 @@ const NODE_ACCENTS: Record<string, string> = {
   ship:     '#111827',
 }
 
-function CircleNode({ data }: NodeProps) {
-  const d = data as CircleNodeData
+function CircleNode({ data }: NodeProps<Node<CircleNodeData>>) {
   const r = 22
   const size = r * 2
 
@@ -60,13 +59,13 @@ function CircleNode({ data }: NodeProps) {
         height={size}
         style={{ overflow: 'visible', display: 'block' }}
       >
-        {d.selected && (
+        {data.selected && (
           <circle
             cx={r}
             cy={r}
             r={r + 7}
             fill="none"
-            stroke={d.accent}
+            stroke={data.accent}
             strokeWidth={2}
             opacity={0.5}
           />
@@ -75,10 +74,10 @@ function CircleNode({ data }: NodeProps) {
           cx={r}
           cy={r}
           r={r}
-          fill={d.accent}
-          opacity={d.dimmed ? 0.25 : 1}
+          fill={data.accent}
+          opacity={data.dimmed ? 0.25 : 1}
         />
-        {d.entry && (
+        {data.entry && (
           <circle cx={r} cy={r} r={r - 5} fill="none" stroke="white" strokeWidth={1.5} opacity={0.6} />
         )}
       </svg>
@@ -91,12 +90,12 @@ function CircleNode({ data }: NodeProps) {
           transform: 'translateX(-50%)',
           fontFamily: 'monospace',
           fontSize: 11,
-          color: d.dimmed ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)',
+          color: data.dimmed ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
         }}
       >
-        {d.label}
+        {data.label}
       </div>
 
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
@@ -242,30 +241,34 @@ function GraphCanvasInner({
   )
 
   const initialNodes = useMemo(
-    () => buildRFNodes(studioNodes, positions, selectedNodeName, selectedEdgeIndex, edges, lensMode),
+    () => buildRFNodes(studioNodes, positions, null, null, edges, 'topology'),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [positions],
   )
 
   const initialEdges = useMemo(
-    () => buildRFEdges(edges, selectedEdgeIndex, selectedNodeName, lensMode),
+    () => buildRFEdges(edges, null, null, 'topology'),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [positions],
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-  const [rfEdges, , onEdgesChange] = useEdgesState(initialEdges)
+  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(initialEdges)
 
   // Sync visual state (selection + lens) into node/edge data without re-running layout
-  useMemo(() => {
-    setNodes((prev) =>
-      buildRFNodes(studioNodes, positions, selectedNodeName, selectedEdgeIndex, edges, lensMode).map((next, i) => ({
-        ...prev[i],
+  useEffect(() => {
+    setNodes((prev) => {
+      const prevById = new Map(prev.map((n) => [n.id, n]))
+      return buildRFNodes(studioNodes, positions, selectedNodeName, selectedEdgeIndex, edges, lensMode).map((next) => ({
+        ...(prevById.get(next.id) ?? next),
         data: next.data,
-      })),
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNodeName, selectedEdgeIndex, lensMode])
+      }))
+    })
+  }, [selectedNodeName, selectedEdgeIndex, lensMode, studioNodes, positions, edges, setNodes])
+
+  useEffect(() => {
+    setRfEdges(buildRFEdges(edges, selectedEdgeIndex, selectedNodeName, lensMode))
+  }, [selectedEdgeIndex, selectedNodeName, lensMode, edges, setRfEdges])
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => onSelectNode(node.id),
@@ -274,10 +277,10 @@ function GraphCanvasInner({
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: RFEdge) => {
-      const idx = rfEdges.findIndex((e) => e.id === edge.id)
-      if (idx !== -1) onSelectEdge(idx)
+      const idx = parseInt(edge.id.slice(2), 10)
+      if (!isNaN(idx)) onSelectEdge(idx)
     },
-    [rfEdges, onSelectEdge],
+    [onSelectEdge],
   )
 
   return (
