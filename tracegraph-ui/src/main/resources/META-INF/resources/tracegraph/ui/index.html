@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TraceGraph &mdash; Typed agent runtime for the JVM</title>
+<meta name="description" content="A production-grade agent runtime for the JVM. Typed graphs, durable memory, deep observability." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Geist', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+          mono: ['Geist Mono', 'ui-monospace', 'Menlo', 'monospace'],
+          display: ['Newsreader', 'Geist', 'serif'],
+        },
+        colors: {
+          ink: {
+            50:  '#f7f7f7',
+            100: '#ededed',
+            200: '#dcdcdc',
+            300: '#bebebe',
+            400: '#8e8e8e',
+            500: '#6f6f6f',
+            600: '#525252',
+            700: '#3d3d3d',
+            800: '#1f1f1f',
+            900: '#141414',
+            950: '#0a0a0a',
+          },
+          accent: {
+            50:  '#eef9f3',
+            100: '#d4f1e0',
+            500: '#0d8f63',
+            600: '#0b7a55',
+            700: '#0a6447',
+          },
+        },
+        borderRadius: {
+          xl: '0.875rem',
+          '2xl': '1.25rem',
+          '3xl': '1.75rem',
+        },
+        boxShadow: {
+          'soft': '0 1px 0 rgba(0,0,0,0.02), 0 6px 24px -8px rgba(0,0,0,0.06)',
+          'card': '0 1px 0 rgba(0,0,0,0.02), 0 12px 48px -16px rgba(0,0,0,0.08)',
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background: #fafafa;
+    color: #0a0a0a;
+  }
+  .dark body { background: #0a0a0a; color: #fafafa; }
+
+  .display {
+    font-family: 'Geist', ui-sans-serif, system-ui;
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+  .display-tight {
+    font-family: 'Geist', ui-sans-serif, system-ui;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    line-height: 1.0;
+  }
+
+  .mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+
+  .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+  .scroll-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 99px; }
+  .dark .scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
+
+  .code-block {
+    font-family: 'Geist Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .code-block .kw { color: #c084fc; }
+  .code-block .ty { color: #67e8f9; }
+  .code-block .st { color: #fde68a; }
+  .code-block .nm { color: #f9a8d4; }
+  .code-block .cm { color: #6b7280; font-style: italic; }
+  .code-block .pn { color: #9ca3af; }
+
+  .light-code .kw { color: #7c3aed; }
+  .light-code .ty { color: #0891b2; }
+  .light-code .st { color: #b45309; }
+  .light-code .nm { color: #be185d; }
+  .light-code .cm { color: #6b7280; font-style: italic; }
+  .light-code .pn { color: #6b7280; }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .dark .grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+  }
+
+  .hairline { border-color: rgba(0,0,0,0.08); }
+  .dark .hairline { border-color: rgba(255,255,255,0.08); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease-out both; }
+
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(13, 143, 99, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(13, 143, 99, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(13, 143, 99, 0); }
+  }
+  .pulse-dot {
+    animation: pulse-ring 2s infinite;
+  }
+
+  .arrow-link .arrow { transition: transform .2s ease; }
+  .arrow-link:hover .arrow { transform: translateX(3px); }
+
+  .hero-gradient {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(13,143,99,0.08), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,0,0,0.04), transparent 60%);
+  }
+  .dark .hero-gradient {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(13,143,99,0.18), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255,255,255,0.04), transparent 60%);
+  }
+</style>
+
+<!-- React 18 -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react" src="src/icons.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/data.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/ui.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/header.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/footer.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/home.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/docs.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/trace.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/studio.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/changelog.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/api.jsx"></script>
+  <script type="text/babel" data-presets="react" src="src/app.jsx"></script>
+</body>
+</html>

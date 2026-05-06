@@ -34,6 +34,7 @@ public class AppConfiguration {
                         new AgentState(state.input(), "[" + state.output() + "]"))
                 .entry("process")
                 .edge("process", "format")
+                .terminal("format")
                 .listener(listener)
                 .traceRecorder(traceRecorder)
                 .build();
