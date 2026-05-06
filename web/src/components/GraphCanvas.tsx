@@ -15,9 +15,7 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import * as d3Force from 'd3-force'
-import type { Edge, StudioNode } from '@/types'
-
-type LensMode = 'topology' | 'relations' | 'execution'
+import type { Edge, LensMode, StudioNode } from '@/types'
 
 interface GraphCanvasProps {
   studioNodes: StudioNode[]

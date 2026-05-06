@@ -88,3 +88,6 @@ export interface ApiGroup {
   group: string
   endpoints: ApiEndpoint[]
 }
+
+export type LensMode = 'topology' | 'relations' | 'execution'
+

@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react'
 import { Badge, Button, GraphCanvas, Icon, Panel } from '@/components'
 import { EDGES, STUDIO_NODES } from '@/data/mock'
 import { api } from '@/lib/api'
-import type { Edge, GraphComplexity } from '@/types'
+import type { Edge, GraphComplexity, LensMode } from '@/types'
 
 type Selection =
   | { type: 'node'; nodeName: string }
   | { type: 'edge'; edgeIndex: number }
-
-type LensMode = 'topology' | 'relations' | 'execution'
 
 const NODE_META: Record<
   string,
