@@ -300,6 +300,31 @@ public final class Graph<S> {
     }
 
     /**
+     * Return the branch count for each parallel node, keyed by node name.
+     * Non-parallel nodes are not included.
+     *
+     * @return immutable map of parallel node name to branch count
+     */
+    public Map<String, Integer> parallelBranchCounts() {
+        Map<String, Integer> result = new LinkedHashMap<>();
+        for (Map.Entry<String, NodeKind<S>> e : nodes.entrySet()) {
+            if (e.getValue() instanceof NodeKind.Parallel<S> p) {
+                result.put(e.getKey(), p.branches().size());
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    /**
+     * Compute structural complexity metrics for this graph.
+     *
+     * @return complexity record
+     */
+    public io.tracegraph.core.analysis.GraphComplexity complexity() {
+        return io.tracegraph.core.analysis.GraphComplexity.of(this);
+    }
+
+    /**
      * Render this graph as Mermaid flowchart source.
      *
      * @return Mermaid source

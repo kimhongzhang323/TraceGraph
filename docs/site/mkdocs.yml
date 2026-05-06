@@ -29,7 +29,21 @@ nav:
   - Home: index.md
   - Getting Started:
     - Installation: getting-started/installation.md
+    - Your First Graph: getting-started/first-graph.md
     - Quickstart: getting-started/quickstart.md
+    - Spring Boot Setup: getting-started/spring-boot.md
+  - Tutorial:
+    - "01 — Nodes & Edges": tutorial/01-nodes-and-edges.md
+    - "02 — State & Context": tutorial/02-state-and-context.md
+    - "03 — Retries & Failures": tutorial/03-retries-and-failures.md
+    - "04 — Checkpoints & Resume": tutorial/04-checkpoints-and-resume.md
+    - "05 — Parallel & Send": tutorial/05-parallel-and-send.md
+    - "06 — Memory": tutorial/06-memory.md
+    - "07 — LLM & Tools": tutorial/07-llm-and-tools.md
+    - "08 — ReAct Agent": tutorial/08-react-agent.md
+    - "09 — RAG Pipeline": tutorial/09-rag-pipeline.md
+    - "10 — Replay & Diff": tutorial/10-replay-and-diff.md
+    - "11 — HITL Interrupts": tutorial/11-hitl-interrupts.md
   - Concepts:
     - Graph & Nodes: concepts/graph-nodes.md
     - State & Context: concepts/state-context.md
@@ -38,6 +52,13 @@ nav:
     - Memory: concepts/memory.md
     - Connectors: concepts/connectors.md
     - RAG: concepts/rag.md
+  - Reference:
+    - REST API: reference/rest-api.md
+    - Configuration: reference/configuration.md
+    - Graph Complexity: reference/complexity.md
+  - Trace UI:
+    - Overview: trace-ui/overview.md
+    - Views Guide: trace-ui/views.md
   - Spring Boot: spring-boot.md
   - Cookbook:
     - ReAct Agent: cookbook/react-agent.md
@@ -54,3 +75,8 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - attr_list
+  - toc:
+      permalink: true
+
+plugins:
+  - search

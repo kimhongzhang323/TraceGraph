@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TraceGraph UI</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">TraceGraph</div>
+      <ul class="nav-links">
+        <li><a href="#/traces" data-route="traces">Traces</a></li>
+        <li><a href="#/graph" data-route="graph">Graph</a></li>
+        <li><a href="#/diff" data-route="diff">Diff</a></li>
+      </ul>
+    </nav>
+    <main id="view" class="main-content">
+      <p class="loading">Loading…</p>
+    </main>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

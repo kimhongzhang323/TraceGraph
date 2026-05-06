@@ -55,6 +55,7 @@
         <module>tracegraph-a2a</module>
         <module>tracegraph-bench</module>
         <module>tracegraph-e2e</module>
+        <module>tracegraph-ui</module>
     </modules>
 
     <properties>
@@ -138,6 +139,11 @@
             <dependency>
                 <groupId>site.tracegraph</groupId>
                 <artifactId>tracegraph-a2a</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-ui</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
