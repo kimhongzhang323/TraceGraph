@@ -187,7 +187,7 @@ export function Studio() {
               highlightedEdges={highlightedEdges}
               onSelectEdge={(edgeIndex) => setSelection({ type: 'edge', edgeIndex })}
             />
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 z-0">
               <GraphCanvas
                 studioNodes={STUDIO_NODES}
                 edges={EDGES}
@@ -349,33 +349,30 @@ function CanvasOverlay({
 }
 
 function MiniMap({ focusNode }: { focusNode: string | null }) {
+  const cols = 3
+  const fw = 210 / cols
+  const fh = 74 / Math.ceil(STUDIO_NODES.length / cols)
+  const nodeIndex = new Map(STUDIO_NODES.map((n, i) => [n.name, i]))
+
   return (
     <svg viewBox="0 0 210 74" className="h-full w-full">
       {EDGES.map((edge, index) => {
-        const from = STUDIO_NODES.find((n) => n.name === edge.from)
-        const to = STUDIO_NODES.find((n) => n.name === edge.to)
-        if (!from || !to) return null
-        const fromIndex = STUDIO_NODES.indexOf(from)
-        const toIndex = STUDIO_NODES.indexOf(to)
-        const cols = 3
-        const fw = 210 / cols
-        const fh = 74 / Math.ceil(STUDIO_NODES.length / cols)
+        const fromIdx = nodeIndex.get(edge.from)
+        const toIdx = nodeIndex.get(edge.to)
+        if (fromIdx == null || toIdx == null) return null
         return (
           <line
             key={index}
-            x1={(fromIndex % cols) * fw + fw / 2}
-            y1={Math.floor(fromIndex / cols) * fh + fh / 2}
-            x2={(toIndex % cols) * fw + fw / 2}
-            y2={Math.floor(toIndex / cols) * fh + fh / 2}
+            x1={(fromIdx % cols) * fw + fw / 2}
+            y1={Math.floor(fromIdx / cols) * fh + fh / 2}
+            x2={(toIdx % cols) * fw + fw / 2}
+            y2={Math.floor(toIdx / cols) * fh + fh / 2}
             stroke="rgba(15,23,42,0.25)"
             strokeWidth="1.4"
           />
         )
       })}
       {STUDIO_NODES.map((node, index) => {
-        const cols = 3
-        const fw = 210 / cols
-        const fh = 74 / Math.ceil(STUDIO_NODES.length / cols)
         const meta = NODE_META[node.name]
         return (
           <circle
