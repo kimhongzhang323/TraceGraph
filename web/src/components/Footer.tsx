@@ -16,7 +16,7 @@ export function Footer() {
         {[
           {title:'Product', items:[['Docs','/docs'],['Trace explorer','/trace'],['Graph studio','/studio'],['Changelog','/changelog']] as [string,string][]},
           {title:'Reference',items:[['Quickstart','/docs'],['REST API','/api'],['Javadoc','#'],['Examples','#']] as [string,string][]},
-          {title:'Project',  items:[['GitHub','#'],['Maven Central','#'],['License — Apache 2.0','#']] as [string,string][]},
+          {title:'Project',  items:[['GitHub','https://github.com/kimhongzhang323/TraceGraph'],['Maven Central','#'],['License — Apache 2.0','#']] as [string,string][]},
         ].map((col) => (
           <div key={col.title}>
             <h5 className="mono text-[10.5px] uppercase tracking-[0.14em] text-ink-500 mb-3">{col.title}</h5>

@@ -229,7 +229,7 @@ export function Studio() {
               ['Cyclomatic', complexity.cyclomaticComplexity],
               ['Parallel branches', complexity.parallelBranches],
               ['Subgraph depth', complexity.subgraphDepth],
-              ['Hotspots', complexity.hotspots.length],
+              ['Hotspots', (complexity.hotspots ?? []).length],
             ] as [string, number][]).map(([label, val]) => (
               <div key={label}>
                 <div className="mono text-[10px] text-ink-500 uppercase tracking-wider">{label}</div>

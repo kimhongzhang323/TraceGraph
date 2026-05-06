@@ -46,7 +46,7 @@ export function Header({ route, theme, setTheme }: HeaderProps) {
             aria-label="Toggle theme">
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
           </button>
-          <a href="https://github.com/tracegraph/tracegraph"
+          <a href="https://github.com/kimhongzhang323/TraceGraph"
              className="w-8 h-8 rounded-md inline-flex items-center justify-center text-ink-600 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-900"
              aria-label="GitHub" target="_blank" rel="noreferrer">
             <Icon name="github" size={15} />
