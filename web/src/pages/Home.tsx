@@ -1,4 +1,4 @@
-import { SectionLabel, StatusDot, Button, Code, CodeBlock, Badge } from '@/components'
+import { SectionLabel, StatusDot, Button, Code, CodeBlock, Badge, Icon } from '@/components'
 import { MODULES } from '@/data/mock'
 import { highlightJava } from '@/lib/highlight'
 
@@ -49,12 +49,13 @@ function Hero() {
 
 function HeroViz() {
   const steps = [
-    { i:0, name:'validate', dur:12  },
-    { i:1, name:'enrich',   dur:184 },
-    { i:2, name:'score',    dur:312 },
-    { i:3, name:'charge',   dur:421 },
-    { i:4, name:'ship',     dur:92  },
+    { i: 0, name: 'validate', dur: 12 },
+    { i: 1, name: 'enrich', dur: 184 },
+    { i: 2, name: 'score', dur: 312 },
+    { i: 3, name: 'charge', dur: 421 },
+    { i: 4, name: 'ship', dur: 92 },
   ]
+
   return (
     <div className="rounded-3xl border hairline bg-white dark:bg-ink-950 shadow-card overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b hairline">
@@ -81,23 +82,48 @@ function HeroViz() {
               <path d="M210 290 L360 350" /><path d="M510 290 L360 350" /><path d="M360 400 L360 440" />
             </g>
             {([
-              { x:300,y:32, w:120,h:38,label:'entry',solid:true,accent:false,pulse:false,sub:'' },
-              { x:300,y:130,w:120,h:50,label:'validate',solid:false,accent:true,pulse:false,sub:'12ms · ok' },
-              { x:150,y:240,w:120,h:50,label:'enrich',solid:false,accent:false,pulse:false,sub:'parallel · 3' },
-              { x:450,y:240,w:120,h:50,label:'score',solid:false,accent:false,pulse:false,sub:'async · llm' },
-              { x:300,y:350,w:120,h:50,label:'charge',solid:false,accent:true,pulse:true,sub:'retry 1/3' },
-              { x:320,y:438,w:80, h:32,label:'terminal',solid:true,accent:false,pulse:false,sub:'' },
+              { x: 300, y: 32, w: 120, h: 38, label: 'entry', solid: true, accent: false, pulse: false, sub: '' },
+              { x: 300, y: 130, w: 120, h: 50, label: 'validate', solid: false, accent: true, pulse: false, sub: '12ms · ok' },
+              { x: 150, y: 240, w: 120, h: 50, label: 'enrich', solid: false, accent: false, pulse: false, sub: 'parallel · 3' },
+              { x: 450, y: 240, w: 120, h: 50, label: 'score', solid: false, accent: false, pulse: false, sub: 'async · llm' },
+              { x: 300, y: 350, w: 120, h: 50, label: 'charge', solid: false, accent: true, pulse: true, sub: 'retry 1/3' },
+              { x: 320, y: 438, w: 80, h: 32, label: 'terminal', solid: true, accent: false, pulse: false, sub: '' },
             ] as const).map((n, i) => (
               <g key={i}>
-                <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="8"
+                <rect
+                  x={n.x}
+                  y={n.y}
+                  width={n.w}
+                  height={n.h}
+                  rx="8"
                   fill={n.solid ? 'currentColor' : (n.accent ? 'rgba(13,143,99,0.08)' : 'white')}
                   stroke={n.accent ? '#0d8f63' : 'currentColor'}
                   strokeWidth={n.accent ? 1.6 : 1.4}
-                  className={n.solid ? '' : 'dark:fill-ink-950'} />
-                <text x={n.x + n.w / 2} y={n.y + (n.sub ? 22 : n.h / 2 + 4)} textAnchor="middle"
-                  fill={n.solid ? 'white' : 'currentColor'} className="mono fill-ink-950 dark:fill-white" fontSize="12" fontWeight="500">{n.label}</text>
-                {n.sub && <text x={n.x + n.w / 2} y={n.y + 38} textAnchor="middle" className="mono"
-                  fill={n.accent ? '#0d8f63' : '#6b7280'} fontSize="10">{n.sub}</text>}
+                  className={n.solid ? '' : 'dark:fill-ink-950'}
+                />
+                <text
+                  x={n.x + n.w / 2}
+                  y={n.y + (n.sub ? 22 : n.h / 2 + 4)}
+                  textAnchor="middle"
+                  fill={n.solid ? 'white' : 'currentColor'}
+                  className="mono fill-ink-950 dark:fill-white"
+                  fontSize="12"
+                  fontWeight="500"
+                >
+                  {n.label}
+                </text>
+                {n.sub && (
+                  <text
+                    x={n.x + n.w / 2}
+                    y={n.y + 38}
+                    textAnchor="middle"
+                    className="mono"
+                    fill={n.accent ? '#0d8f63' : '#6b7280'}
+                    fontSize="10"
+                  >
+                    {n.sub}
+                  </text>
+                )}
               </g>
             ))}
           </svg>
@@ -135,10 +161,11 @@ function HeroViz() {
 function KeyStats() {
   const stats = [
     ['Virtual threads', '1·per node', 'Default executor: virtual-thread-per-task. Lazy, scoped to the run.'],
-    ['Retry policies',  'fixed · exp', 'Per-node or graph-wide. Idempotency keys exposed via ctx.'],
-    ['Replay fidelity', 'step·level',  'Re-execute from any saved step. Forks track lineage automatically.'],
-    ['Heavy core deps', 'zero',        'SLF4J only. No Spring, no Jackson, no OpenTelemetry in core.'],
+    ['Retry policies', 'fixed · exp', 'Per-node or graph-wide. Idempotency keys exposed via ctx.'],
+    ['Replay fidelity', 'step·level', 'Re-execute from any saved step. Forks track lineage automatically.'],
+    ['Heavy core deps', 'zero', 'SLF4J only. No Spring, no Jackson, no OpenTelemetry in core.'],
   ] as const
+
   return (
     <section className="border-t hairline">
       <div className="max-w-[1320px] mx-auto px-6 lg:px-8 py-20 grid md:grid-cols-4 gap-px bg-ink-100 dark:bg-ink-900 rounded-2xl overflow-hidden">
@@ -156,13 +183,14 @@ function KeyStats() {
 
 function FeatureGrid() {
   const features = [
-    { icon:'box',         title:'Typed graphs, plain Java',  body:'Build graphs from records and lambdas. Compile-time safety; no DSL, no annotations, no reflection.' },
-    { icon:'history',     title:'Replay any execution',      body:'Plug in a TraceRecorder. Re-run a saved trace step by step against the same graph — or a modified one.' },
-    { icon:'refresh-cw',  title:'Retries with backoff',      body:'Fixed or exponential, per-node or graph-default. Errors short-circuit. onRetry fires on each attempt.' },
-    { icon:'database',    title:'Checkpoints & resume',      body:'Pluggable CheckpointStore writes after each node exit. Survive process boundaries; resume by id.' },
-    { icon:'activity',    title:'OpenTelemetry, native',     body:'One span per node, retries as span events, errors set StatusCode.ERROR. State diffs as events.' },
-    { icon:'package',     title:'Spring Boot starter',       body:'Auto-config for all four SPIs, REST inspector at /tracegraph/traces, SSE streaming.' },
+    { icon: 'box', title: 'Typed graphs, plain Java', body: 'Build graphs from records and lambdas. Compile-time safety; no DSL, no annotations, no reflection.' },
+    { icon: 'history', title: 'Replay any execution', body: 'Plug in a TraceRecorder. Re-run a saved trace step by step against the same graph — or a modified one.' },
+    { icon: 'refresh-cw', title: 'Retries with backoff', body: 'Fixed or exponential, per-node or graph-default. Errors short-circuit. onRetry fires on each attempt.' },
+    { icon: 'database', title: 'Checkpoints & resume', body: 'Pluggable CheckpointStore writes after each node exit. Survive process boundaries; resume by id.' },
+    { icon: 'activity', title: 'OpenTelemetry, native', body: 'One span per node, retries as span events, errors set StatusCode.ERROR. State diffs as events.' },
+    { icon: 'package', title: 'Spring Boot starter', body: 'Auto-config for all four SPIs, REST inspector at /tracegraph/traces, SSE streaming.' },
   ]
+
   return (
     <section className="border-t hairline">
       <div className="max-w-[1320px] mx-auto px-6 lg:px-8 py-24">
@@ -181,9 +209,7 @@ function FeatureGrid() {
           {features.map((f, i) => (
             <div key={i} className="bg-white dark:bg-ink-950 p-8 min-h-[220px]">
               <div className="w-9 h-9 rounded-lg bg-ink-100 dark:bg-ink-900 flex items-center justify-center text-ink-700 dark:text-ink-300 mb-5">
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="1.75" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="24" height="24" fill="none" stroke="none"/>
-                </svg>
+                <Icon name={f.icon} size={18} />
               </div>
               <div className="mono text-[10px] tracking-widest text-ink-400 dark:text-ink-500 mb-2">F·0{i + 1}</div>
               <h3 className="text-[16px] font-semibold text-ink-950 dark:text-white tracking-tight">{f.title}</h3>
@@ -225,6 +251,7 @@ Graph<OrderState> graph = Graph.<OrderState>builder()
     .build();
 
 ExecutionResult<OrderState> r = graph.run(seed);`
+
   return (
     <section className="border-t hairline bg-ink-50/60 dark:bg-ink-950/40">
       <div className="max-w-[1320px] mx-auto px-6 lg:px-8 py-24">
@@ -243,10 +270,10 @@ ExecutionResult<OrderState> r = graph.run(seed);`
             </p>
             <ul className="mt-8 space-y-0">
               {([
-                ['node',    'Pure function: (state, ctx) → state. Sync, async, or parallel branches.'],
-                ['edge',    'First-class record. Predicate is a pure function of state — replay-safe.'],
+                ['node', 'Pure function: (state, ctx) → state. Sync, async, or parallel branches.'],
+                ['edge', 'First-class record. Predicate is a pure function of state — replay-safe.'],
                 ['context', 'Carries idempotency key, listener hooks, memory, executor. Never mutates state.'],
-                ['result',  'ExecutionResult<S> — id, finalState, path, status, error.'],
+                ['result', 'ExecutionResult<S> — id, finalState, path, status, error.'],
               ] as const).map(([k, v]) => (
                 <li key={k} className="grid grid-cols-[100px_1fr] gap-4 py-3 border-t hairline last:border-b text-[14.5px]">
                   <span className="mono text-[12px] text-ink-500">{k}</span>
@@ -281,6 +308,7 @@ TraceDiff<OrderState> d = TraceDiff.between(trace, fork);
 if (!d.identical()) {
     System.out.println("diverged at " + d.divergenceIndex());
 }`
+
   return (
     <section className="border-t border-white/5 bg-ink-950 text-white">
       <div className="max-w-[1320px] mx-auto px-6 lg:px-8 py-24">
@@ -306,8 +334,8 @@ if (!d.identical()) {
             </p>
             <ul className="mt-8 space-y-0">
               {([
-                ['store',   'In-memory · JSON file · JDBC. All ship in observability.'],
-                ['resume',  'One trace per executionId; resume appends to the prior trace.'],
+                ['store', 'In-memory · JSON file · JDBC. All ship in observability.'],
+                ['resume', 'One trace per executionId; resume appends to the prior trace.'],
                 ['retries', "Don't add steps; attempts tracks the count."],
               ] as const).map(([k, v]) => (
                 <li key={k} className="grid grid-cols-[100px_1fr] gap-4 py-3 border-t border-white/10 text-[14.5px]">
