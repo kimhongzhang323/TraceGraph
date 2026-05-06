@@ -1,5 +1,5 @@
 import type {
-  ExecutionTrace, TraceSummary, NodeLayout, Edge, StudioNode,
+  ExecutionTrace, TraceSummary, Edge, StudioNode,
   Module, ChangelogEntry, ApiGroup,
 } from '@/types'
 
@@ -55,14 +55,6 @@ export const MOCK_TRACE_LIST: TraceSummary[] = [
   {id:'7f1d92cb', graph:'rag-agent',      status:'COMPLETED'},
   {id:'b40e87aa', graph:'react-agent',    status:'INTERRUPTED'},
 ]
-
-export const NODE_LAYOUT: Record<string, NodeLayout> = {
-  validate:{x:320,y:70, w:120,h:56,kind:'node'},
-  enrich:  {x:320,y:180,w:120,h:56,kind:'parallel'},
-  score:   {x:320,y:290,w:120,h:56,kind:'async'},
-  charge:  {x:200,y:400,w:120,h:56,kind:'node | retry(3)'},
-  ship:    {x:440,y:400,w:120,h:56,kind:'node'},
-}
 
 export const EDGES: Edge[] = [
   {from:'validate',to:'enrich', label:'valid'},

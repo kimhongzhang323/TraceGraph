@@ -48,14 +48,6 @@ export interface GraphComplexity {
   hotspots: string[]
 }
 
-export interface NodeLayout {
-  x: number
-  y: number
-  w: number
-  h: number
-  kind: string
-}
-
 export interface Edge {
   from: string
   to: string
