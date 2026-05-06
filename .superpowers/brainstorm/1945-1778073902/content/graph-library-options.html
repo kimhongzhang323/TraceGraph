@@ -1,0 +1,42 @@
+<h2>Which graph library for the Studio canvas?</h2>
+<p class="subtitle">All three can replicate the yFiles knowledge-graph look. Pick the one whose trade-offs fit best.</p>
+
+<div class="options">
+  <div class="option" data-choice="reactflow" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>React Flow</h3>
+      <p>The de-facto React graph library. Drag nodes, pan/zoom, custom node renderers, mini-map, edge routing — all built in. Looks great out of the box and integrates cleanly with the existing React + Tailwind stack. ~200 KB gzipped.</p>
+      <br>
+      <p><strong>Best for:</strong> DAG / directed graphs (exactly what TraceGraph is). Rich ecosystem with plugins. MIT licensed.</p>
+      <p><strong>Trade-off:</strong> Node positions still need an initial layout algorithm (you can use dagre or elkjs alongside it). Not free for commercial SaaS use in the Pro tier, but the core library is MIT.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="cytoscape" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Cytoscape.js</h3>
+      <p>Battle-tested graph library used in bioinformatics, network tools, and knowledge graphs. Built-in layout algorithms (dagre, cola, elk, breadthfirst). Handles very large graphs efficiently. ~150 KB.</p>
+      <br>
+      <p><strong>Best for:</strong> Graphs where you want the library to own layout completely. Very close to what yFiles demos show.</p>
+      <p><strong>Trade-off:</strong> Not React-native — needs a wrapper (react-cytoscapejs). Custom node rendering is limited compared to React Flow (no arbitrary JSX in nodes).</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="d3" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>D3-force + custom SVG</h3>
+      <p>Build on top of D3's force simulation. Full creative control — any visual style. Smooth physics-based layout. The existing SVG canvas in Studio.tsx is already close to this approach.</p>
+      <br>
+      <p><strong>Best for:</strong> Highly custom visual designs. Knowledge graph "nebula" aesthetic.</p>
+      <p><strong>Trade-off:</strong> Most implementation work. D3's imperative mutation model fights React's rendering. Requires writing layout, interaction, and animation from scratch.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem; padding: 1rem; background: rgba(0,0,0,0.04); border-radius: 8px;">
+  <p class="label">My recommendation</p>
+  <p><strong>React Flow (A)</strong> — it integrates seamlessly with the existing React codebase, handles DAGs natively (which is exactly what a TraceGraph is), and produces the interactive node-dragging / pan-zoom / minimap experience from the yFiles demo with the least custom code. Pair it with <code>@dagrejs/dagre</code> for automatic hierarchical layout.</p>
+</div>

@@ -1,4 +1,5 @@
 import { Badge } from '@/components'
+import { Seo } from '@/components/Seo'
 import { CHANGELOG } from '@/data/mock'
 
 type Kind = 'feat' | 'fix' | 'improve' | 'breaking'
@@ -13,6 +14,11 @@ const kindStyles: Record<Kind, string> = {
 export function Changelog() {
   return (
     <div className="max-w-[920px] mx-auto px-6 lg:px-8 py-16 fade-up">
+      <Seo
+        title="Changelog"
+        description="Release notes, breaking changes, and upgrade tips for TraceGraph."
+        path="/changelog"
+      />
       <div className="mono text-[11px] uppercase tracking-[0.14em] text-ink-500 mb-4">PROJECT / CHANGELOG</div>
       <h1 className="display-tight text-[56px] text-ink-950 dark:text-white">Changelog</h1>
       <p className="mt-4 text-[16px] text-ink-600 dark:text-ink-400 max-w-xl">

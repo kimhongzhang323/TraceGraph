@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, GraphCanvas, Icon, Panel } from '@/components'
+import { Seo } from '@/components/Seo'
 import { EDGES, STUDIO_NODES } from '@/data/mock'
 import { api } from '@/lib/api'
 import type { Edge, GraphComplexity, LensMode } from '@/types'
@@ -89,6 +90,12 @@ export function Studio() {
 
   return (
     <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-6 fade-up">
+      <Seo
+        title="Studio"
+        description="Visualize graph structure, relationships, and execution context in the TraceGraph studio."
+        path="/studio"
+        noindex
+      />
       <StudioHeader complexity={complexity} mermaid={mermaid} />
 
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-[290px_1fr_340px] gap-3 h-[calc(100vh-200px)] min-h-[640px]">

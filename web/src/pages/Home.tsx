@@ -1,10 +1,16 @@
 import { SectionLabel, StatusDot, Button, Code, CodeBlock, Badge, Icon } from '@/components'
+import { Seo } from '@/components/Seo'
 import { MODULES } from '@/data/mock'
 import { highlightJava } from '@/lib/highlight'
 
 export function Home() {
   return (
     <div className="fade-up">
+      <Seo
+        title="Typed agent runtime for the JVM"
+        description="TraceGraph is a typed execution-graph runtime for the JVM. Replay any run, fork from any step, diff executions, and keep agents production-ready."
+        path="/"
+      />
       <Hero />
       <KeyStats />
       <FeatureGrid />

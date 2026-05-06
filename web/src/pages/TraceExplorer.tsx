@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Panel, Badge, Button } from '@/components'
+import { Seo } from '@/components/Seo'
 import { MOCK_TRACE, MOCK_TRACE_LIST } from '@/data/mock'
 import { api } from '@/lib/api'
 import type { ExecutionTrace, TraceStep, TraceSummary } from '@/types'
@@ -39,6 +40,12 @@ export function TraceExplorer() {
 
   return (
     <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-6 fade-up">
+      <Seo
+        title="Trace explorer"
+        description="Inspect execution traces, replay forks, and compare state changes in the TraceGraph trace explorer."
+        path="/trace"
+        noindex
+      />
       <TopBar trace={trace} traceList={traceList} activeIdx={activeIdx} onLoad={loadTrace} />
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-[300px_1fr_360px] gap-3 h-[calc(100vh-260px)] min-h-[640px]">
         <StepList trace={trace} activeIdx={activeIdx} setActiveIdx={setActiveIdx} />

@@ -114,7 +114,7 @@ function computeForceLayout(
 
   const simulation = d3Force
     .forceSimulation(simNodes)
-    .force('link', d3Force.forceLink(simLinks).id((d: { id: string }) => d.id).distance(130))
+    .force('link', d3Force.forceLink(simLinks).id((d: any) => d.id).distance(130))
     .force('charge', d3Force.forceManyBody().strength(-400))
     .force('center', d3Force.forceCenter(width / 2, height / 2))
     .force('collide', d3Force.forceCollide(50))

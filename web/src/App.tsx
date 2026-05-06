@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
+import { Seo } from '@/components/Seo'
 import { Home } from '@/pages/Home'
 import { Docs } from '@/pages/Docs'
 import { TraceExplorer } from '@/pages/TraceExplorer'
@@ -21,9 +22,52 @@ function Layout() {
   const location = useLocation()
   const route = routeId(location.pathname)
   const hideFooter = route === 'trace' || route === 'studio'
+  const seo =
+    route === 'docs'
+      ? {
+          title: 'Docs',
+          description: 'Documentation for TraceGraph: quickstart, runtime features, Spring Boot integration, replay, and API reference.',
+          path: location.pathname,
+          noindex: false,
+        }
+      : route === 'trace'
+        ? {
+            title: 'Trace explorer',
+            description: 'Inspect executions, replay traces, and compare state changes in the TraceGraph trace explorer.',
+            path: location.pathname,
+            noindex: true,
+          }
+        : route === 'studio'
+          ? {
+              title: 'Studio',
+              description: 'Visualize graph structure, relationships, and execution context in the TraceGraph studio.',
+              path: location.pathname,
+              noindex: true,
+            }
+          : route === 'api'
+            ? {
+                title: 'API reference',
+                description: 'REST endpoints exposed by the TraceGraph Spring Boot starter for traces, replay, stream, and graph inspection.',
+                path: location.pathname,
+                noindex: false,
+              }
+            : route === 'changelog'
+              ? {
+                  title: 'Changelog',
+                  description: 'Release notes, breaking changes, and upgrade tips for TraceGraph.',
+                  path: location.pathname,
+                  noindex: false,
+                }
+              : {
+                  title: 'Typed agent runtime for the JVM',
+                  description: 'TraceGraph is a typed execution-graph runtime for the JVM. Replay runs, resume checkpoints, and observe every step.',
+                  path: '/',
+                  noindex: false,
+                }
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-ink-950">
+      <Seo {...seo} />
       <Header route={route} theme={theme} setTheme={setTheme} />
       <main className="flex-1">
         <Routes>

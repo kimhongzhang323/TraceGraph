@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Code, CodeBlock, Badge } from '@/components'
+import { Seo } from '@/components/Seo'
 import { DOCS_TREE } from '@/data/mock'
 import { highlightJava } from '@/lib/highlight'
 
@@ -15,8 +16,15 @@ export function Docs() {
     setActive(id)
   }, [location.pathname])
 
+  const page = DOC_PAGES[active] ?? DOC_PAGES.quickstart
+
   return (
     <div className="max-w-[1320px] mx-auto px-6 lg:px-8 py-12 grid grid-cols-1 lg:grid-cols-[240px_1fr_220px] gap-12 fade-up">
+      <Seo
+        title={`${page.title} docs`}
+        description={page.lede}
+        path={location.pathname}
+      />
       <aside className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-100px)] overflow-y-auto scroll-thin pr-2">
         {DOCS_TREE.map((group) => (
           <div key={group.section} className="mb-6">

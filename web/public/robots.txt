@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /trace
+Disallow: /studio
+
+Sitemap: https://www.tracegraph.site/sitemap.xml

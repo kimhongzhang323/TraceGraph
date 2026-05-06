@@ -1,4 +1,5 @@
 import { CodeBlock, Code } from '@/components'
+import { Seo } from '@/components/Seo'
 import { API_GROUPS } from '@/data/mock'
 import type { ApiEndpoint } from '@/types'
 
@@ -34,6 +35,11 @@ $ curl -X POST "http://localhost:8082/tracegraph/traces/e9c4f1a2/replay?step=2"
 export function ApiReference() {
   return (
     <div className="max-w-[1100px] mx-auto px-6 lg:px-8 py-16 fade-up">
+      <Seo
+        title="API reference"
+        description="REST endpoints exposed by the TraceGraph Spring Boot starter for traces, replay, streaming, and graph inspection."
+        path="/api"
+      />
       <div className="mono text-[11px] uppercase tracking-[0.14em] text-ink-500 mb-4">REFERENCE / REST API</div>
       <h1 className="display-tight text-[56px] text-ink-950 dark:text-white">API reference</h1>
       <p className="mt-4 text-[16px] text-ink-600 dark:text-ink-400 max-w-2xl">
