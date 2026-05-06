@@ -34,18 +34,18 @@ export const MOCK_TRACE: ExecutionTrace = {
       diff:['  id: o-91','! ship attempt 1: CarrierUnavailableException','! gateway returned 503','! retries exhausted (max=1)'] },
   ],
   logs: [
-    {t:0,   lv:'evt',  msg:'execution started · entry=validate · idem=ord-91-v2'},
-    {t:12,  lv:'info', msg:'validate completed · 12ms'},
-    {t:14,  lv:'evt',  msg:'parallel(enrich) fan-out · 3 branches'},
-    {t:198, lv:'info', msg:'parallel(enrich) merged · 184ms'},
+    {t:0,   lv:'evt',  msg:'execution started | entry=validate | idem=ord-91-v2'},
+    {t:12,  lv:'info', msg:'validate completed | 12ms'},
+    {t:14,  lv:'evt',  msg:'parallel(enrich) fan-out | 3 branches'},
+    {t:198, lv:'info', msg:'parallel(enrich) merged | 184ms'},
     {t:201, lv:'evt',  msg:'async(score) submitted to virtual-thread executor'},
-    {t:512, lv:'info', msg:'async(score) completed · 312ms · usage{p=482,c=96}'},
+    {t:512, lv:'info', msg:'async(score) completed | 312ms | usage{p=482,c=96}'},
     {t:514, lv:'info', msg:'charge attempt 1 of 3'},
-    {t:717, lv:'warn', msg:'charge attempt 1 failed · NetworkTimeoutException · retrying in 200ms'},
-    {t:919, lv:'info', msg:'charge attempt 2 succeeded · 218ms'},
+    {t:717, lv:'warn', msg:'charge attempt 1 failed | NetworkTimeoutException | retrying in 200ms'},
+    {t:919, lv:'info', msg:'charge attempt 2 succeeded | 218ms'},
     {t:938, lv:'info', msg:'ship attempt 1 of 1'},
-    {t:1030,lv:'err',  msg:'ship failed · CarrierUnavailableException: gateway 503 · no retries left'},
-    {t:1041,lv:'evt',  msg:'execution finished · status=FAILED · path=[validate, enrich, score, charge]'},
+    {t:1030,lv:'err',  msg:'ship failed | CarrierUnavailableException: gateway 503 | no retries left'},
+    {t:1041,lv:'evt',  msg:'execution finished | status=FAILED | path=[validate, enrich, score, charge]'},
   ],
 }
 
@@ -58,9 +58,9 @@ export const MOCK_TRACE_LIST: TraceSummary[] = [
 
 export const NODE_LAYOUT: Record<string, NodeLayout> = {
   validate:{x:320,y:70, w:120,h:56,kind:'node'},
-  enrich:  {x:320,y:180,w:120,h:56,kind:'parallel ∥'},
+  enrich:  {x:320,y:180,w:120,h:56,kind:'parallel'},
   score:   {x:320,y:290,w:120,h:56,kind:'async'},
-  charge:  {x:200,y:400,w:120,h:56,kind:'node · retry(3)'},
+  charge:  {x:200,y:400,w:120,h:56,kind:'node | retry(3)'},
   ship:    {x:440,y:400,w:120,h:56,kind:'node'},
 }
 
@@ -72,11 +72,11 @@ export const EDGES: Edge[] = [
 ]
 
 export const STUDIO_NODES: StudioNode[] = [
-  {name:'validate',kind:'node',    fn:'OrderNodes::validate',         retry:'—',            entry:true, terminal:false},
-  {name:'enrich',  kind:'parallel',fn:'List.of(profile, fraud, inv)', retry:'—',            entry:false,terminal:false},
-  {name:'score',   kind:'async',   fn:'OrderNodes::scoreAsync',       retry:'—',            entry:false,terminal:false},
-  {name:'charge',  kind:'node',    fn:'OrderNodes::charge',           retry:'exponential(3)',    entry:false,terminal:false},
-  {name:'ship',    kind:'node',    fn:'OrderNodes::ship',             retry:'—',            entry:false,terminal:true},
+  {name:'validate',kind:'node',    fn:'OrderNodes::validate',         retry:'-',               entry:true, terminal:false},
+  {name:'enrich',  kind:'parallel',fn:'List.of(profile, fraud, inv)', retry:'-',               entry:false,terminal:false},
+  {name:'score',   kind:'async',   fn:'OrderNodes::scoreAsync',       retry:'-',               entry:false,terminal:false},
+  {name:'charge',  kind:'node',    fn:'OrderNodes::charge',           retry:'exponential(3)',  entry:false,terminal:false},
+  {name:'ship',    kind:'node',    fn:'OrderNodes::ship',             retry:'-',               entry:false,terminal:true},
 ]
 
 export const MODULES: Module[] = [
@@ -88,8 +88,8 @@ export const MODULES: Module[] = [
   {name:'tracegraph-ui',                  desc:'Embedded trace inspector UI served at /tracegraph/ui.',                                status:'stable',       cov:'n/a'},
   {name:'tracegraph-runtime',             desc:'Async/parallel nodes, checkpointing, retries, resume.',                                status:'stable',       cov:'81%'},
   {name:'tracegraph-eval',                desc:'Test harness: deterministic seeds, golden traces, CI assertions.',                     status:'experimental', cov:'61%'},
-  {name:'tracegraph-mcp',                 desc:'Expose graphs as MCP tools and consume MCP servers as nodes.',                        status:'experimental', cov:'52%'},
-  {name:'tracegraph-rag',                 desc:'RAG pipeline nodes: chunker, embedder, retriever, reranker.',                         status:'experimental', cov:'48%'},
+  {name:'tracegraph-mcp',                 desc:'Expose graphs as MCP tools and consume MCP servers as nodes.',                          status:'experimental', cov:'52%'},
+  {name:'tracegraph-rag',                 desc:'RAG pipeline nodes: chunker, embedder, retriever, reranker.',                          status:'experimental', cov:'48%'},
   {name:'tracegraph-bom',                 desc:'Maven BOM for version alignment across all modules.',                                  status:'stable',       cov:'n/a'},
 ]
 
@@ -99,7 +99,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     {kind:'feat',    text:'JDBC checkpoint store with at-least-once resume semantics.'},
     {kind:'feat',    text:'Anthropic LLM connector (streaming + tool use).'},
     {kind:'feat',    text:'tracegraph-ui module: embedded trace inspector SPA at /tracegraph/ui.'},
-    {kind:'breaking',text:'Node SPI: signature is now (S, NodeContext) → S. Sub-result generic R was removed; compose state instead.'},
+    {kind:'breaking',text:'Node SPI: signature is now (S, NodeContext) -> S. Sub-result generic R was removed; compose state instead.'},
     {kind:'fix',     text:'Parallel branches no longer leak threads when a sibling branch fails fast.'},
   ]},
   {v:'0.2.1',date:'2026-04-09',notes:[
@@ -130,8 +130,8 @@ export const API_GROUPS: ApiGroup[] = [
     {m:'GET', p:'/tracegraph/traces/{a}/diff/{b}',                  desc:'Diff two executions by id.',                       returns:'TraceDiff<JsonNode>'},
   ]},
   {group:'Stream',endpoints:[
-    {m:'GET',p:'/tracegraph/traces/stream',              desc:'Server-Sent Events: live stream of node enter/exit events.',  returns:'text/event-stream'},
-    {m:'GET',p:'/tracegraph/traces/stream?execution={id}',desc:'SSE filtered to a single execution.',                       returns:'text/event-stream'},
+    {m:'GET',p:'/tracegraph/traces/stream',               desc:'Server-Sent Events: live stream of node enter/exit events.', returns:'text/event-stream'},
+    {m:'GET',p:'/tracegraph/traces/stream?execution={id}',desc:'SSE filtered to a single execution.',                        returns:'text/event-stream'},
   ]},
   {group:'Graph',endpoints:[
     {m:'GET',p:'/tracegraph/ui/graph',      desc:'Mermaid source for the registered Graph<?> bean.',      returns:'text/plain'},
