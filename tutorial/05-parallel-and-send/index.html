@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://site.tracegraph.io/spring-boot/">
+        <link rel="canonical" href="https://site.tracegraph.io/tutorial/05-parallel-and-send/">
       
       
-        <link rel="prev" href="../trace-ui/views/">
+        <link rel="prev" href="../04-checkpoints-and-resume/">
       
       
-        <link rel="next" href="../cookbook/react-agent/">
+        <link rel="next" href="../06-memory/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Spring Boot - TraceGraph</title>
+        <title>05 — Parallel & Send - TraceGraph</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#spring-boot-integration" class="md-skip">
+        <a href="#05-parallel-send" class="md-skip">
           Skip to content
         </a>
       
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="TraceGraph" class="md-header__button md-logo" aria-label="TraceGraph" data-md-component="logo">
+    <a href="../.." title="TraceGraph" class="md-header__button md-logo" aria-label="TraceGraph" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Spring Boot
+              05 — Parallel & Send
             
           </span>
         </div>
@@ -223,7 +223,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/installation/" class="md-tabs__link">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -260,11 +260,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../tutorial/01-nodes-and-edges/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../01-nodes-and-edges/" class="md-tabs__link">
           
   
   
@@ -284,7 +286,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/graph-nodes/" class="md-tabs__link">
+        <a href="../../concepts/graph-nodes/" class="md-tabs__link">
           
   
   
@@ -304,7 +306,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reference/rest-api/" class="md-tabs__link">
+        <a href="../../reference/rest-api/" class="md-tabs__link">
           
   
   
@@ -324,7 +326,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../trace-ui/overview/" class="md-tabs__link">
+        <a href="../../trace-ui/overview/" class="md-tabs__link">
           
   
   
@@ -340,11 +342,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../../spring-boot/" class="md-tabs__link">
         
   
   
@@ -365,7 +365,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../cookbook/react-agent/" class="md-tabs__link">
+        <a href="../../cookbook/react-agent/" class="md-tabs__link">
           
   
   
@@ -383,7 +383,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../changelog/" class="md-tabs__link">
+      <a href="../../changelog/" class="md-tabs__link">
         
   
   
@@ -418,7 +418,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="TraceGraph" class="md-nav__button md-logo" aria-label="TraceGraph" data-md-component="logo">
+    <a href="../.." title="TraceGraph" class="md-nav__button md-logo" aria-label="TraceGraph" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -448,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -529,7 +529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/installation/" class="md-nav__link">
+      <a href="../../getting-started/installation/" class="md-nav__link">
         
   
   
@@ -557,7 +557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/first-graph/" class="md-nav__link">
+      <a href="../../getting-started/first-graph/" class="md-nav__link">
         
   
   
@@ -585,7 +585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/quickstart/" class="md-nav__link">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
         
   
   
@@ -613,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/spring-boot/" class="md-nav__link">
+      <a href="../../getting-started/spring-boot/" class="md-nav__link">
         
   
   
@@ -645,28 +645,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -684,7 +687,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -702,7 +705,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/01-nodes-and-edges/" class="md-nav__link">
+      <a href="../01-nodes-and-edges/" class="md-nav__link">
         
   
   
@@ -730,7 +733,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/02-state-and-context/" class="md-nav__link">
+      <a href="../02-state-and-context/" class="md-nav__link">
         
   
   
@@ -758,7 +761,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/03-retries-and-failures/" class="md-nav__link">
+      <a href="../03-retries-and-failures/" class="md-nav__link">
         
   
   
@@ -786,7 +789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/04-checkpoints-and-resume/" class="md-nav__link">
+      <a href="../04-checkpoints-and-resume/" class="md-nav__link">
         
   
   
@@ -811,10 +814,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../tutorial/05-parallel-and-send/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 — Parallel & Send
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -830,6 +860,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#static-parallel-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static parallel branches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-executor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom executor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-fan-out-with-sendall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic fan-out with sendAll
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -842,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/06-memory/" class="md-nav__link">
+      <a href="../06-memory/" class="md-nav__link">
         
   
   
@@ -870,7 +964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/07-llm-and-tools/" class="md-nav__link">
+      <a href="../07-llm-and-tools/" class="md-nav__link">
         
   
   
@@ -898,7 +992,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/08-react-agent/" class="md-nav__link">
+      <a href="../08-react-agent/" class="md-nav__link">
         
   
   
@@ -926,7 +1020,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/09-rag-pipeline/" class="md-nav__link">
+      <a href="../09-rag-pipeline/" class="md-nav__link">
         
   
   
@@ -954,7 +1048,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/10-replay-and-diff/" class="md-nav__link">
+      <a href="../10-replay-and-diff/" class="md-nav__link">
         
   
   
@@ -982,7 +1076,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/11-hitl-interrupts/" class="md-nav__link">
+      <a href="../11-hitl-interrupts/" class="md-nav__link">
         
   
   
@@ -1071,7 +1165,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/graph-nodes/" class="md-nav__link">
+      <a href="../../concepts/graph-nodes/" class="md-nav__link">
         
   
   
@@ -1099,7 +1193,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/state-context/" class="md-nav__link">
+      <a href="../../concepts/state-context/" class="md-nav__link">
         
   
   
@@ -1127,7 +1221,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/edges-routing/" class="md-nav__link">
+      <a href="../../concepts/edges-routing/" class="md-nav__link">
         
   
   
@@ -1155,7 +1249,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/observability/" class="md-nav__link">
+      <a href="../../concepts/observability/" class="md-nav__link">
         
   
   
@@ -1183,7 +1277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/memory/" class="md-nav__link">
+      <a href="../../concepts/memory/" class="md-nav__link">
         
   
   
@@ -1211,7 +1305,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/connectors/" class="md-nav__link">
+      <a href="../../concepts/connectors/" class="md-nav__link">
         
   
   
@@ -1239,7 +1333,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/rag/" class="md-nav__link">
+      <a href="../../concepts/rag/" class="md-nav__link">
         
   
   
@@ -1328,7 +1422,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/rest-api/" class="md-nav__link">
+      <a href="../../reference/rest-api/" class="md-nav__link">
         
   
   
@@ -1356,7 +1450,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/configuration/" class="md-nav__link">
+      <a href="../../reference/configuration/" class="md-nav__link">
         
   
   
@@ -1384,7 +1478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/complexity/" class="md-nav__link">
+      <a href="../../reference/complexity/" class="md-nav__link">
         
   
   
@@ -1473,7 +1567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trace-ui/overview/" class="md-nav__link">
+      <a href="../../trace-ui/overview/" class="md-nav__link">
         
   
   
@@ -1501,7 +1595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trace-ui/views/" class="md-nav__link">
+      <a href="../../trace-ui/views/" class="md-nav__link">
         
   
   
@@ -1533,37 +1627,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Spring Boot
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../spring-boot/" class="md-nav__link">
         
   
   
@@ -1579,48 +1646,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#rest-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        REST Endpoints
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1686,7 +1711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/react-agent/" class="md-nav__link">
+      <a href="../../cookbook/react-agent/" class="md-nav__link">
         
   
   
@@ -1714,7 +1739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/rag-agent/" class="md-nav__link">
+      <a href="../../cookbook/rag-agent/" class="md-nav__link">
         
   
   
@@ -1742,7 +1767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/hitl-approval/" class="md-nav__link">
+      <a href="../../cookbook/hitl-approval/" class="md-nav__link">
         
   
   
@@ -1777,7 +1802,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -1824,10 +1849,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rest-endpoints" class="md-nav__link">
+  <a href="#static-parallel-branches" class="md-nav__link">
     <span class="md-ellipsis">
       
-        REST Endpoints
+        Static parallel branches
       
     </span>
   </a>
@@ -1835,10 +1860,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#custom-executor" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Custom executor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-fan-out-with-sendall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic fan-out with sendAll
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
       
     </span>
   </a>
@@ -1865,77 +1912,64 @@
   
 
 
-<h1 id="spring-boot-integration">Spring Boot Integration<a class="headerlink" href="#spring-boot-integration" title="Permanent link">&para;</a></h1>
-<p>Add the starter to your <code>pom.xml</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>site.tracegraph<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>langgraph-spring-boot-starter<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.2.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
+<h1 id="05-parallel-send">05 — Parallel &amp; Send<a class="headerlink" href="#05-parallel-send" title="Permanent link">&para;</a></h1>
+<p>TraceGraph supports two forms of concurrent execution: static <code>parallel</code> branches declared at graph-build time, and dynamic <code>sendAll</code> fan-out resolved at runtime inside a routing node.</p>
+<h2 id="static-parallel-branches">Static parallel branches<a class="headerlink" href="#static-parallel-branches" title="Permanent link">&para;</a></h2>
+<p><code>.parallel(name, branches, merger)</code> runs a fixed list of <code>Node&lt;S&gt;</code> branches concurrently. All branches receive the same input state; their results are merged in declaration order by the <code>merger</code> function.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">record</span> <span class="nc">EnrichState</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">geoResult</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">sentimentResult</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">combined</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Node</span><span class="o">&lt;</span><span class="n">EnrichState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">geoNode</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="na">withGeoResult</span><span class="p">(</span><span class="n">geoApi</span><span class="p">.</span><span class="na">lookup</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="na">input</span><span class="p">()));</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">Node</span><span class="o">&lt;</span><span class="n">EnrichState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">sentimentNode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="na">withSentimentResult</span><span class="p">(</span><span class="n">sentimentApi</span><span class="p">.</span><span class="na">analyze</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="na">input</span><span class="p">()));</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">Graph</span><span class="o">&lt;</span><span class="n">EnrichState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">graph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">EnrichState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">.</span><span class="na">parallel</span><span class="p">(</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="s">&quot;enrich&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">geoNode</span><span class="p">,</span><span class="w"> </span><span class="n">sentimentNode</span><span class="p">),</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EnrichState</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="na">input</span><span class="p">(),</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="na">geoResult</span><span class="p">(),</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="na">sentimentResult</span><span class="p">(),</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;combine&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="na">withCombined</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="na">geoResult</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; | &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="na">sentimentResult</span><span class="p">()))</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="p">.</span><span class="na">edge</span><span class="p">(</span><span class="s">&quot;enrich&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;combine&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">.</span><span class="na">entry</span><span class="p">(</span><span class="s">&quot;enrich&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">.</span><span class="na">terminal</span><span class="p">(</span><span class="s">&quot;combine&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
-<p>The starter auto-configures no-op implementations of all SPIs. Override any with your own <code>@Bean</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@Configuration</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">AppConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nd">@Bean</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Graph</span><span class="o">&lt;</span><span class="n">MyState</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">graph</span><span class="p">(</span><span class="n">NodeListener</span><span class="w"> </span><span class="n">listener</span><span class="p">,</span><span class="w"> </span><span class="n">TraceRecorder</span><span class="w"> </span><span class="n">recorder</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">MyState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;step1&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">            </span><span class="p">.</span><span class="na">entry</span><span class="p">(</span><span class="s">&quot;step1&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">.</span><span class="na">listener</span><span class="p">(</span><span class="n">listener</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="p">.</span><span class="na">traceRecorder</span><span class="p">(</span><span class="n">recorder</span><span class="p">)</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="nd">@Bean</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">TraceStore</span><span class="w"> </span><span class="nf">traceStore</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">InMemoryTraceStore</span><span class="p">();</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="p">}</span>
+<p>Branches run on a virtual-thread executor. They are anonymous — they don't appear in trace steps or fire listener events. If any branch throws, the first failure (in declaration order) propagates.</p>
+<h2 id="custom-executor">Custom executor<a class="headerlink" href="#custom-executor" title="Permanent link">&para;</a></h2>
+<p>By default, a virtual-thread-per-task executor is created per <code>run</code> call and shut down on completion. Supply your own to control thread pool lifecycle:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ExecutorService</span><span class="w"> </span><span class="n">sharedPool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Executors</span><span class="p">.</span><span class="na">newVirtualThreadPerTaskExecutor</span><span class="p">();</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Graph</span><span class="o">&lt;</span><span class="n">EnrichState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">graph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">EnrichState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="c1">// ... nodes ...</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">.</span><span class="na">executor</span><span class="p">(</span><span class="n">sharedPool</span><span class="p">)</span><span class="w">   </span><span class="c1">// NOT shut down by the graph</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
-<h2 id="rest-endpoints">REST Endpoints<a class="headerlink" href="#rest-endpoints" title="Permanent link">&para;</a></h2>
-<p>With <code>TraceStore</code> in context, the starter exposes:</p>
-<table>
-<thead>
-<tr>
-<th>Endpoint</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>GET /tracegraph/traces</code></td>
-<td>List all execution IDs</td>
-</tr>
-<tr>
-<td><code>GET /tracegraph/traces/{id}</code></td>
-<td>Full trace JSON</td>
-</tr>
-<tr>
-<td><code>GET /tracegraph/traces/{a}/diff/{b}</code></td>
-<td>Diff two traces</td>
-</tr>
-<tr>
-<td><code>DELETE /tracegraph/traces/{id}</code></td>
-<td>Delete a trace</td>
-</tr>
-<tr>
-<td><code>POST /tracegraph/traces/{id}/replay?step=N</code></td>
-<td>Re-run from step N</td>
-</tr>
-<tr>
-<td><code>POST /tracegraph/traces/stream</code></td>
-<td>SSE event stream</td>
-</tr>
-</tbody>
-</table>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">tracegraph.web.enabled</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">tracegraph.memory.jdbc.enabled</span><span class="o">=</span><span class="s">false</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">tracegraph.llm.provider</span><span class="o">=</span><span class="s">openai</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">tracegraph.llm.api-key</span><span class="o">=</span><span class="s">sk-...</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="na">tracegraph.llm.model</span><span class="o">=</span><span class="s">gpt-4o</span>
+<p>User-supplied executors are never shut down by the graph.</p>
+<h2 id="dynamic-fan-out-with-sendall">Dynamic fan-out with sendAll<a class="headerlink" href="#dynamic-fan-out-with-sendall" title="Permanent link">&para;</a></h2>
+<p>When the number of parallel targets is not known at build time, use <code>NodeResult.sendAll(...)</code> inside a <code>RoutingNode</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">record</span> <span class="nc">BatchState</span><span class="p">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">results</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">Graph</span><span class="o">&lt;</span><span class="n">BatchState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">graph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">BatchState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">routingNode</span><span class="p">(</span><span class="s">&quot;dispatch&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Send</span><span class="o">&lt;</span><span class="n">BatchState</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">sends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="na">items</span><span class="p">().</span><span class="na">stream</span><span class="p">()</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">            </span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">item</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Send</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="s">&quot;process&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="na">withSingleItem</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">            </span><span class="p">.</span><span class="na">toList</span><span class="p">();</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">NodeResult</span><span class="p">.</span><span class="na">sendAll</span><span class="p">(</span><span class="n">sends</span><span class="p">,</span><span class="w"> </span><span class="n">BatchState</span><span class="p">::</span><span class="n">merge</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">);</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="p">})</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;process&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="na">withResult</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="na">currentItem</span><span class="p">(),</span><span class="w"> </span><span class="n">process</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="na">currentItem</span><span class="p">())))</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">.</span><span class="na">edge</span><span class="p">(</span><span class="s">&quot;process&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;done&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p">.</span><span class="na">entry</span><span class="p">(</span><span class="s">&quot;dispatch&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="p">.</span><span class="na">terminal</span><span class="p">(</span><span class="s">&quot;done&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
+<p><code>sendAll</code> expands identically to <code>parallel</code> at runtime — branches run concurrently on the configured executor.</p>
+<h2 id="key-takeaways">Key takeaways<a class="headerlink" href="#key-takeaways" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>parallel(name, branches, merger)</code> is declared at build time; all branches receive the same input state.</li>
+<li>Branches are anonymous — no names, no trace steps, no listener events.</li>
+<li>First-by-declaration-order failure wins when multiple branches throw.</li>
+<li><code>NodeResult.sendAll(...)</code> inside a routing node enables runtime-determined fan-out.</li>
+<li>User-supplied executors via <code>.executor(...)</code> are not shut down by the graph.</li>
+</ul>
 
 
 
@@ -1985,10 +2019,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

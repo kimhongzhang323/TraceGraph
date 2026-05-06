@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://site.tracegraph.io/spring-boot/">
+        <link rel="canonical" href="https://site.tracegraph.io/tutorial/07-llm-and-tools/">
       
       
-        <link rel="prev" href="../trace-ui/views/">
+        <link rel="prev" href="../06-memory/">
       
       
-        <link rel="next" href="../cookbook/react-agent/">
+        <link rel="next" href="../08-react-agent/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Spring Boot - TraceGraph</title>
+        <title>07 — LLM & Tools - TraceGraph</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#spring-boot-integration" class="md-skip">
+        <a href="#07-llm-tools" class="md-skip">
           Skip to content
         </a>
       
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="TraceGraph" class="md-header__button md-logo" aria-label="TraceGraph" data-md-component="logo">
+    <a href="../.." title="TraceGraph" class="md-header__button md-logo" aria-label="TraceGraph" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Spring Boot
+              07 — LLM & Tools
             
           </span>
         </div>
@@ -223,7 +223,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/installation/" class="md-tabs__link">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -260,11 +260,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../tutorial/01-nodes-and-edges/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../01-nodes-and-edges/" class="md-tabs__link">
           
   
   
@@ -284,7 +286,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/graph-nodes/" class="md-tabs__link">
+        <a href="../../concepts/graph-nodes/" class="md-tabs__link">
           
   
   
@@ -304,7 +306,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reference/rest-api/" class="md-tabs__link">
+        <a href="../../reference/rest-api/" class="md-tabs__link">
           
   
   
@@ -324,7 +326,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../trace-ui/overview/" class="md-tabs__link">
+        <a href="../../trace-ui/overview/" class="md-tabs__link">
           
   
   
@@ -340,11 +342,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../../spring-boot/" class="md-tabs__link">
         
   
   
@@ -365,7 +365,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../cookbook/react-agent/" class="md-tabs__link">
+        <a href="../../cookbook/react-agent/" class="md-tabs__link">
           
   
   
@@ -383,7 +383,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../changelog/" class="md-tabs__link">
+      <a href="../../changelog/" class="md-tabs__link">
         
   
   
@@ -418,7 +418,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="TraceGraph" class="md-nav__button md-logo" aria-label="TraceGraph" data-md-component="logo">
+    <a href="../.." title="TraceGraph" class="md-nav__button md-logo" aria-label="TraceGraph" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -448,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -529,7 +529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/installation/" class="md-nav__link">
+      <a href="../../getting-started/installation/" class="md-nav__link">
         
   
   
@@ -557,7 +557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/first-graph/" class="md-nav__link">
+      <a href="../../getting-started/first-graph/" class="md-nav__link">
         
   
   
@@ -585,7 +585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/quickstart/" class="md-nav__link">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
         
   
   
@@ -613,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/spring-boot/" class="md-nav__link">
+      <a href="../../getting-started/spring-boot/" class="md-nav__link">
         
   
   
@@ -645,28 +645,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -684,7 +687,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -702,7 +705,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/01-nodes-and-edges/" class="md-nav__link">
+      <a href="../01-nodes-and-edges/" class="md-nav__link">
         
   
   
@@ -730,7 +733,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/02-state-and-context/" class="md-nav__link">
+      <a href="../02-state-and-context/" class="md-nav__link">
         
   
   
@@ -758,7 +761,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/03-retries-and-failures/" class="md-nav__link">
+      <a href="../03-retries-and-failures/" class="md-nav__link">
         
   
   
@@ -786,7 +789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/04-checkpoints-and-resume/" class="md-nav__link">
+      <a href="../04-checkpoints-and-resume/" class="md-nav__link">
         
   
   
@@ -814,7 +817,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/05-parallel-and-send/" class="md-nav__link">
+      <a href="../05-parallel-and-send/" class="md-nav__link">
         
   
   
@@ -842,7 +845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/06-memory/" class="md-nav__link">
+      <a href="../06-memory/" class="md-nav__link">
         
   
   
@@ -867,10 +870,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../tutorial/07-llm-and-tools/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 — LLM & Tools
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -886,6 +916,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#llmclient-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LlmClient interface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chatnode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ChatNode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anthropicllmclient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnthropicLlmClient
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Streaming
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -898,7 +1003,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/08-react-agent/" class="md-nav__link">
+      <a href="../08-react-agent/" class="md-nav__link">
         
   
   
@@ -926,7 +1031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/09-rag-pipeline/" class="md-nav__link">
+      <a href="../09-rag-pipeline/" class="md-nav__link">
         
   
   
@@ -954,7 +1059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/10-replay-and-diff/" class="md-nav__link">
+      <a href="../10-replay-and-diff/" class="md-nav__link">
         
   
   
@@ -982,7 +1087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/11-hitl-interrupts/" class="md-nav__link">
+      <a href="../11-hitl-interrupts/" class="md-nav__link">
         
   
   
@@ -1071,7 +1176,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/graph-nodes/" class="md-nav__link">
+      <a href="../../concepts/graph-nodes/" class="md-nav__link">
         
   
   
@@ -1099,7 +1204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/state-context/" class="md-nav__link">
+      <a href="../../concepts/state-context/" class="md-nav__link">
         
   
   
@@ -1127,7 +1232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/edges-routing/" class="md-nav__link">
+      <a href="../../concepts/edges-routing/" class="md-nav__link">
         
   
   
@@ -1155,7 +1260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/observability/" class="md-nav__link">
+      <a href="../../concepts/observability/" class="md-nav__link">
         
   
   
@@ -1183,7 +1288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/memory/" class="md-nav__link">
+      <a href="../../concepts/memory/" class="md-nav__link">
         
   
   
@@ -1211,7 +1316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/connectors/" class="md-nav__link">
+      <a href="../../concepts/connectors/" class="md-nav__link">
         
   
   
@@ -1239,7 +1344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/rag/" class="md-nav__link">
+      <a href="../../concepts/rag/" class="md-nav__link">
         
   
   
@@ -1328,7 +1433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/rest-api/" class="md-nav__link">
+      <a href="../../reference/rest-api/" class="md-nav__link">
         
   
   
@@ -1356,7 +1461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/configuration/" class="md-nav__link">
+      <a href="../../reference/configuration/" class="md-nav__link">
         
   
   
@@ -1384,7 +1489,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/complexity/" class="md-nav__link">
+      <a href="../../reference/complexity/" class="md-nav__link">
         
   
   
@@ -1473,7 +1578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trace-ui/overview/" class="md-nav__link">
+      <a href="../../trace-ui/overview/" class="md-nav__link">
         
   
   
@@ -1501,7 +1606,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trace-ui/views/" class="md-nav__link">
+      <a href="../../trace-ui/views/" class="md-nav__link">
         
   
   
@@ -1533,37 +1638,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Spring Boot
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../spring-boot/" class="md-nav__link">
         
   
   
@@ -1579,48 +1657,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#rest-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        REST Endpoints
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1686,7 +1722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/react-agent/" class="md-nav__link">
+      <a href="../../cookbook/react-agent/" class="md-nav__link">
         
   
   
@@ -1714,7 +1750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/rag-agent/" class="md-nav__link">
+      <a href="../../cookbook/rag-agent/" class="md-nav__link">
         
   
   
@@ -1742,7 +1778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/hitl-approval/" class="md-nav__link">
+      <a href="../../cookbook/hitl-approval/" class="md-nav__link">
         
   
   
@@ -1777,7 +1813,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -1824,10 +1860,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rest-endpoints" class="md-nav__link">
+  <a href="#llmclient-interface" class="md-nav__link">
     <span class="md-ellipsis">
       
-        REST Endpoints
+        LlmClient interface
       
     </span>
   </a>
@@ -1835,10 +1871,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#chatnode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        ChatNode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anthropicllmclient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnthropicLlmClient
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Streaming
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
       
     </span>
   </a>
@@ -1865,77 +1934,69 @@
   
 
 
-<h1 id="spring-boot-integration">Spring Boot Integration<a class="headerlink" href="#spring-boot-integration" title="Permanent link">&para;</a></h1>
-<p>Add the starter to your <code>pom.xml</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>site.tracegraph<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>langgraph-spring-boot-starter<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.2.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
+<h1 id="07-llm-tools">07 — LLM &amp; Tools<a class="headerlink" href="#07-llm-tools" title="Permanent link">&para;</a></h1>
+<p>TraceGraph's connector module provides a vendor-neutral <code>LlmClient</code> interface and <code>ChatNode&lt;S&gt;</code> adapter that wires any LLM into a graph node.</p>
+<h2 id="llmclient-interface">LlmClient interface<a class="headerlink" href="#llmclient-interface" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">LlmClient</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">LlmResponse</span><span class="w"> </span><span class="nf">complete</span><span class="p">(</span><span class="n">LlmRequest</span><span class="w"> </span><span class="n">request</span><span class="p">);</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="k">default</span><span class="w"> </span><span class="n">Flow</span><span class="p">.</span><span class="na">Publisher</span><span class="o">&lt;</span><span class="n">LlmStreamChunk</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">stream</span><span class="p">(</span><span class="n">LlmRequest</span><span class="w"> </span><span class="n">request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span>
 </code></pre></div>
-<p>The starter auto-configures no-op implementations of all SPIs. Override any with your own <code>@Bean</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@Configuration</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">AppConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nd">@Bean</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Graph</span><span class="o">&lt;</span><span class="n">MyState</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">graph</span><span class="p">(</span><span class="n">NodeListener</span><span class="w"> </span><span class="n">listener</span><span class="p">,</span><span class="w"> </span><span class="n">TraceRecorder</span><span class="w"> </span><span class="n">recorder</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">MyState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;step1&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">            </span><span class="p">.</span><span class="na">entry</span><span class="p">(</span><span class="s">&quot;step1&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">.</span><span class="na">listener</span><span class="p">(</span><span class="n">listener</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="p">.</span><span class="na">traceRecorder</span><span class="p">(</span><span class="n">recorder</span><span class="p">)</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="nd">@Bean</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">TraceStore</span><span class="w"> </span><span class="nf">traceStore</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">InMemoryTraceStore</span><span class="p">();</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="p">}</span>
+<p><code>LlmRequest</code> and <code>LlmResponse</code> are records covering the common denominator across chat APIs: messages, model, temperature, max tokens, usage, and finish reason.</p>
+<h2 id="chatnode">ChatNode<a class="headerlink" href="#chatnode" title="Permanent link">&para;</a></h2>
+<p><code>ChatNode&lt;S&gt;</code> bridges <code>LlmClient</code> and <code>Node&lt;S&gt;</code>. You supply two functions:</p>
+<ul>
+<li><code>requestBuilder</code>: <code>(S state) -&gt; LlmRequest</code> — build the request from the current state.</li>
+<li><code>responseFolder</code>: <code>(S state, LlmResponse response) -&gt; S</code> — fold the response back into the state.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">record</span> <span class="nc">ChatState</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">userMessage</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">assistantReply</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">promptTokens</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">completionTokens</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">LlmClient</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OpenAiLlmClient</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="p">.</span><span class="na">apiKey</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;OPENAI_API_KEY&quot;</span><span class="p">))</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">.</span><span class="na">model</span><span class="p">(</span><span class="s">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">Node</span><span class="o">&lt;</span><span class="n">ChatState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">chatNode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ChatNode</span><span class="p">.</span><span class="o">&lt;</span><span class="n">ChatState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="p">.</span><span class="na">client</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="p">.</span><span class="na">requestBuilder</span><span class="p">(</span><span class="n">state</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LlmRequest</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p">.</span><span class="na">message</span><span class="p">(</span><span class="n">ChatMessage</span><span class="p">.</span><span class="na">user</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="na">userMessage</span><span class="p">()))</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="p">.</span><span class="na">model</span><span class="p">(</span><span class="s">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p">.</span><span class="na">maxTokens</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="p">.</span><span class="na">responseFolder</span><span class="p">((</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="n">response</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ChatState</span><span class="p">(</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="n">state</span><span class="p">.</span><span class="na">userMessage</span><span class="p">(),</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">content</span><span class="p">(),</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">usage</span><span class="p">().</span><span class="na">promptTokens</span><span class="p">(),</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">usage</span><span class="p">().</span><span class="na">completionTokens</span><span class="p">()</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">    </span><span class="p">))</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
-<h2 id="rest-endpoints">REST Endpoints<a class="headerlink" href="#rest-endpoints" title="Permanent link">&para;</a></h2>
-<p>With <code>TraceStore</code> in context, the starter exposes:</p>
-<table>
-<thead>
-<tr>
-<th>Endpoint</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>GET /tracegraph/traces</code></td>
-<td>List all execution IDs</td>
-</tr>
-<tr>
-<td><code>GET /tracegraph/traces/{id}</code></td>
-<td>Full trace JSON</td>
-</tr>
-<tr>
-<td><code>GET /tracegraph/traces/{a}/diff/{b}</code></td>
-<td>Diff two traces</td>
-</tr>
-<tr>
-<td><code>DELETE /tracegraph/traces/{id}</code></td>
-<td>Delete a trace</td>
-</tr>
-<tr>
-<td><code>POST /tracegraph/traces/{id}/replay?step=N</code></td>
-<td>Re-run from step N</td>
-</tr>
-<tr>
-<td><code>POST /tracegraph/traces/stream</code></td>
-<td>SSE event stream</td>
-</tr>
-</tbody>
-</table>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">tracegraph.web.enabled</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">tracegraph.memory.jdbc.enabled</span><span class="o">=</span><span class="s">false</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">tracegraph.llm.provider</span><span class="o">=</span><span class="s">openai</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">tracegraph.llm.api-key</span><span class="o">=</span><span class="s">sk-...</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="na">tracegraph.llm.model</span><span class="o">=</span><span class="s">gpt-4o</span>
+<p><code>ChatNode</code> automatically calls <code>ctx.reportUsage(promptTokens, completionTokens)</code> after each successful response, so token usage appears in trace steps and OTel spans.</p>
+<h2 id="anthropicllmclient">AnthropicLlmClient<a class="headerlink" href="#anthropicllmclient" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">LlmClient</span><span class="w"> </span><span class="n">anthropic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AnthropicLlmClient</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="na">apiKey</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;ANTHROPIC_API_KEY&quot;</span><span class="p">))</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">model</span><span class="p">(</span><span class="s">&quot;claude-3-5-haiku-20241022&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
+<p>System messages are lifted into the top-level <code>system</code> field required by the Anthropic Messages API. Non-2xx responses surface as <code>LlmHttpException(statusCode, body)</code>.</p>
+<h2 id="streaming">Streaming<a class="headerlink" href="#streaming" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Flow</span><span class="p">.</span><span class="na">Publisher</span><span class="o">&lt;</span><span class="n">LlmStreamChunk</span><span class="o">&gt;</span><span class="w"> </span><span class="n">chunks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="na">stream</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">chunks</span><span class="p">.</span><span class="na">subscribe</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Flow</span><span class="p">.</span><span class="na">Subscriber</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onNext</span><span class="p">(</span><span class="n">LlmStreamChunk</span><span class="w"> </span><span class="n">chunk</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">print</span><span class="p">(</span><span class="n">chunk</span><span class="p">.</span><span class="na">delta</span><span class="p">());</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">chunk</span><span class="p">.</span><span class="na">isLast</span><span class="p">())</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">();</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="c1">// ... other lifecycle methods</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">});</span>
+</code></pre></div>
+<p>Providers without native streaming support fall back to a single-chunk publisher wrapping <code>complete()</code>.</p>
+<h2 id="key-takeaways">Key takeaways<a class="headerlink" href="#key-takeaways" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>LlmClient</code> is the vendor-neutral SPI; <code>OpenAiLlmClient</code> and <code>AnthropicLlmClient</code> are bundled adapters.</li>
+<li><code>ChatNode&lt;S&gt;</code> adapts any <code>LlmClient</code> into a <code>Node&lt;S&gt;</code> via <code>requestBuilder</code> and <code>responseFolder</code>.</li>
+<li>Token usage is reported automatically through <code>ctx.reportUsage(...)</code> and appears in traces and spans.</li>
+<li>Non-2xx responses surface as <code>LlmHttpException</code> — handle them in a retry policy or a failure edge.</li>
+</ul>
 
 
 
@@ -1985,10 +2046,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://site.tracegraph.io/spring-boot/">
+        <link rel="canonical" href="https://site.tracegraph.io/reference/configuration/">
       
       
-        <link rel="prev" href="../trace-ui/views/">
+        <link rel="prev" href="../rest-api/">
       
       
-        <link rel="next" href="../cookbook/react-agent/">
+        <link rel="next" href="../complexity/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Spring Boot - TraceGraph</title>
+        <title>Configuration - TraceGraph</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#spring-boot-integration" class="md-skip">
+        <a href="#configuration-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="TraceGraph" class="md-header__button md-logo" aria-label="TraceGraph" data-md-component="logo">
+    <a href="../.." title="TraceGraph" class="md-header__button md-logo" aria-label="TraceGraph" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Spring Boot
+              Configuration
             
           </span>
         </div>
@@ -223,7 +223,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/installation/" class="md-tabs__link">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -264,7 +264,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../tutorial/01-nodes-and-edges/" class="md-tabs__link">
+        <a href="../../tutorial/01-nodes-and-edges/" class="md-tabs__link">
           
   
   
@@ -284,7 +284,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/graph-nodes/" class="md-tabs__link">
+        <a href="../../concepts/graph-nodes/" class="md-tabs__link">
           
   
   
@@ -300,11 +300,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../reference/rest-api/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../rest-api/" class="md-tabs__link">
           
   
   
@@ -324,7 +326,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../trace-ui/overview/" class="md-tabs__link">
+        <a href="../../trace-ui/overview/" class="md-tabs__link">
           
   
   
@@ -340,11 +342,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../../spring-boot/" class="md-tabs__link">
         
   
   
@@ -365,7 +365,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../cookbook/react-agent/" class="md-tabs__link">
+        <a href="../../cookbook/react-agent/" class="md-tabs__link">
           
   
   
@@ -383,7 +383,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../changelog/" class="md-tabs__link">
+      <a href="../../changelog/" class="md-tabs__link">
         
   
   
@@ -418,7 +418,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="TraceGraph" class="md-nav__button md-logo" aria-label="TraceGraph" data-md-component="logo">
+    <a href="../.." title="TraceGraph" class="md-nav__button md-logo" aria-label="TraceGraph" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -448,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -529,7 +529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/installation/" class="md-nav__link">
+      <a href="../../getting-started/installation/" class="md-nav__link">
         
   
   
@@ -557,7 +557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/first-graph/" class="md-nav__link">
+      <a href="../../getting-started/first-graph/" class="md-nav__link">
         
   
   
@@ -585,7 +585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/quickstart/" class="md-nav__link">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
         
   
   
@@ -613,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/spring-boot/" class="md-nav__link">
+      <a href="../../getting-started/spring-boot/" class="md-nav__link">
         
   
   
@@ -702,7 +702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/01-nodes-and-edges/" class="md-nav__link">
+      <a href="../../tutorial/01-nodes-and-edges/" class="md-nav__link">
         
   
   
@@ -730,7 +730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/02-state-and-context/" class="md-nav__link">
+      <a href="../../tutorial/02-state-and-context/" class="md-nav__link">
         
   
   
@@ -758,7 +758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/03-retries-and-failures/" class="md-nav__link">
+      <a href="../../tutorial/03-retries-and-failures/" class="md-nav__link">
         
   
   
@@ -786,7 +786,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/04-checkpoints-and-resume/" class="md-nav__link">
+      <a href="../../tutorial/04-checkpoints-and-resume/" class="md-nav__link">
         
   
   
@@ -814,7 +814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/05-parallel-and-send/" class="md-nav__link">
+      <a href="../../tutorial/05-parallel-and-send/" class="md-nav__link">
         
   
   
@@ -842,7 +842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/06-memory/" class="md-nav__link">
+      <a href="../../tutorial/06-memory/" class="md-nav__link">
         
   
   
@@ -870,7 +870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/07-llm-and-tools/" class="md-nav__link">
+      <a href="../../tutorial/07-llm-and-tools/" class="md-nav__link">
         
   
   
@@ -898,7 +898,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/08-react-agent/" class="md-nav__link">
+      <a href="../../tutorial/08-react-agent/" class="md-nav__link">
         
   
   
@@ -926,7 +926,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/09-rag-pipeline/" class="md-nav__link">
+      <a href="../../tutorial/09-rag-pipeline/" class="md-nav__link">
         
   
   
@@ -954,7 +954,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/10-replay-and-diff/" class="md-nav__link">
+      <a href="../../tutorial/10-replay-and-diff/" class="md-nav__link">
         
   
   
@@ -982,7 +982,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/11-hitl-interrupts/" class="md-nav__link">
+      <a href="../../tutorial/11-hitl-interrupts/" class="md-nav__link">
         
   
   
@@ -1071,7 +1071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/graph-nodes/" class="md-nav__link">
+      <a href="../../concepts/graph-nodes/" class="md-nav__link">
         
   
   
@@ -1099,7 +1099,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/state-context/" class="md-nav__link">
+      <a href="../../concepts/state-context/" class="md-nav__link">
         
   
   
@@ -1127,7 +1127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/edges-routing/" class="md-nav__link">
+      <a href="../../concepts/edges-routing/" class="md-nav__link">
         
   
   
@@ -1155,7 +1155,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/observability/" class="md-nav__link">
+      <a href="../../concepts/observability/" class="md-nav__link">
         
   
   
@@ -1183,7 +1183,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/memory/" class="md-nav__link">
+      <a href="../../concepts/memory/" class="md-nav__link">
         
   
   
@@ -1211,7 +1211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/connectors/" class="md-nav__link">
+      <a href="../../concepts/connectors/" class="md-nav__link">
         
   
   
@@ -1239,7 +1239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/rag/" class="md-nav__link">
+      <a href="../../concepts/rag/" class="md-nav__link">
         
   
   
@@ -1271,28 +1271,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1310,7 +1313,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1328,7 +1331,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/rest-api/" class="md-nav__link">
+      <a href="../rest-api/" class="md-nav__link">
         
   
   
@@ -1353,10 +1356,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../reference/configuration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1372,6 +1402,109 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#web-rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web / REST API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace UI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-jdbc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory (JDBC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#llm-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM Providers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLM Providers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#openai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenAI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anthropic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anthropic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-configuration-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-configuration order
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1384,7 +1517,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/complexity/" class="md-nav__link">
+      <a href="../complexity/" class="md-nav__link">
         
   
   
@@ -1473,7 +1606,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trace-ui/overview/" class="md-nav__link">
+      <a href="../../trace-ui/overview/" class="md-nav__link">
         
   
   
@@ -1501,7 +1634,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trace-ui/views/" class="md-nav__link">
+      <a href="../../trace-ui/views/" class="md-nav__link">
         
   
   
@@ -1533,37 +1666,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Spring Boot
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../spring-boot/" class="md-nav__link">
         
   
   
@@ -1579,48 +1685,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#rest-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        REST Endpoints
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1686,7 +1750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/react-agent/" class="md-nav__link">
+      <a href="../../cookbook/react-agent/" class="md-nav__link">
         
   
   
@@ -1714,7 +1778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/rag-agent/" class="md-nav__link">
+      <a href="../../cookbook/rag-agent/" class="md-nav__link">
         
   
   
@@ -1742,7 +1806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cookbook/hitl-approval/" class="md-nav__link">
+      <a href="../../cookbook/hitl-approval/" class="md-nav__link">
         
   
   
@@ -1777,7 +1841,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -1824,10 +1888,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rest-endpoints" class="md-nav__link">
+  <a href="#web-rest-api" class="md-nav__link">
     <span class="md-ellipsis">
       
-        REST Endpoints
+        Web / REST API
       
     </span>
   </a>
@@ -1835,10 +1899,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#trace-ui" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Trace UI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-jdbc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory (JDBC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#llm-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM Providers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLM Providers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#openai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenAI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anthropic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anthropic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-configuration-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-configuration order
       
     </span>
   </a>
@@ -1865,77 +1990,216 @@
   
 
 
-<h1 id="spring-boot-integration">Spring Boot Integration<a class="headerlink" href="#spring-boot-integration" title="Permanent link">&para;</a></h1>
-<p>Add the starter to your <code>pom.xml</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>site.tracegraph<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>langgraph-spring-boot-starter<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.2.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
-</code></pre></div>
-<p>The starter auto-configures no-op implementations of all SPIs. Override any with your own <code>@Bean</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@Configuration</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">AppConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nd">@Bean</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Graph</span><span class="o">&lt;</span><span class="n">MyState</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">graph</span><span class="p">(</span><span class="n">NodeListener</span><span class="w"> </span><span class="n">listener</span><span class="p">,</span><span class="w"> </span><span class="n">TraceRecorder</span><span class="w"> </span><span class="n">recorder</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">MyState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;step1&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">            </span><span class="p">.</span><span class="na">entry</span><span class="p">(</span><span class="s">&quot;step1&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">.</span><span class="na">listener</span><span class="p">(</span><span class="n">listener</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="p">.</span><span class="na">traceRecorder</span><span class="p">(</span><span class="n">recorder</span><span class="p">)</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="nd">@Bean</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">TraceStore</span><span class="w"> </span><span class="nf">traceStore</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">InMemoryTraceStore</span><span class="p">();</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="rest-endpoints">REST Endpoints<a class="headerlink" href="#rest-endpoints" title="Permanent link">&para;</a></h2>
-<p>With <code>TraceStore</code> in context, the starter exposes:</p>
+<h1 id="configuration-reference">Configuration Reference<a class="headerlink" href="#configuration-reference" title="Permanent link">&para;</a></h1>
+<p>All TraceGraph properties use the <code>tracegraph.*</code> prefix. Set them in <code>application.yml</code> or <code>application.properties</code>.</p>
+<hr />
+<h2 id="web-rest-api">Web / REST API<a class="headerlink" href="#web-rest-api" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Endpoint</th>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>GET /tracegraph/traces</code></td>
-<td>List all execution IDs</td>
-</tr>
-<tr>
-<td><code>GET /tracegraph/traces/{id}</code></td>
-<td>Full trace JSON</td>
-</tr>
-<tr>
-<td><code>GET /tracegraph/traces/{a}/diff/{b}</code></td>
-<td>Diff two traces</td>
-</tr>
-<tr>
-<td><code>DELETE /tracegraph/traces/{id}</code></td>
-<td>Delete a trace</td>
-</tr>
-<tr>
-<td><code>POST /tracegraph/traces/{id}/replay?step=N</code></td>
-<td>Re-run from step N</td>
-</tr>
-<tr>
-<td><code>POST /tracegraph/traces/stream</code></td>
-<td>SSE event stream</td>
+<td><code>tracegraph.web.enabled</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>When <code>false</code>, suppresses the entire <code>TraceWebAutoConfiguration</code> — no <code>TraceController</code>, <code>TraceReplayController</code>, or <code>TraceStreamController</code> beans are registered.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">tracegraph.web.enabled</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">tracegraph.memory.jdbc.enabled</span><span class="o">=</span><span class="s">false</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">tracegraph.llm.provider</span><span class="o">=</span><span class="s">openai</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">tracegraph.llm.api-key</span><span class="o">=</span><span class="s">sk-...</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="na">tracegraph.llm.model</span><span class="o">=</span><span class="s">gpt-4o</span>
+<p><strong>Example — disable the REST API entirely:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">tracegraph</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">web</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
+<hr />
+<h2 id="trace-ui">Trace UI<a class="headerlink" href="#trace-ui" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracegraph.ui.enabled</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>When <code>false</code>, suppresses the UI auto-config. The <code>/tracegraph/ui/*</code> endpoints and static assets are not served.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="memory-jdbc">Memory (JDBC)<a class="headerlink" href="#memory-jdbc" title="Permanent link">&para;</a></h2>
+<p>These properties control <code>MemoryAutoConfiguration</code>, which registers a <code>JdbcMemoryStore</code> when <code>tracegraph-memory</code>, <code>jackson-databind</code>, and a <code>DataSource</code> bean are all present.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracegraph.memory.jdbc.enabled</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Set to <code>false</code> to skip <code>JdbcMemoryStore</code> auto-registration. The no-op <code>MemoryStore</code> from <code>TraceGraphAutoConfiguration</code> is used instead (unless you declare your own bean).</td>
+</tr>
+<tr>
+<td><code>tracegraph.memory.jdbc.init-schema</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>When <code>true</code>, calls <code>initSchema()</code> on startup to create the <code>tracegraph_memory</code> table if it does not exist. Set to <code>false</code> if you manage schema migrations yourself.</td>
+</tr>
+<tr>
+<td><code>tracegraph.memory.jdbc.table</code></td>
+<td>string</td>
+<td><code>tracegraph_memory</code></td>
+<td>Override the table name. Useful when the default conflicts with an existing schema.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">tracegraph</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">memory</span><span class="p">:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">jdbc</span><span class="p">:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">      </span><span class="nt">init-schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">      </span><span class="c1"># managed by Flyway</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">table</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tg_memory</span>
+</code></pre></div>
+<hr />
+<h2 id="llm-providers">LLM Providers<a class="headerlink" href="#llm-providers" title="Permanent link">&para;</a></h2>
+<p><code>LlmAutoConfiguration</code> registers an <code>LlmClient</code> bean when <code>tracegraph-connectors</code> is on the classpath and <code>tracegraph.llm.provider</code> is set. It is guarded by <code>@ConditionalOnMissingBean(LlmClient)</code> — declare your own bean to override.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracegraph.llm.enabled</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Set to <code>false</code> to disable <code>LlmAutoConfiguration</code> entirely — no <code>LlmClient</code> bean is registered.</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.provider</code></td>
+<td>string</td>
+<td>(none)</td>
+<td>Required to activate an LLM bean. Accepted values: <code>openai</code>, <code>anthropic</code>. No bean is registered when unset.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="openai">OpenAI<a class="headerlink" href="#openai" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracegraph.llm.openai.api-key</code></td>
+<td>string</td>
+<td>—</td>
+<td>OpenAI API key. Required when <code>provider=openai</code>.</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.openai.model</code></td>
+<td>string</td>
+<td><code>gpt-4o-mini</code></td>
+<td>Model ID passed in every request.</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.openai.base-url</code></td>
+<td>string</td>
+<td><code>https://api.openai.com/v1</code></td>
+<td>Override for OpenAI-compatible endpoints (Azure, local proxies).</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.openai.timeout-seconds</code></td>
+<td>int</td>
+<td><code>30</code></td>
+<td>Request timeout for the underlying JDK <code>HttpClient</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="anthropic">Anthropic<a class="headerlink" href="#anthropic" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracegraph.llm.anthropic.api-key</code></td>
+<td>string</td>
+<td>—</td>
+<td>Anthropic API key. Required when <code>provider=anthropic</code>.</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.anthropic.model</code></td>
+<td>string</td>
+<td><code>claude-3-5-haiku-20241022</code></td>
+<td>Model ID.</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.anthropic.anthropic-version</code></td>
+<td>string</td>
+<td><code>2023-06-01</code></td>
+<td>Value of the <code>anthropic-version</code> request header.</td>
+</tr>
+<tr>
+<td><code>tracegraph.llm.anthropic.timeout-seconds</code></td>
+<td>int</td>
+<td><code>60</code></td>
+<td>Request timeout. LLM calls can be slow — set conservatively.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example — OpenAI:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">tracegraph</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">llm</span><span class="p">:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">openai</span><span class="p">:</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">api-key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${OPENAI_API_KEY}</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="nt">timeout-seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">45</span>
+</code></pre></div>
+<p><strong>Example — Anthropic:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">tracegraph</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">llm</span><span class="p">:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">anthropic</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">anthropic</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">api-key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${ANTHROPIC_API_KEY}</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-3-5-sonnet-20241022</span>
+</code></pre></div>
+<hr />
+<h2 id="auto-configuration-order">Auto-configuration order<a class="headerlink" href="#auto-configuration-order" title="Permanent link">&para;</a></h2>
+<p><code>MemoryAutoConfiguration</code> runs <strong>before</strong> <code>TraceGraphAutoConfiguration</code> so that a <code>JdbcMemoryStore</code> wins over the no-op default. <code>LlmAutoConfiguration</code> is independent.</p>
+<p><code>JdbcCheckpointStore</code> and <code>JdbcTraceStore</code> are <strong>not</strong> auto-wired because they require a user-supplied <code>Class&lt;S&gt;</code> — declare them as explicit <code>@Bean</code> definitions.</p>
 
 
 
@@ -1985,10 +2249,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

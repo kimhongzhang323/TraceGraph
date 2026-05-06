@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://site.tracegraph.io/concepts/connectors/">
+        <link rel="canonical" href="https://site.tracegraph.io/tutorial/08-react-agent/">
       
       
-        <link rel="prev" href="../memory/">
+        <link rel="prev" href="../07-llm-and-tools/">
       
       
-        <link rel="next" href="../rag/">
+        <link rel="next" href="../09-rag-pipeline/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Connectors - TraceGraph</title>
+        <title>08 — ReAct Agent - TraceGraph</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#connectors" class="md-skip">
+        <a href="#08-react-agent" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Connectors
+              08 — ReAct Agent
             
           </span>
         </div>
@@ -260,11 +260,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../tutorial/01-nodes-and-edges/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../01-nodes-and-edges/" class="md-tabs__link">
           
   
   
@@ -280,13 +282,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../graph-nodes/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../concepts/graph-nodes/" class="md-tabs__link">
           
   
   
@@ -645,28 +645,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -684,7 +687,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -702,7 +705,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/01-nodes-and-edges/" class="md-nav__link">
+      <a href="../01-nodes-and-edges/" class="md-nav__link">
         
   
   
@@ -730,7 +733,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/02-state-and-context/" class="md-nav__link">
+      <a href="../02-state-and-context/" class="md-nav__link">
         
   
   
@@ -758,7 +761,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/03-retries-and-failures/" class="md-nav__link">
+      <a href="../03-retries-and-failures/" class="md-nav__link">
         
   
   
@@ -786,7 +789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/04-checkpoints-and-resume/" class="md-nav__link">
+      <a href="../04-checkpoints-and-resume/" class="md-nav__link">
         
   
   
@@ -814,7 +817,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/05-parallel-and-send/" class="md-nav__link">
+      <a href="../05-parallel-and-send/" class="md-nav__link">
         
   
   
@@ -842,7 +845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/06-memory/" class="md-nav__link">
+      <a href="../06-memory/" class="md-nav__link">
         
   
   
@@ -870,7 +873,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/07-llm-and-tools/" class="md-nav__link">
+      <a href="../07-llm-and-tools/" class="md-nav__link">
         
   
   
@@ -895,10 +898,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../tutorial/08-react-agent/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 — ReAct Agent
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -914,6 +944,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-loop-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the loop works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-agent-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the agent graph
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composing-the-agent-as-a-subgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composing the agent as a subgraph
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -926,7 +1053,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/09-rag-pipeline/" class="md-nav__link">
+      <a href="../09-rag-pipeline/" class="md-nav__link">
         
   
   
@@ -954,7 +1081,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/10-replay-and-diff/" class="md-nav__link">
+      <a href="../10-replay-and-diff/" class="md-nav__link">
         
   
   
@@ -982,7 +1109,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorial/11-hitl-interrupts/" class="md-nav__link">
+      <a href="../11-hitl-interrupts/" class="md-nav__link">
         
   
   
@@ -1014,31 +1141,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -1056,7 +1180,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1074,7 +1198,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../graph-nodes/" class="md-nav__link">
+      <a href="../../concepts/graph-nodes/" class="md-nav__link">
         
   
   
@@ -1102,7 +1226,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../state-context/" class="md-nav__link">
+      <a href="../../concepts/state-context/" class="md-nav__link">
         
   
   
@@ -1130,7 +1254,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../edges-routing/" class="md-nav__link">
+      <a href="../../concepts/edges-routing/" class="md-nav__link">
         
   
   
@@ -1158,7 +1282,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../observability/" class="md-nav__link">
+      <a href="../../concepts/observability/" class="md-nav__link">
         
   
   
@@ -1186,7 +1310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../memory/" class="md-nav__link">
+      <a href="../../concepts/memory/" class="md-nav__link">
         
   
   
@@ -1211,19 +1335,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../concepts/connectors/" class="md-nav__link">
         
   
   
@@ -1239,7 +1354,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -1252,7 +1366,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rag/" class="md-nav__link">
+      <a href="../../concepts/rag/" class="md-nav__link">
         
   
   
@@ -1761,6 +1875,91 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-loop-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the loop works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-agent-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the agent graph
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composing-the-agent-as-a-subgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composing the agent as a subgraph
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1779,8 +1978,90 @@
   
 
 
-<h1 id="connectors">Connectors<a class="headerlink" href="#connectors" title="Permanent link">&para;</a></h1>
-<p>Documentation coming soon. See the <a href="https://github.com/kimho/TraceGraph/tree/main/examples">examples</a> for working code.</p>
+<h1 id="08-react-agent">08 — ReAct Agent<a class="headerlink" href="#08-react-agent" title="Permanent link">&para;</a></h1>
+<p>The ReAct (Reason + Act) pattern alternates between asking the LLM to reason about what action to take and executing that action. <code>ReActAgent&lt;S&gt;</code> is a factory that builds a complete <code>Graph&lt;S&gt;</code> implementing this loop.</p>
+<h2 id="how-the-loop-works">How the loop works<a class="headerlink" href="#how-the-loop-works" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>llm node</strong> — sends the current state (including tool results from prior steps) to the LLM.</li>
+<li>If the response contains tool calls → route to the <strong>tools node</strong>.</li>
+<li><strong>tools node</strong> — executes each requested tool and appends results to state.</li>
+<li>Route back to <strong>llm node</strong>.</li>
+<li>When the LLM returns no tool calls → route to <strong>done</strong> (terminal).</li>
+</ol>
+<h2 id="define-state">Define state<a class="headerlink" href="#define-state" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">record</span> <span class="nc">AgentState</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">userQuery</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ChatMessage</span><span class="o">&gt;</span><span class="w"> </span><span class="n">history</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ToolResult</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lastToolResults</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">finalAnswer</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="n">AgentState</span><span class="w"> </span><span class="nf">of</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">query</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AgentState</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(),</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(),</span><span class="w"> </span><span class="kc">null</span><span class="p">);</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="define-tools">Define tools<a class="headerlink" href="#define-tools" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Tool</span><span class="w"> </span><span class="n">calculator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="c1">// args is a JSON string per the tool&#39;s parametersSchema</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Json</span><span class="p">.</span><span class="na">parse</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eval</span><span class="p">(</span><span class="n">input</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;expression&quot;</span><span class="p">).</span><span class="na">asText</span><span class="p">());</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">valueOf</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">};</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">ToolDefinition</span><span class="w"> </span><span class="n">calcDef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ToolDefinition</span><span class="p">(</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="s">&quot;calculator&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="s">&quot;Evaluates a mathematical expression&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="s">&quot;&quot;&quot;</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="s">    {&quot;type&quot;:&quot;object&quot;,&quot;properties&quot;:{&quot;expression&quot;:{&quot;type&quot;:&quot;string&quot;}},&quot;required&quot;:[&quot;expression&quot;]}</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="s">    &quot;&quot;&quot;</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">);</span>
+</code></pre></div>
+<h2 id="build-the-agent-graph">Build the agent graph<a class="headerlink" href="#build-the-agent-graph" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">LlmClient</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OpenAiLlmClient</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="na">apiKey</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;OPENAI_API_KEY&quot;</span><span class="p">))</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">model</span><span class="p">(</span><span class="s">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">Graph</span><span class="o">&lt;</span><span class="n">AgentState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">agentGraph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ReActAgent</span><span class="p">.</span><span class="o">&lt;</span><span class="n">AgentState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">.</span><span class="na">client</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p">.</span><span class="na">tool</span><span class="p">(</span><span class="n">calcDef</span><span class="p">,</span><span class="w"> </span><span class="n">calculator</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="p">.</span><span class="na">requestFactory</span><span class="p">(</span><span class="n">state</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LlmRequest</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="p">.</span><span class="na">messages</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="na">history</span><span class="p">())</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="p">.</span><span class="na">model</span><span class="p">(</span><span class="s">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="p">.</span><span class="na">responseFolder</span><span class="p">((</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="n">response</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="na">withHistory</span><span class="p">(</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="na">history</span><span class="p">(),</span><span class="w"> </span><span class="n">ChatMessage</span><span class="p">.</span><span class="na">assistant</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">content</span><span class="p">()))</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="p">))</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="p">.</span><span class="na">toolResultFolder</span><span class="p">((</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="n">results</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">state</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="p">.</span><span class="na">withLastToolResults</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span><span class="p">.</span><span class="na">withHistory</span><span class="p">(</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="na">history</span><span class="p">(),</span><span class="w"> </span><span class="n">toMessages</span><span class="p">(</span><span class="n">results</span><span class="p">))))</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">()</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="p">.</span><span class="na">buildGraph</span><span class="p">();</span>
+</code></pre></div>
+<h2 id="run-it">Run it<a class="headerlink" href="#run-it" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ExecutionResult</span><span class="o">&lt;</span><span class="n">AgentState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">agentGraph</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">AgentState</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;What is 42 * 17?&quot;</span><span class="p">));</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="na">finalState</span><span class="p">().</span><span class="na">finalAnswer</span><span class="p">());</span><span class="w"> </span><span class="c1">// 714.0</span>
+</code></pre></div>
+<p>The agent will loop as many times as needed until the LLM stops requesting tools.</p>
+<h2 id="composing-the-agent-as-a-subgraph">Composing the agent as a subgraph<a class="headerlink" href="#composing-the-agent-as-a-subgraph" title="Permanent link">&para;</a></h2>
+<p><code>ReActAgent</code> produces a regular <code>Graph&lt;S&gt;</code>. Use <code>.subgraph(name, agentGraph)</code> to embed it inside a larger graph:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Graph</span><span class="o">&lt;</span><span class="n">AppState</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pipeline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Graph</span><span class="p">.</span><span class="o">&lt;</span><span class="n">AppState</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;prepare&quot;</span><span class="p">,</span><span class="w">   </span><span class="n">prepareNode</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p">.</span><span class="na">subgraph</span><span class="p">(</span><span class="s">&quot;agent&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">agentGraph</span><span class="p">)</span><span class="w">   </span><span class="c1">// inner graph shares &lt;AppState&gt;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">.</span><span class="na">node</span><span class="p">(</span><span class="s">&quot;format&quot;</span><span class="p">,</span><span class="w">    </span><span class="n">formatNode</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p">.</span><span class="na">edge</span><span class="p">(</span><span class="s">&quot;prepare&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;agent&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">.</span><span class="na">edge</span><span class="p">(</span><span class="s">&quot;agent&quot;</span><span class="p">,</span><span class="w">   </span><span class="s">&quot;format&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="p">.</span><span class="na">entry</span><span class="p">(</span><span class="s">&quot;prepare&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="p">.</span><span class="na">terminal</span><span class="p">(</span><span class="s">&quot;format&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+<h2 id="key-takeaways">Key takeaways<a class="headerlink" href="#key-takeaways" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>ReActAgent&lt;S&gt;.builder()</code> produces a complete <code>Graph&lt;S&gt;</code> — the llm/tools/done structure is wired for you.</li>
+<li>Supply <code>requestFactory</code> and <code>responseFolder</code> to control how state maps to <code>LlmRequest</code> and back.</li>
+<li><code>toolResultFolder</code> folds executed tool results back into the state before the next LLM call.</li>
+<li>The built graph is a regular <code>Graph&lt;S&gt;</code> — embed it as a subgraph or run it standalone.</li>
+</ul>
 
 
 
