@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Icon, Panel } from '@/components'
-import { EDGES, NODE_LAYOUT, STUDIO_NODES } from '@/data/mock'
+import { Badge, Button, GraphCanvas, Icon, Panel } from '@/components'
+import { EDGES, STUDIO_NODES } from '@/data/mock'
 import { api } from '@/lib/api'
-import type { Edge, GraphComplexity, NodeLayout } from '@/types'
+import type { Edge, GraphComplexity } from '@/types'
 
 type Selection =
   | { type: 'node'; nodeName: string }
@@ -64,6 +64,30 @@ export function Studio() {
 
   const selectedNodeName = selection.type === 'node' ? selection.nodeName : null
   const selectedEdgeIndex = selection.type === 'edge' ? selection.edgeIndex : null
+
+  const focusNode = selectedNodeName ?? (selectedEdgeIndex != null ? EDGES[selectedEdgeIndex]?.from : STUDIO_NODES[0]?.name) ?? null
+  const neighborhood = new Set<string>()
+  const highlightedEdges = new Set<number>()
+
+  if (focusNode) {
+    neighborhood.add(focusNode)
+    EDGES.forEach((edge, index) => {
+      if (edge.from === focusNode || edge.to === focusNode) {
+        neighborhood.add(edge.from)
+        neighborhood.add(edge.to)
+        highlightedEdges.add(index)
+      }
+    })
+  }
+
+  if (selectedEdgeIndex != null) {
+    const edge = EDGES[selectedEdgeIndex]
+    if (edge) {
+      neighborhood.add(edge.from)
+      neighborhood.add(edge.to)
+      highlightedEdges.add(selectedEdgeIndex)
+    }
+  }
 
   return (
     <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-6 fade-up">
@@ -156,16 +180,24 @@ export function Studio() {
           }
         >
           <div className="relative h-full overflow-hidden bg-[radial-gradient(circle_at_18%_18%,rgba(13,143,99,0.10),transparent_24%),radial-gradient(circle_at_80%_10%,rgba(50,118,255,0.10),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(109,74,255,0.12),transparent_24%),linear-gradient(180deg,#fcfcfc_0%,#f3f6f8_100%)] dark:bg-[radial-gradient(circle_at_18%_18%,rgba(13,143,99,0.16),transparent_24%),radial-gradient(circle_at_80%_10%,rgba(50,118,255,0.14),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(109,74,255,0.18),transparent_24%),linear-gradient(180deg,#0c1014_0%,#090b0f_100%)]">
-            <div className="absolute inset-0 opacity-40 dark:opacity-60">
-              <div className="grid-bg h-full" />
-            </div>
-            <StudioCanvas
+            <CanvasOverlay
               lensMode={lensMode}
-              selectedNodeName={selectedNodeName}
+              focusNode={focusNode}
               selectedEdgeIndex={selectedEdgeIndex}
-              onSelectNode={(nodeName) => setSelection({ type: 'node', nodeName })}
+              highlightedEdges={highlightedEdges}
               onSelectEdge={(edgeIndex) => setSelection({ type: 'edge', edgeIndex })}
             />
+            <div className="absolute inset-0">
+              <GraphCanvas
+                studioNodes={STUDIO_NODES}
+                edges={EDGES}
+                selectedNodeName={selectedNodeName}
+                selectedEdgeIndex={selectedEdgeIndex}
+                lensMode={lensMode}
+                onSelectNode={(nodeName) => setSelection({ type: 'node', nodeName })}
+                onSelectEdge={(edgeIndex) => setSelection({ type: 'edge', edgeIndex })}
+              />
+            </div>
           </div>
         </Panel>
 
@@ -256,168 +288,6 @@ function SectionHeader({ label, count, className = '' }: { label: string; count:
   )
 }
 
-function StudioCanvas({
-  lensMode,
-  selectedNodeName,
-  selectedEdgeIndex,
-  onSelectNode,
-  onSelectEdge,
-}: {
-  lensMode: LensMode
-  selectedNodeName: string | null
-  selectedEdgeIndex: number | null
-  onSelectNode: (nodeName: string) => void
-  onSelectEdge: (edgeIndex: number) => void
-}) {
-  const focusNode = selectedNodeName ?? (selectedEdgeIndex != null ? EDGES[selectedEdgeIndex]?.from : STUDIO_NODES[0]?.name)
-  const neighborhood = new Set<string>()
-  const highlightedEdges = new Set<number>()
-
-  if (focusNode) {
-    neighborhood.add(focusNode)
-    EDGES.forEach((edge, index) => {
-      if (edge.from === focusNode || edge.to === focusNode) {
-        neighborhood.add(edge.from)
-        neighborhood.add(edge.to)
-        highlightedEdges.add(index)
-      }
-    })
-  }
-
-  if (selectedEdgeIndex != null) {
-    const edge = EDGES[selectedEdgeIndex]
-    if (edge) {
-      neighborhood.add(edge.from)
-      neighborhood.add(edge.to)
-      highlightedEdges.add(selectedEdgeIndex)
-    }
-  }
-
-  return (
-    <div className="relative h-full">
-      <CanvasOverlay
-        lensMode={lensMode}
-        focusNode={focusNode}
-        selectedEdgeIndex={selectedEdgeIndex}
-        highlightedEdges={highlightedEdges}
-        onSelectEdge={onSelectEdge}
-      />
-
-      <svg viewBox="0 0 760 580" preserveAspectRatio="xMidYMid meet" className="h-full w-full">
-        <defs>
-          <marker id="studio-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
-          </marker>
-        </defs>
-
-        {EDGES.map((edge, edgeIndex) => {
-          const from = NODE_LAYOUT[edge.from]
-          const to = NODE_LAYOUT[edge.to]
-          if (!from || !to) return null
-
-          const edgeState = getEdgeVisualState(lensMode, edgeIndex, highlightedEdges, selectedEdgeIndex)
-          const mid = getEdgeMidpoint(from, to)
-
-          return (
-            <g key={`${edge.from}-${edge.to}-${edgeIndex}`} style={{ cursor: 'pointer' }} onClick={() => onSelectEdge(edgeIndex)}>
-              <path
-                d={buildEdgePath(from, to)}
-                fill="none"
-                stroke={edgeState.stroke}
-                strokeWidth={edgeState.width}
-                strokeOpacity={edgeState.opacity}
-                markerEnd="url(#studio-arrow)"
-              />
-              {edge.label && (
-                <g>
-                  <rect
-                    x={mid.x - 38}
-                    y={mid.y - 11}
-                    width="76"
-                    height="22"
-                    rx="11"
-                    fill="white"
-                    stroke={edgeState.stroke}
-                    strokeOpacity={0.18}
-                    className="dark:fill-ink-900"
-                  />
-                  <text x={mid.x} y={mid.y + 4} textAnchor="middle" className="mono fill-ink-700 dark:fill-ink-300" fontSize="10">
-                    {edge.label}
-                  </text>
-                </g>
-              )}
-            </g>
-          )
-        })}
-
-        {Object.entries(NODE_LAYOUT).map(([name, layout]) => {
-          const meta = NODE_META[name]
-          const isFocused = selectedNodeName === name
-          const inNeighborhood = neighborhood.has(name)
-          const nodeState = getNodeVisualState(lensMode, isFocused, inNeighborhood)
-
-          return (
-            <g key={name} style={{ cursor: 'pointer' }} onClick={() => onSelectNode(name)}>
-              <circle
-                cx={layout.x + layout.w / 2}
-                cy={layout.y + layout.h / 2}
-                r={isFocused ? 52 : 42}
-                fill={meta.accent}
-                opacity={nodeState.haloOpacity}
-              />
-              <rect
-                x={layout.x}
-                y={layout.y}
-                width={layout.w}
-                height={layout.h}
-                rx="12"
-                fill={nodeState.fill}
-                stroke={nodeState.stroke}
-                strokeWidth={nodeState.strokeWidth}
-                opacity={nodeState.opacity}
-                className="dark:fill-ink-900"
-              />
-              <text x={layout.x + 16} y={layout.y + 22} className="mono fill-ink-950 dark:fill-white" fontSize="11">
-                {meta.tier}
-              </text>
-              <text x={layout.x + 16} y={layout.y + 40} className="mono fill-ink-950 dark:fill-white" fontSize="15" fontWeight="600">
-                {name}
-              </text>
-              <text x={layout.x + 16} y={layout.y + 54} className="mono fill-ink-500 dark:fill-ink-400" fontSize="10">
-                {layout.kind}
-              </text>
-            </g>
-          )
-        })}
-
-        <rect x={NODE_LAYOUT.validate.x + 16} y="28" width={NODE_LAYOUT.validate.w - 32} height="22" rx="11" fill="#111827" opacity="0.92" />
-        <text x={NODE_LAYOUT.validate.x + NODE_LAYOUT.validate.w / 2} y="42" textAnchor="middle" fill="white" className="mono" fontSize="10">
-          entry
-        </text>
-
-        <rect
-          x={NODE_LAYOUT.ship.x + 16}
-          y={NODE_LAYOUT.ship.y + NODE_LAYOUT.ship.h + 28}
-          width={NODE_LAYOUT.ship.w - 32}
-          height="22"
-          rx="11"
-          fill="#111827"
-          opacity="0.92"
-        />
-        <text
-          x={NODE_LAYOUT.ship.x + NODE_LAYOUT.ship.w / 2}
-          y={NODE_LAYOUT.ship.y + NODE_LAYOUT.ship.h + 42}
-          textAnchor="middle"
-          fill="white"
-          className="mono"
-          fontSize="10"
-        >
-          terminal
-        </text>
-      </svg>
-    </div>
-  )
-}
 
 function CanvasOverlay({
   lensMode,
@@ -482,106 +352,44 @@ function MiniMap({ focusNode }: { focusNode: string | null }) {
   return (
     <svg viewBox="0 0 210 74" className="h-full w-full">
       {EDGES.map((edge, index) => {
-        const from = NODE_LAYOUT[edge.from]
-        const to = NODE_LAYOUT[edge.to]
+        const from = STUDIO_NODES.find((n) => n.name === edge.from)
+        const to = STUDIO_NODES.find((n) => n.name === edge.to)
         if (!from || !to) return null
+        const fromIndex = STUDIO_NODES.indexOf(from)
+        const toIndex = STUDIO_NODES.indexOf(to)
+        const cols = 3
+        const fw = 210 / cols
+        const fh = 74 / Math.ceil(STUDIO_NODES.length / cols)
         return (
           <line
             key={index}
-            x1={(from.x + from.w / 2) / 3.6}
-            y1={(from.y + from.h / 2) / 6.6}
-            x2={(to.x + to.w / 2) / 3.6}
-            y2={(to.y + to.h / 2) / 6.6}
+            x1={(fromIndex % cols) * fw + fw / 2}
+            y1={Math.floor(fromIndex / cols) * fh + fh / 2}
+            x2={(toIndex % cols) * fw + fw / 2}
+            y2={Math.floor(toIndex / cols) * fh + fh / 2}
             stroke="rgba(15,23,42,0.25)"
             strokeWidth="1.4"
           />
         )
       })}
-      {Object.entries(NODE_LAYOUT).map(([name, layout]) => (
-        <circle
-          key={name}
-          cx={(layout.x + layout.w / 2) / 3.6}
-          cy={(layout.y + layout.h / 2) / 6.6}
-          r={focusNode === name ? 5 : 3.5}
-          fill={NODE_META[name].accent}
-          opacity={focusNode === name ? 1 : 0.72}
-        />
-      ))}
+      {STUDIO_NODES.map((node, index) => {
+        const cols = 3
+        const fw = 210 / cols
+        const fh = 74 / Math.ceil(STUDIO_NODES.length / cols)
+        const meta = NODE_META[node.name]
+        return (
+          <circle
+            key={node.name}
+            cx={(index % cols) * fw + fw / 2}
+            cy={Math.floor(index / cols) * fh + fh / 2}
+            r={focusNode === node.name ? 5 : 3.5}
+            fill={meta?.accent ?? '#6b7280'}
+            opacity={focusNode === node.name ? 1 : 0.72}
+          />
+        )
+      })}
     </svg>
   )
-}
-
-function getEdgeMidpoint(from: NodeLayout, to: NodeLayout) {
-  return {
-    x: (from.x + from.w / 2 + to.x + to.w / 2) / 2,
-    y: (from.y + from.h + to.y) / 2,
-  }
-}
-
-function buildEdgePath(from: NodeLayout, to: NodeLayout) {
-  const x1 = from.x + from.w / 2
-  const y1 = from.y + from.h
-  const x2 = to.x + to.w / 2
-  const y2 = to.y
-  return `M ${x1} ${y1} C ${x1} ${y1 + 36}, ${x2} ${y2 - 36}, ${x2} ${y2}`
-}
-
-function getEdgeVisualState(
-  lensMode: LensMode,
-  edgeIndex: number,
-  highlightedEdges: Set<number>,
-  selectedEdgeIndex: number | null,
-) {
-  const isSelected = selectedEdgeIndex === edgeIndex
-  const inNeighborhood = highlightedEdges.has(edgeIndex)
-
-  if (isSelected) {
-    return { stroke: '#0d8f63', width: 3.2, opacity: 1 }
-  }
-  if (lensMode === 'relations' && inNeighborhood) {
-    return { stroke: '#3276ff', width: 2.4, opacity: 0.95 }
-  }
-  if (lensMode === 'execution') {
-    return { stroke: '#6d4aff', width: inNeighborhood ? 2.6 : 1.6, opacity: inNeighborhood ? 0.9 : 0.32 }
-  }
-  return { stroke: 'currentColor', width: inNeighborhood ? 2 : 1.4, opacity: inNeighborhood ? 0.72 : 0.34 }
-}
-
-function getNodeVisualState(lensMode: LensMode, isFocused: boolean, inNeighborhood: boolean) {
-  if (isFocused) {
-    return {
-      haloOpacity: 0.16,
-      fill: 'rgba(255,255,255,0.98)',
-      stroke: '#0d8f63',
-      strokeWidth: 2.4,
-      opacity: 1,
-    }
-  }
-  if (lensMode === 'relations' && inNeighborhood) {
-    return {
-      haloOpacity: 0.1,
-      fill: 'rgba(255,255,255,0.94)',
-      stroke: '#3276ff',
-      strokeWidth: 1.8,
-      opacity: 1,
-    }
-  }
-  if (lensMode === 'execution') {
-    return {
-      haloOpacity: inNeighborhood ? 0.09 : 0.03,
-      fill: 'rgba(255,255,255,0.92)',
-      stroke: '#6b7280',
-      strokeWidth: 1.4,
-      opacity: inNeighborhood ? 0.96 : 0.48,
-    }
-  }
-  return {
-    haloOpacity: inNeighborhood ? 0.08 : 0.03,
-    fill: 'rgba(255,255,255,0.92)',
-    stroke: '#111827',
-    strokeWidth: 1.4,
-    opacity: inNeighborhood ? 0.96 : 0.6,
-  }
 }
 
 function StudioInspector({ selection }: { selection: Selection }) {
