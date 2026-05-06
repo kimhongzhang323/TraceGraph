@@ -248,6 +248,7 @@ function GraphCanvasInner({
 
   const initialEdges = useMemo(
     () => buildRFEdges(edges, null, null, 'topology'),
+    // positions not read by buildRFEdges — dep here ensures edges seed after layout resolves
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [positions],
   )
