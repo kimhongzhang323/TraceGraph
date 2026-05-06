@@ -13,6 +13,6 @@ import org.springframework.context.annotation.Import;
 @AutoConfiguration(afterName = "io.tracegraph.boot.web.TraceWebAutoConfiguration")
 @ConditionalOnWebApplication
 @ConditionalOnProperty(prefix = "tracegraph.ui", name = "enabled", havingValue = "true", matchIfMissing = true)
-@Import({GraphRenderController.class, ComplexityController.class})
+@Import({GraphRenderController.class, ComplexityController.class, UiIndexController.class})
 public class TraceUiAutoConfiguration {
 }
