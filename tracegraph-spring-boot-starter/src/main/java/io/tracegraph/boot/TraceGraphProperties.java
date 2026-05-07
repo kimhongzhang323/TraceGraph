@@ -68,6 +68,8 @@ public class TraceGraphProperties {
     public static class Web {
         private boolean enabled = true;
         private final Cors cors = new Cors();
+        private final RateLimit rateLimit = new RateLimit();
+        private final Replay replay = new Replay();
 
         public boolean isEnabled() {
             return enabled;
@@ -79,6 +81,14 @@ public class TraceGraphProperties {
 
         public Cors getCors() {
             return cors;
+        }
+
+        public RateLimit getRateLimit() {
+            return rateLimit;
+        }
+
+        public Replay getReplay() {
+            return replay;
         }
 
         public static class Cors {
@@ -100,6 +110,33 @@ public class TraceGraphProperties {
             public void setAllowedOrigins(String allowedOrigins) {
                 this.allowedOrigins = allowedOrigins;
             }
+        }
+
+        /** Token-bucket rate limiting for read endpoints. Disabled by default. */
+        public static class RateLimit {
+            private boolean enabled = false;
+            /** Sustained requests per second per remote IP. */
+            private int rps = 50;
+            /** Maximum burst above the sustained rate. */
+            private int burst = 100;
+
+            public boolean isEnabled() { return enabled; }
+            public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+            public int getRps() { return rps; }
+            public void setRps(int rps) { this.rps = rps; }
+
+            public int getBurst() { return burst; }
+            public void setBurst(int burst) { this.burst = burst; }
+        }
+
+        /** Concurrency controls for trace replay. */
+        public static class Replay {
+            /** Maximum number of concurrent replay executions. 0 means unlimited. */
+            private int maxConcurrent = 10;
+
+            public int getMaxConcurrent() { return maxConcurrent; }
+            public void setMaxConcurrent(int maxConcurrent) { this.maxConcurrent = maxConcurrent; }
         }
     }
 

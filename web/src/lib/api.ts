@@ -10,19 +10,44 @@
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
+const REQUEST_TIMEOUT_MS = 10_000
+
+// Deduplicates in-flight GET requests by URL — prevents concurrent re-renders
+// from fanning out identical fetches.
+const inflight = new Map<string, Promise<unknown>>()
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${BASE}${path}`
-  const res = await fetch(url, {
+  const method = (init?.method ?? 'GET').toUpperCase()
+
+  if (method === 'GET' && inflight.has(url)) {
+    return inflight.get(url) as Promise<T>
+  }
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  const promise = fetch(url, {
     headers: { 'Content-Type': 'application/json', ...init?.headers },
+    signal: controller.signal,
     ...init,
   })
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new ApiError(res.status, text)
-  }
-  const ct = res.headers.get('content-type') ?? ''
-  if (ct.includes('application/json')) return res.json() as Promise<T>
-  return res.text() as unknown as Promise<T>
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text().catch(() => res.statusText)
+        throw new ApiError(res.status, text)
+      }
+      const ct = res.headers.get('content-type') ?? ''
+      if (ct.includes('application/json')) return res.json() as T
+      return res.text() as unknown as T
+    })
+    .finally(() => {
+      clearTimeout(timer)
+      if (method === 'GET') inflight.delete(url)
+    })
+
+  if (method === 'GET') inflight.set(url, promise)
+  return promise
 }
 
 export class ApiError extends Error {
