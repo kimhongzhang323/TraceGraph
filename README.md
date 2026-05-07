@@ -1,3 +1,5 @@
+![TraceGraph banner](docs/images/banner.png)
+
 # TraceGraph
 
 [![Maven Central](https://img.shields.io/maven-central/v/site.tracegraph/tracegraph-core?label=Maven%20Central)](https://central.sonatype.com/artifact/site.tracegraph/tracegraph-core)
