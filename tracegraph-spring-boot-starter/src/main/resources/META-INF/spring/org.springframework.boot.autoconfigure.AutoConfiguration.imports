@@ -2,6 +2,7 @@ io.tracegraph.boot.TraceGraphAutoConfiguration
 io.tracegraph.boot.memory.MemoryAutoConfiguration
 io.tracegraph.boot.llm.LlmAutoConfiguration
 io.tracegraph.boot.web.TraceWebAutoConfiguration
+io.tracegraph.boot.web.CorsAutoConfiguration
 io.tracegraph.boot.rag.RagAutoConfiguration
 io.tracegraph.boot.rag.EmbeddingAutoConfiguration
 io.tracegraph.boot.a2a.A2AAutoConfiguration

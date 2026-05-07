@@ -1,9 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Badge, Button, GraphCanvas, Icon, Panel } from '@/components'
 import { Seo } from '@/components/Seo'
 import { EDGES, STUDIO_NODES } from '@/data/mock'
 import { api } from '@/lib/api'
-import type { Edge, GraphComplexity, LensMode } from '@/types'
+import type { Edge, GraphComplexity, LensMode, StudioNode } from '@/types'
+
+function parseMermaid(src: string): { nodes: StudioNode[]; edges: Edge[] } {
+  const nodeSet = new Set<string>()
+  const edges: Edge[] = []
+  const lines = src.split('\n')
+  for (const line of lines) {
+    // A -->|label| B  or  A --> B
+    const labeled = line.match(/^\s*(\w+)\s*-->\s*\|([^|]+)\|\s*(\w+)/)
+    if (labeled) {
+      nodeSet.add(labeled[1]); nodeSet.add(labeled[3])
+      edges.push({ from: labeled[1], to: labeled[3], label: labeled[2] })
+      continue
+    }
+    const plain = line.match(/^\s*(\w+)\s*-->\s*(\w+)/)
+    if (plain) {
+      nodeSet.add(plain[1]); nodeSet.add(plain[2])
+      edges.push({ from: plain[1], to: plain[2] })
+    }
+  }
+  const nodes: StudioNode[] = Array.from(nodeSet).map((name, i) => ({
+    name,
+    kind: 'sync',
+    fn: `${name}Fn`,
+    retry: '-',
+    entry: i === 0,
+    terminal: i === nodeSet.size - 1,
+  }))
+  return { nodes, edges }
+}
 
 type Selection =
   | { type: 'node'; nodeName: string }
@@ -55,22 +84,43 @@ export function Studio() {
   const [lensMode, setLensMode] = useState<LensMode>('relations')
   const [mermaid, setMermaid] = useState<string | null>(null)
   const [complexity, setComplexity] = useState<GraphComplexity | null>(null)
+  const [isLive, setIsLive] = useState(false)
+  const [liveNodes, setLiveNodes] = useState<StudioNode[] | null>(null)
+  const [liveEdges, setLiveEdges] = useState<Edge[] | null>(null)
 
-  useEffect(() => {
-    api.graph.mermaid().then(setMermaid).catch(() => {})
-    api.graph.complexity().then(setComplexity).catch(() => {})
+  const fetchBackend = useCallback(() => {
+    api.graph.mermaid()
+      .then((src) => {
+        setMermaid(src as string)
+        setIsLive(true)
+        const parsed = parseMermaid(src as string)
+        if (parsed.nodes.length > 0) {
+          setLiveNodes(parsed.nodes)
+          setLiveEdges(parsed.edges)
+          if (parsed.nodes[0]) setSelection({ type: 'node', nodeName: parsed.nodes[0].name })
+        }
+      })
+      .catch(() => { setIsLive(false) })
+    api.graph.complexity()
+      .then((c) => setComplexity(c as GraphComplexity))
+      .catch(() => {})
   }, [])
+
+  useEffect(() => { fetchBackend() }, [fetchBackend])
+
+  const activeNodes = liveNodes ?? STUDIO_NODES
+  const activeEdges = liveEdges ?? EDGES
 
   const selectedNodeName = selection.type === 'node' ? selection.nodeName : null
   const selectedEdgeIndex = selection.type === 'edge' ? selection.edgeIndex : null
 
-  const focusNode = selectedNodeName ?? (selectedEdgeIndex != null ? EDGES[selectedEdgeIndex]?.from : STUDIO_NODES[0]?.name) ?? null
+  const focusNode = selectedNodeName ?? (selectedEdgeIndex != null ? activeEdges[selectedEdgeIndex]?.from : activeNodes[0]?.name) ?? null
   const neighborhood = new Set<string>()
   const highlightedEdges = new Set<number>()
 
   if (focusNode) {
     neighborhood.add(focusNode)
-    EDGES.forEach((edge, index) => {
+    activeEdges.forEach((edge, index) => {
       if (edge.from === focusNode || edge.to === focusNode) {
         neighborhood.add(edge.from)
         neighborhood.add(edge.to)
@@ -80,7 +130,7 @@ export function Studio() {
   }
 
   if (selectedEdgeIndex != null) {
-    const edge = EDGES[selectedEdgeIndex]
+    const edge = activeEdges[selectedEdgeIndex]
     if (edge) {
       neighborhood.add(edge.from)
       neighborhood.add(edge.to)
@@ -96,13 +146,16 @@ export function Studio() {
         path="/studio"
         noindex
       />
-      <StudioHeader complexity={complexity} mermaid={mermaid} />
+      <BackendBanner isLive={isLive} onRefresh={fetchBackend} />
+      <div className="mt-2">
+        <StudioHeader complexity={complexity} mermaid={mermaid} nodeCount={activeNodes.length} edgeCount={activeEdges.length} />
+      </div>
 
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-[290px_1fr_340px] gap-3 h-[calc(100vh-200px)] min-h-[640px]">
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-[290px_1fr_340px] gap-3 h-[calc(100vh-250px)] min-h-[640px]">
         <Panel title="Knowledge Graph">
           <div className="py-1.5">
-            <SectionHeader label="Nodes" count={STUDIO_NODES.length} />
-            {STUDIO_NODES.map((node) => {
+            <SectionHeader label="Nodes" count={activeNodes.length} />
+            {activeNodes.map((node) => {
               const active = selection.type === 'node' && selection.nodeName === node.name
               const meta = NODE_META[node.name]
               return (
@@ -141,8 +194,8 @@ export function Studio() {
               )
             })}
 
-            <SectionHeader label="Relationships" count={EDGES.length} className="mt-5" />
-            {EDGES.map((edge, edgeIndex) => {
+            <SectionHeader label="Relationships" count={activeEdges.length} className="mt-5" />
+            {activeEdges.map((edge, edgeIndex) => {
               const active = selection.type === 'edge' && selection.edgeIndex === edgeIndex
               return (
                 <button
@@ -190,12 +243,14 @@ export function Studio() {
               focusNode={focusNode}
               selectedEdgeIndex={selectedEdgeIndex}
               highlightedEdges={highlightedEdges}
+              edges={activeEdges}
+              nodes={activeNodes}
               onSelectEdge={(edgeIndex) => setSelection({ type: 'edge', edgeIndex })}
             />
             <div className="absolute inset-0 z-0">
               <GraphCanvas
-                studioNodes={STUDIO_NODES}
-                edges={EDGES}
+                studioNodes={activeNodes}
+                edges={activeEdges}
                 selectedNodeName={selectedNodeName}
                 selectedEdgeIndex={selectedEdgeIndex}
                 lensMode={lensMode}
@@ -213,7 +268,7 @@ export function Studio() {
               : `edge | ${selectedEdgeIndex != null ? selectedEdgeIndex + 1 : ''}`
           }
         >
-          <StudioInspector selection={selection} />
+          <StudioInspector selection={selection} nodes={activeNodes} edges={activeEdges} />
         </Panel>
       </div>
 
@@ -243,7 +298,23 @@ export function Studio() {
   )
 }
 
-function StudioHeader({ complexity, mermaid }: { complexity: GraphComplexity | null; mermaid: string | null }) {
+function BackendBanner({ isLive, onRefresh }: { isLive: boolean; onRefresh: () => void }) {
+  return (
+    <div className={`rounded-xl border px-4 py-2 flex items-center gap-2.5 mono text-[11.5px] ${
+      isLive
+        ? 'bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+        : 'bg-amber-50 dark:bg-amber-900/15 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+    }`}>
+      <span className={`inline-block w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+      {isLive
+        ? 'Live — graph loaded from backend at localhost:8082'
+        : 'Demo data — backend not reachable. Start tracegraph-demo on port 8082 to see real graph structure.'}
+      <button onClick={onRefresh} className="ml-auto text-[10.5px] underline opacity-70 hover:opacity-100">Refresh</button>
+    </div>
+  )
+}
+
+function StudioHeader({ complexity, mermaid, nodeCount, edgeCount }: { complexity: GraphComplexity | null; mermaid: string | null; nodeCount: number; edgeCount: number }) {
   return (
     <div className="rounded-[20px] border hairline bg-white dark:bg-ink-950 px-4 py-2.5 flex items-center gap-3 flex-wrap">
       <div className="flex items-center gap-2.5 min-w-0 text-[12px] text-ink-700 dark:text-ink-300">
@@ -255,7 +326,7 @@ function StudioHeader({ complexity, mermaid }: { complexity: GraphComplexity | n
             {complexity.nodeCount} nodes | {complexity.edgeCount} edges | 1 entry | 1 terminal
           </span>
         ) : (
-          <span className="mono whitespace-nowrap">5 nodes | 4 edges | 1 entry | 1 terminal</span>
+          <span className="mono whitespace-nowrap">{nodeCount} nodes | {edgeCount} edges | 1 entry | 1 terminal</span>
         )}
         <span className="text-ink-300 dark:text-ink-700">|</span>
         <Badge tone="ok">VALID</Badge>
@@ -299,15 +370,19 @@ function CanvasOverlay({
   focusNode,
   selectedEdgeIndex,
   highlightedEdges,
+  edges,
+  nodes,
   onSelectEdge,
 }: {
   lensMode: LensMode
   focusNode: string | null
   selectedEdgeIndex: number | null
   highlightedEdges: Set<number>
+  edges: Edge[]
+  nodes: StudioNode[]
   onSelectEdge: (edgeIndex: number) => void
 }) {
-  const overviewEdges = EDGES.map((edge, index) => ({
+  const overviewEdges = edges.map((edge, index) => ({
     edge,
     index,
     active: selectedEdgeIndex === index || highlightedEdges.has(index),
@@ -330,7 +405,7 @@ function CanvasOverlay({
       <div className="absolute right-4 top-4 z-10 w-[220px] rounded-2xl border border-white/65 bg-white/82 p-3 shadow-card backdrop-blur dark:border-white/10 dark:bg-ink-950/75">
         <div className="mono text-[10px] uppercase tracking-[0.16em] text-ink-500">Overview</div>
         <div className="mt-2 h-[74px] rounded-xl border border-black/5 bg-white/70 dark:border-white/10 dark:bg-white/5">
-          <MiniMap focusNode={focusNode} />
+          <MiniMap focusNode={focusNode} nodes={nodes} edges={edges} />
         </div>
         <div className="mt-3 space-y-1.5">
           {overviewEdges.map(({ edge, index, active }) => (
@@ -353,15 +428,15 @@ function CanvasOverlay({
   )
 }
 
-function MiniMap({ focusNode }: { focusNode: string | null }) {
+function MiniMap({ focusNode, nodes, edges }: { focusNode: string | null; nodes: StudioNode[]; edges: Edge[] }) {
   const cols = 3
   const fw = 210 / cols
-  const fh = 74 / Math.ceil(STUDIO_NODES.length / cols)
-  const nodeIndex = new Map(STUDIO_NODES.map((n, i) => [n.name, i]))
+  const fh = 74 / Math.ceil(Math.max(nodes.length, 1) / cols)
+  const nodeIndex = new Map(nodes.map((n, i) => [n.name, i]))
 
   return (
     <svg viewBox="0 0 210 74" className="h-full w-full">
-      {EDGES.map((edge, index) => {
+      {edges.map((edge, index) => {
         const fromIdx = nodeIndex.get(edge.from)
         const toIdx = nodeIndex.get(edge.to)
         if (fromIdx == null || toIdx == null) return null
@@ -377,7 +452,7 @@ function MiniMap({ focusNode }: { focusNode: string | null }) {
           />
         )
       })}
-      {STUDIO_NODES.map((node, index) => {
+      {nodes.map((node, index) => {
         const meta = NODE_META[node.name]
         return (
           <circle
@@ -394,19 +469,19 @@ function MiniMap({ focusNode }: { focusNode: string | null }) {
   )
 }
 
-function StudioInspector({ selection }: { selection: Selection }) {
+function StudioInspector({ selection, nodes, edges }: { selection: Selection; nodes: StudioNode[]; edges: Edge[] }) {
   if (selection.type === 'edge') {
-    return <StudioEdgeInspector edge={EDGES[selection.edgeIndex]} edgeIndex={selection.edgeIndex} />
+    return <StudioEdgeInspector edge={edges[selection.edgeIndex]} edgeIndex={selection.edgeIndex} nodes={nodes} />
   }
-  return <StudioNodeInspector nodeName={selection.nodeName} />
+  return <StudioNodeInspector nodeName={selection.nodeName} nodes={nodes} edges={edges} />
 }
 
-function StudioNodeInspector({ nodeName }: { nodeName: string }) {
-  const node = STUDIO_NODES.find((item) => item.name === nodeName)
+function StudioNodeInspector({ nodeName, nodes, edges }: { nodeName: string; nodes: StudioNode[]; edges: Edge[] }) {
+  const node = nodes.find((item) => item.name === nodeName)
   if (!node) return null
 
-  const incoming = EDGES.filter((edge) => edge.to === node.name)
-  const outgoing = EDGES.filter((edge) => edge.from === node.name)
+  const incoming = edges.filter((edge) => edge.to === node.name)
+  const outgoing = edges.filter((edge) => edge.from === node.name)
   const meta = NODE_META[node.name]
 
   const Field = ({ k, v }: { k: string; v: string }) => (
@@ -466,11 +541,11 @@ function StudioNodeInspector({ nodeName }: { nodeName: string }) {
   )
 }
 
-function StudioEdgeInspector({ edge, edgeIndex }: { edge: Edge | undefined; edgeIndex: number }) {
+function StudioEdgeInspector({ edge, edgeIndex, nodes }: { edge: Edge | undefined; edgeIndex: number; nodes: StudioNode[] }) {
   if (!edge) return null
 
-  const sourceNode = STUDIO_NODES.find((node) => node.name === edge.from)
-  const targetNode = STUDIO_NODES.find((node) => node.name === edge.to)
+  const sourceNode = nodes.find((node) => node.name === edge.from)
+  const targetNode = nodes.find((node) => node.name === edge.to)
 
   const Field = ({ k, v }: { k: string; v: string }) => (
     <div className="grid grid-cols-[100px_1fr] gap-3 py-2 border-t hairline first:border-t-0 text-[12.5px]">

@@ -1,4 +1,5 @@
 export interface TraceStep {
+  // Frontend display fields (mock-compatible)
   i: number
   name: string
   kind: string
@@ -13,6 +14,12 @@ export interface TraceStep {
   before: Record<string, unknown> | null
   after: Record<string, unknown> | null
   diff: string[]
+  // Backend record fields (from TraceStep<S>)
+  index?: number
+  nodeName?: string
+  duration?: string
+  error?: string | { className: string; message: string }
+  children?: TraceStep[]
 }
 
 export interface TraceLog {
@@ -23,12 +30,36 @@ export interface TraceLog {
 
 export interface ExecutionTrace {
   executionId: string
-  graph: string
-  status: 'COMPLETED' | 'FAILED' | 'RUNNING' | 'INTERRUPTED'
+  // Backend uses initialState/finalState; frontend uses graph/duration
+  graph?: string
+  initialState?: Record<string, unknown> | null
+  finalState?: Record<string, unknown> | null
+  status: 'COMPLETED' | 'FAILED' | 'RUNNING' | 'INTERRUPTED' | 'HALTED'
   startedAt: string
-  duration: number
+  completedAt?: string
+  duration?: number
   steps: TraceStep[]
-  logs: TraceLog[]
+  logs?: TraceLog[]
+  forkedFromExecutionId?: string | null
+  forkedFromStepIndex?: number
+}
+
+export interface TraceDiff {
+  leftExecutionId: string
+  rightExecutionId: string
+  commonPrefix: TraceStep[]
+  divergenceIndex: number
+  leftRemainder: TraceStep[]
+  rightRemainder: TraceStep[]
+  sameStatus: boolean
+  sameFinalState: boolean
+}
+
+export interface ReplayResponse {
+  executionId: string
+  forkedFromExecutionId: string
+  forkedFromStepIndex: number
+  status: string
 }
 
 export interface TraceSummary {
