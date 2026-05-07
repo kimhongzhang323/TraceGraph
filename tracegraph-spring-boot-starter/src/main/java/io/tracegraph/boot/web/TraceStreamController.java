@@ -21,6 +21,8 @@ public class TraceStreamController<S> {
         this.graph = graph;
     }
 
+    private static final int SSE_CREDIT = 64;
+
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@RequestBody S initial) {
         SseEmitter emitter = new SseEmitter(0L);
@@ -30,7 +32,10 @@ public class TraceStreamController<S> {
             @Override
             public void onSubscribe(Flow.Subscription s) {
                 this.sub = s;
-                s.request(Long.MAX_VALUE);
+                emitter.onTimeout(s::cancel);
+                emitter.onCompletion(s::cancel);
+                emitter.onError(ignored -> s.cancel());
+                s.request(SSE_CREDIT);
             }
 
             @Override
@@ -39,6 +44,7 @@ public class TraceStreamController<S> {
                     emitter.send(SseEmitter.event()
                             .name(event.getClass().getSimpleName())
                             .data(event));
+                    sub.request(1);
                 } catch (Exception ex) {
                     emitter.completeWithError(ex);
                     sub.cancel();

@@ -1,5 +1,6 @@
 package io.tracegraph.boot.web;
 
+import io.tracegraph.boot.TraceGraphProperties;
 import io.tracegraph.core.ExecutionResult;
 import io.tracegraph.core.Graph;
 import io.tracegraph.core.Status;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 
 @RestController
 @RequestMapping("/tracegraph/traces")
@@ -22,15 +24,23 @@ public class TraceReplayController {
 
     private final TraceStore store;
     private final Graph<?> graph;
+    private final Semaphore replaySemaphore;
 
-    public TraceReplayController(TraceStore store, Graph<?> graph) {
+    public TraceReplayController(TraceStore store, Graph<?> graph, TraceGraphProperties props) {
         this.store = store;
         this.graph = graph;
+        int max = props.getWeb().getReplay().getMaxConcurrent();
+        this.replaySemaphore = max > 0 ? new Semaphore(max) : null;
     }
 
+    /**
+     * Re-executes a saved trace from a chosen step. Runs synchronously on the
+     * (virtual) request thread — callers block until replay completes. Concurrent
+     * replay is bounded by {@code tracegraph.web.replay.max-concurrent}.
+     */
     @PostMapping("/{id}/replay")
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public ResponseEntity<ReplayResponse> replay(
+    public ResponseEntity<?> replay(
             @PathVariable("id") String id,
             @RequestParam(name = "step", defaultValue = "-1") int stepIndex) {
 
@@ -43,13 +53,18 @@ public class TraceReplayController {
         if (stepIndex < -1 || stepIndex > maxIndex) {
             return ResponseEntity.badRequest().build();
         }
-        ReplayRunner runner = ReplayRunner.of((ExecutionTrace) trace, (Graph) graph);
-        ExecutionResult result = runner.reRunFrom(stepIndex);
-        return ResponseEntity.ok(new ReplayResponse(
-                result.executionId(),
-                id,
-                stepIndex,
-                result.status().name()));
+        if (replaySemaphore != null && !replaySemaphore.tryAcquire()) {
+            return ResponseEntity.status(429)
+                    .body(Map.of("error", "Too many concurrent replays — try again later"));
+        }
+        try {
+            ReplayRunner runner = ReplayRunner.of((ExecutionTrace) trace, (Graph) graph);
+            ExecutionResult result = runner.reRunFrom(stepIndex);
+            return ResponseEntity.ok(new ReplayResponse(
+                    result.executionId(), id, stepIndex, result.status().name()));
+        } finally {
+            if (replaySemaphore != null) replaySemaphore.release();
+        }
     }
 
     @PostMapping("/{id}/resume")

@@ -58,7 +58,7 @@ function normaliseTrace(raw: unknown): ExecutionTrace {
     completedAt,
     duration: durationMs,
     steps,
-    logs: Array.isArray(r.logs) ? (r.logs as TraceStep['before'][]) as ExecutionTrace['logs'] : [],
+    logs: Array.isArray(r.logs) ? (r.logs as unknown as ExecutionTrace['logs']) : [],
     forkedFromExecutionId: r.forkedFromExecutionId as string | null,
     forkedFromStepIndex: r.forkedFromStepIndex as number,
   }

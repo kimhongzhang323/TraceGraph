@@ -1,14 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { Seo } from '@/components/Seo'
-import { Home } from '@/pages/Home'
-import { Docs } from '@/pages/Docs'
-import { TraceExplorer } from '@/pages/TraceExplorer'
-import { Studio } from '@/pages/Studio'
-import { Changelog } from '@/pages/Changelog'
-import { ApiReference } from '@/pages/ApiReference'
 import { useTheme } from '@/hooks/useTheme'
+
+const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
+const Docs = lazy(() => import('@/pages/Docs').then((m) => ({ default: m.Docs })))
+const TraceExplorer = lazy(() => import('@/pages/TraceExplorer').then((m) => ({ default: m.TraceExplorer })))
+const Studio = lazy(() => import('@/pages/Studio').then((m) => ({ default: m.Studio })))
+const Changelog = lazy(() => import('@/pages/Changelog').then((m) => ({ default: m.Changelog })))
+const ApiReference = lazy(() => import('@/pages/ApiReference').then((m) => ({ default: m.ApiReference })))
 
 const APP_ROUTES = ['docs', 'trace', 'studio', 'api', 'changelog']
 
@@ -70,16 +72,18 @@ function Layout() {
       <Seo {...seo} />
       <Header route={route} theme={theme} setTheme={setTheme} />
       <main className="flex-1">
-        <Routes>
-          <Route path="/"            element={<Home />} />
-          <Route path="/docs"        element={<Docs />} />
-          <Route path="/docs/:id"    element={<Docs />} />
-          <Route path="/trace"       element={<TraceExplorer />} />
-          <Route path="/studio"      element={<Studio />} />
-          <Route path="/api"         element={<ApiReference />} />
-          <Route path="/changelog"   element={<Changelog />} />
-          <Route path="*"            element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/"            element={<Home />} />
+            <Route path="/docs"        element={<Docs />} />
+            <Route path="/docs/:id"    element={<Docs />} />
+            <Route path="/trace"       element={<TraceExplorer />} />
+            <Route path="/studio"      element={<Studio />} />
+            <Route path="/api"         element={<ApiReference />} />
+            <Route path="/changelog"   element={<Changelog />} />
+            <Route path="*"            element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
       {!hideFooter && <Footer />}
     </div>

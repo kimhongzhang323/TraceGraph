@@ -1,6 +1,7 @@
 package io.tracegraph.boot.web;
 
 import io.tracegraph.boot.TraceGraphAutoConfiguration;
+import io.tracegraph.boot.TraceGraphProperties;
 import io.tracegraph.core.Graph;
 import io.tracegraph.observability.replay.TraceStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.DispatcherServlet;
 
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 @ConditionalOnWebApplication
 @ConditionalOnBean(TraceStore.class)
 @ConditionalOnProperty(prefix = "tracegraph.web", name = "enabled", havingValue = "true", matchIfMissing = true)
+@EnableConfigurationProperties(TraceGraphProperties.class)
 public class TraceWebAutoConfiguration {
 
     @Bean
@@ -29,8 +32,8 @@ public class TraceWebAutoConfiguration {
     @Bean
     @ConditionalOnSingleCandidate(Graph.class)
     @ConditionalOnMissingBean
-    public TraceReplayController traceReplayController(TraceStore store, Graph<?> graph) {
-        return new TraceReplayController(store, graph);
+    public TraceReplayController traceReplayController(TraceStore store, Graph<?> graph, TraceGraphProperties props) {
+        return new TraceReplayController(store, graph, props);
     }
 
     @Bean

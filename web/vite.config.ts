@@ -25,6 +25,8 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'lucide': ['lucide-react'],
+          'xyflow': ['@xyflow/react'],
+          'd3': ['d3-force'],
         },
       },
     },
