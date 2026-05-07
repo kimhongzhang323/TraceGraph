@@ -1744,82 +1744,160 @@ System.out.println("At step:     " + forkTrace.forkedFromStepIndex());`} />
   spring: {
     crumb: 'INTEGRATION / SPRING BOOT',
     title: 'Spring Boot starter',
-    lede: 'The starter wires infrastructure around your graph, not the graph itself. You still define the state type and the Graph<S> bean; the starter supplies no-op defaults, HTTP endpoints, and optional auto-configuration around it.',
+    lede: 'The starter wires infrastructure around your graph, not the graph itself. You declare the Graph<S> bean; the starter auto-configures SPI defaults, REST endpoints, LLM clients, and optional JDBC stores.',
     toc: [
       { id: 'dep', label: 'Dependencies' },
+      { id: 'autoconfig', label: 'Auto-config model' },
       { id: 'graph', label: 'Define Graph bean' },
       { id: 'trace', label: 'Enable traces' },
-      { id: 'props', label: 'Properties' },
-      { id: 'conditions', label: 'Auto-config conditions' },
+      { id: 'props', label: 'Property reference' },
+      { id: 'conditions', label: 'Condition table' },
     ],
     body: () => (
       <>
+        <P>The Spring Boot starter is four auto-configurations in one artifact. Each is guarded by conditions so unused features add zero overhead. You declare your own <Code>Graph&lt;S&gt;</Code> bean; the starter injects the surrounding infrastructure.</P>
+
         <H2 id="dep">Dependencies</H2>
-        <Cb file="pom.xml" lang="xml" src={`<dependency>
+        <Cb file="pom.xml" lang="xml" src={`<!-- core starter: SPI defaults + REST endpoints -->
+<dependency>
     <groupId>site.tracegraph</groupId>
     <artifactId>tracegraph-spring-boot-starter</artifactId>
     <version>0.3.0</version>
+</dependency>
+
+<!-- add observability for traces, replay, and diff endpoints -->
+<dependency>
+    <groupId>site.tracegraph</groupId>
+    <artifactId>tracegraph-observability</artifactId>
+    <version>0.3.0</version>
+</dependency>
+
+<!-- add connectors for LLM auto-wiring -->
+<dependency>
+    <groupId>site.tracegraph</groupId>
+    <artifactId>tracegraph-connectors</artifactId>
+    <version>0.3.0</version>
 </dependency>`} />
-        <P>Add <Code>tracegraph-observability</Code> as well when you want trace endpoints, replay, diff, or the embedded UI.</P>
+
+        <H2 id="autoconfig">The auto-configuration model</H2>
+        <P>The starter ships four auto-configurations. They are independent and guarded by <Code>@ConditionalOn*</Code> annotations — only what you need activates.</P>
+        <Table
+          headers={['Auto-config class', 'Registers', 'Activates when']}
+          rows={[
+            ['TraceGraphAutoConfiguration',  'No-op SPI beans (NodeListener, CheckpointStore, TraceRecorder, MemoryStore)', 'Always (lowest priority — user beans win via @ConditionalOnMissingBean)'],
+            ['TraceWebAutoConfiguration',     'TraceController, TraceReplayController, TraceStreamController',               'TraceStore bean present + web application + tracegraph.web.enabled=true'],
+            ['MemoryAutoConfiguration',       'JdbcMemoryStore bean',                                                        'DataSource + JdbcMemoryStore + Jackson on classpath + no MemoryStore bean'],
+            ['LlmAutoConfiguration',          'OpenAiLlmClient or AnthropicLlmClient bean',                                  'LlmClient on classpath + tracegraph.llm.provider set + no LlmClient bean'],
+          ]}
+        />
 
         <H2 id="graph">Define your Graph bean</H2>
+        <P>The starter never guesses <Code>Graph&lt;?&gt;</Code>. Declare it as a <Code>@Bean</Code> and inject the SPI beans the starter provides. The injected <Code>NodeListener</Code> and <Code>CheckpointStore</Code> are no-ops by default; declare your own beans to override them.</P>
         <Cb file="AppConfiguration.java" src={`@Configuration
 public class AppConfiguration {
+
     @Bean
-    public Graph<MyState> graph(NodeListener listener, CheckpointStore checkpoints) {
-        return Graph.<MyState>builder()
-            .node("ingest",  (s, ctx) -> s.normalize())
-            .node("respond", (s, ctx) -> s.reply())
+    public Graph<AgentState> agentGraph(
+            NodeListener listener,
+            CheckpointStore checkpoints,
+            TraceRecorder<AgentState> recorder,
+            MemoryStore memory) {
+
+        return Graph.<AgentState>builder()
+            .node("ingest",    AgentNodes::ingest)
+            .node("llm",       AgentNodes::callLlm)
+            .node("respond",   AgentNodes::respond)
             .entry("ingest")
-            .edge("ingest", "respond")
+            .edge("ingest", "llm")
+            .edge("llm", "respond", AgentState::hasResponse)
+            .edge("llm", "llm",     s -> !s.hasResponse() && s.attempts() < 3)
             .terminal("respond")
             .listener(listener)
             .checkpointStore(checkpoints)
+            .traceRecorder(recorder)
+            .memoryStore(memory)
             .build();
     }
 }`} />
-        <P>The starter does not attempt to guess <Code>Graph&lt;?&gt;</Code> because your state type is application-specific. It only auto-wires the surrounding SPI beans.</P>
+        <Callout><strong>Generic type.</strong> Spring cannot auto-register <Code>Graph&lt;?&gt;</Code> because it is generic in <Code>S</Code>. Your application owns the state type and the graph definition. The starter provides the infrastructure around it.</Callout>
 
-        <H2 id="trace">Enable traces and REST endpoints</H2>
-        <Cb file="TraceConfig.java" src={`@Bean
-TraceStore<MyState> traceStore() {
-    return new InMemoryTraceStore<>();
-}
+        <H2 id="trace">Enable traces and REST inspection</H2>
+        <P>Declare a <Code>TraceStore</Code> bean and the web endpoints activate automatically. For production, use <Code>JdbcTraceStore</Code> initialized at startup.</P>
+        <Cb file="TraceConfig.java" src={`@Configuration
+public class TraceConfig {
 
-@Bean
-TraceRecorder<MyState> traceRecorder(TraceStore<MyState> store) {
-    return new RecordingTraceRecorder<>(store);
+    // In-memory for dev/test
+    @Bean
+    @Profile("!prod")
+    public TraceStore<AgentState> devTraceStore() {
+        return new InMemoryTraceStore<>();
+    }
+
+    // JDBC for production
+    @Bean
+    @Profile("prod")
+    public TraceStore<AgentState> prodTraceStore(DataSource ds) {
+        var store = new JdbcTraceStore<>(ds, AgentState.class);
+        store.initSchema();
+        return store;
+    }
+
+    @Bean
+    public TraceRecorder<AgentState> traceRecorder(TraceStore<AgentState> store) {
+        return new RecordingTraceRecorder<>(store);
+    }
 }`} />
-        <UL items={[
-          <>When a <Code>TraceStore</Code> is present, trace inspection endpoints become available.</>,
-          <>Replay and resume endpoints require a single candidate <Code>Graph&lt;?&gt;</Code> bean.</>,
-          <>The embedded UI depends on both the starter and the UI module being on the classpath.</>,
-        ]} />
 
-        <H2 id="props">Key properties</H2>
+        <H2 id="props">Full property reference</H2>
         <Cb file="application.yml" lang="yaml" src={`tracegraph:
   web:
-    enabled: true
-  ui:
-    enabled: true
+    enabled: true           # set false to disable all /tracegraph/* REST endpoints
+
   memory:
     jdbc:
-      enabled: true
-      init-schema: false
-      table: tracegraph_memory
+      enabled: true         # auto-wire JdbcMemoryStore when DataSource present
+      init-schema: true     # run initSchema() at startup
+      table: tracegraph_memory  # override table name
+
   llm:
-    provider: openai
+    enabled: true           # set false to disable LlmAutoConfiguration
+    provider: openai        # openai | anthropic
     openai:
       api-key: \${OPENAI_API_KEY}
-      model: gpt-4o-mini`} />
+      endpoint: https://api.openai.com/v1
+      model: gpt-4o-mini
+      timeout: 30s
+    anthropic:
+      api-key: \${ANTHROPIC_API_KEY}
+      model: claude-sonnet-4-6
+      version: 2023-06-01`} />
+        <Table
+          headers={['Property', 'Default', 'Description']}
+          rows={[
+            ['tracegraph.web.enabled',                 'true',                       'Toggle all REST endpoints.'],
+            ['tracegraph.memory.jdbc.enabled',         'true',                       'Toggle JdbcMemoryStore auto-wiring.'],
+            ['tracegraph.memory.jdbc.init-schema',     'true',                       'Run initSchema() at startup.'],
+            ['tracegraph.memory.jdbc.table',           'tracegraph_memory',          'Override the memory table name.'],
+            ['tracegraph.llm.enabled',                 'true',                       'Toggle LlmAutoConfiguration.'],
+            ['tracegraph.llm.provider',                '(none — LlmClient not registered)', 'Set to openai or anthropic to register a client.'],
+            ['tracegraph.llm.openai.api-key',          '(required when provider=openai)',   'OpenAI API key.'],
+            ['tracegraph.llm.anthropic.api-key',       '(required when provider=anthropic)', 'Anthropic API key.'],
+          ]}
+        />
 
-        <H2 id="conditions">What the starter auto-configures</H2>
-        <Table headers={['Concern', 'Condition']} rows={[
-          ['NodeListener / CheckpointStore / TraceRecorder / MemoryStore', 'No-op defaults only when you do not declare your own bean.'],
-          ['Trace REST controllers', 'Require starter web config plus observability pieces.'],
-          ['Replay / resume endpoints', 'Require a single Graph<?> candidate.'],
-          ['LlmClient', 'Requires connectors on the classpath and tracegraph.llm.provider set.'],
-        ]} />
+        <H2 id="conditions">Auto-config condition summary</H2>
+        <Table
+          headers={['Bean / endpoint', 'Requires']}
+          rows={[
+            ['No-op NodeListener, CheckpointStore, TraceRecorder, MemoryStore', '@ConditionalOnMissingBean — replaced by any user-declared bean.'],
+            ['GET/DELETE /tracegraph/traces/**',         'TraceStore bean + web app + tracegraph.web.enabled=true.'],
+            ['POST /tracegraph/traces/{id}/replay',      'Above + single Graph<?> candidate bean.'],
+            ['POST /tracegraph/traces/{id}/resume',      'Above + single Graph<?> candidate bean.'],
+            ['POST /tracegraph/traces/stream',           'Above + single Graph<?> candidate bean.'],
+            ['JdbcMemoryStore',                          'DataSource + JdbcMemoryStore + Jackson on classpath, no MemoryStore bean, enabled=true.'],
+            ['OpenAiLlmClient or AnthropicLlmClient',   'LlmClient on classpath, tracegraph.llm.provider set, no LlmClient bean, enabled=true.'],
+          ]}
+        />
       </>
     ),
   },
@@ -1827,44 +1905,180 @@ TraceRecorder<MyState> traceRecorder(TraceStore<MyState> store) {
   llm: {
     crumb: 'INTEGRATION / LLM CONNECTORS',
     title: 'LLM connectors',
-    lede: 'The connectors module gives you low-level, testable Java types for LLM calls. It intentionally avoids pretending providers are all identical.',
+    lede: 'The connectors module provides low-level, testable Java types for LLM calls, a ChatNode adapter that bridges LLM responses into graph state, and a ReActAgent factory for tool-use loops.',
     toc: [
-      { id: 'client', label: 'LlmClient' },
-      { id: 'openai', label: 'OpenAI' },
-      { id: 'anthropic', label: 'Anthropic' },
+      { id: 'client', label: 'LlmClient interface' },
+      { id: 'openai', label: 'OpenAI adapter' },
+      { id: 'anthropic', label: 'Anthropic adapter' },
+      { id: 'mock', label: 'MockLlmClient for tests' },
       { id: 'chat', label: 'ChatNode' },
+      { id: 'streaming', label: 'Streaming' },
+      { id: 'react', label: 'ReActAgent' },
     ],
     body: () => (
       <>
+        <P>LLM adapters live in <Code>tracegraph-connectors</Code>. The design is intentionally low-level: <Code>LlmClient</Code> is a single-method interface, request and response are plain records, and the bridge between LLM output and graph state is an explicit lambda you write. No magic prompt templates or hidden state management.</P>
+
         <H2 id="client">LlmClient interface</H2>
-        <Cb src={`LlmResponse res = client.complete(LlmRequest.builder()
-    .model("gpt-4o")
-    .message(ChatMessage.user("Summarize this order: " + state))
+        <P><Code>LlmClient</Code> is a <Code>@FunctionalInterface</Code> with one method: <Code>complete(LlmRequest)</Code>. Swap providers by injecting a different implementation.</P>
+        <Cb src={`// build a request
+LlmRequest req = LlmRequest.builder()
+    .model("gpt-4o-mini")
+    .message(ChatMessage.system("You are a helpful assistant."))
+    .message(ChatMessage.user("Summarize this order: " + state.orderId()))
     .temperature(0.2)
     .maxTokens(256)
-    .build());
-String text = res.content();`} />
+    .build();
+
+// call the provider
+LlmResponse res = client.complete(req);
+
+// extract the result
+String text   = res.content();      // concatenated content blocks
+String reason = res.finishReason(); // "stop", "length", "tool_use", etc.
+int promptTok = res.promptTokens();
+int compTok   = res.completionTokens();`} />
+        <Table
+          headers={['LlmRequest field', 'Type', 'Description']}
+          rows={[
+            ['model()',        'String',            'Model name as the provider expects it.'],
+            ['messages()',     'List<ChatMessage>', 'Conversation history. system, user, and assistant roles.'],
+            ['temperature()',  'Double',            'Sampling temperature (0.0–2.0 for most providers).'],
+            ['maxTokens()',    'Integer',           'Maximum completion tokens.'],
+          ]}
+        />
+        <Table
+          headers={['LlmResponse field', 'Type', 'Description']}
+          rows={[
+            ['content()',           'String', 'Concatenated text from all content blocks.'],
+            ['finishReason()',      'String', 'Provider-specific finish reason.'],
+            ['promptTokens()',      'int',    'Input token count.'],
+            ['completionTokens()',  'int',    'Output token count.'],
+          ]}
+        />
 
         <H2 id="openai">OpenAI-compatible adapter</H2>
-        <Cb src={`LlmClient client = OpenAiLlmClient.builder()
+        <P><Code>OpenAiLlmClient</Code> targets the <Code>POST /v1/chat/completions</Code> endpoint. It works with OpenAI and any OpenAI-compatible API (Groq, Together, local Ollama, etc.).</P>
+        <Cb src={`LlmClient openai = OpenAiLlmClient.builder()
     .apiKey(System.getenv("OPENAI_API_KEY"))
     .model("gpt-4o-mini")
-    .endpoint("https://api.openai.com/v1")
+    .endpoint("https://api.openai.com/v1")   // override for compatible APIs
+    .timeout(Duration.ofSeconds(30))
+    .build();
+
+// use with a local Ollama instance
+LlmClient local = OpenAiLlmClient.builder()
+    .apiKey("ignored")
+    .model("llama3")
+    .endpoint("http://localhost:11434/v1")
     .build();`} />
+        <P>Non-2xx responses surface as <Code>LlmHttpException(statusCode, body)</Code>. Wire a retry policy on any node using this client to handle transient overload (429) or timeout errors.</P>
 
         <H2 id="anthropic">Anthropic adapter</H2>
-        <Cb src={`LlmClient client = AnthropicLlmClient.builder()
+        <P><Code>AnthropicLlmClient</Code> targets the <Code>POST /v1/messages</Code> endpoint with <Code>x-api-key</Code> and <Code>anthropic-version</Code> headers. System messages are lifted into the top-level <Code>system</Code> field automatically.</P>
+        <Cb src={`LlmClient anthropic = AnthropicLlmClient.builder()
     .apiKey(System.getenv("ANTHROPIC_API_KEY"))
     .model("claude-sonnet-4-6")
+    .version("2023-06-01")   // anthropic-version header
+    .timeout(Duration.ofSeconds(60))
     .build();`} />
 
-        <H2 id="chat">Folding responses back into state</H2>
-        <Cb src={`Node<AgentState> scoreNode = ChatNode.<AgentState>builder()
-    .client(client)
-    .requestFactory(s -> LlmRequest.builder().model("gpt-4o").message(ChatMessage.user(prompt(s))).build())
-    .responseFolder((s, r) -> s.withScore(parseScore(r.content())))
+        <H2 id="mock">MockLlmClient for tests</H2>
+        <P>Use <Code>MockLlmClient</Code> in unit tests to avoid real HTTP calls. Three modes: constant response, echo, or custom lambda.</P>
+        <Cb src={`// constant response
+LlmClient constant = MockLlmClient.constant("APPROVED");
+
+// echo the last user message back
+LlmClient echo = MockLlmClient.echo();
+
+// custom lambda — full control
+LlmClient custom = MockLlmClient.of(req -> {
+    String lastMsg = req.messages().getLast().content();
+    return LlmResponse.of("Response to: " + lastMsg, "stop", 10, 5);
+});
+
+// use it exactly like a real client
+Node<AgentState> node = ChatNode.<AgentState>builder()
+    .client(custom)
+    .requestFactory(s -> LlmRequest.builder().model("test").message(ChatMessage.user(s.query())).build())
+    .responseFolder((s, r) -> s.withResponse(r.content()))
     .build();`} />
-        <Callout><strong>Design advice.</strong> Keep the provider-facing request small and keep the response-folder explicit. That gives you better tests, easier provider swaps, and cleaner replay artifacts.</Callout>
+
+        <H2 id="chat">ChatNode — bridging LLM responses into state</H2>
+        <P><Code>ChatNode&lt;S&gt;</Code> adapts any <Code>LlmClient</Code> to a <Code>Node&lt;S&gt;</Code>. You supply a <Code>requestFactory</Code> (state → LlmRequest) and a <Code>responseFolder</Code> (state + response → new state). It calls <Code>ctx.reportUsage(…)</Code> automatically so token counts appear in traces and OTel spans.</P>
+        <Cb src={`import io.tracegraph.connectors.llm.ChatNode;
+import io.tracegraph.connectors.llm.LlmRequest;
+import io.tracegraph.connectors.llm.ChatMessage;
+
+Node<AgentState> llmNode = ChatNode.<AgentState>builder()
+    .client(openaiClient)
+    // requestFactory: build the LLM request from current state
+    .requestFactory(s -> LlmRequest.builder()
+        .model("gpt-4o-mini")
+        .message(ChatMessage.system("You process customer support tickets."))
+        .message(ChatMessage.user(s.ticketText()))
+        .temperature(0.1)
+        .maxTokens(512)
+        .build())
+    // responseFolder: fold the LLM response back into state
+    .responseFolder((s, r) -> s.withDraft(r.content()))
+    .build();
+
+// add it to the graph like any other node
+Graph<AgentState> graph = Graph.<AgentState>builder()
+    .node("classify", AgentNodes::classify)
+    .node("draft", llmNode)   // ChatNode implements Node<S>
+    .node("send",  AgentNodes::sendReply)
+    .entry("classify")
+    .edge("classify", "draft")
+    .edge("draft", "send", AgentState::draftApproved)
+    .terminal("send")
+    .build();`} />
+        <Callout><strong>Explicit bridging.</strong> Keeping <Code>requestFactory</Code> and <Code>responseFolder</Code> explicit gives you testable, swappable, and replay-transparent LLM integration. The prompt and the state mapping are code you own, not hidden framework behavior.</Callout>
+
+        <H2 id="streaming">Streaming LLM responses</H2>
+        <P><Code>LlmClient.stream(request)</Code> returns a <Code>Flow.Publisher&lt;LlmStreamChunk&gt;</Code>. Providers with native streaming support override this method; others get a default single-chunk implementation that wraps <Code>complete()</Code>.</P>
+        <Cb src={`// stream token deltas
+client.stream(req).subscribe(new Flow.Subscriber<LlmStreamChunk>() {
+    public void onNext(LlmStreamChunk chunk) {
+        System.out.print(chunk.delta());
+        if (chunk.isLast()) System.out.println(); // terminal chunk
+    }
+    // ... onSubscribe, onError, onComplete
+});`} />
+
+        <H2 id="react">ReActAgent — Reason + Act loop</H2>
+        <P><Code>ReActAgent&lt;S&gt;</Code> produces a complete <Code>Graph&lt;S&gt;</Code> implementing the Reason + Act loop: LLM routing node → tool execution node → back to LLM, terminating at <Code>done</Code> when no tool calls are returned.</P>
+        <Cb src={`import io.tracegraph.connectors.agent.ReActAgent;
+import io.tracegraph.connectors.agent.Tool;
+import io.tracegraph.connectors.agent.ToolDefinition;
+
+// define tools
+Tool webSearch = args -> webSearchClient.search(args);
+Tool calculator = args -> String.valueOf(eval(args));
+
+// build the ReActAgent graph
+Graph<AgentState> agentGraph = ReActAgent.<AgentState>builder()
+    .client(openaiClient)
+    // tool definitions tell the LLM what tools are available
+    .tool(new ToolDefinition("web_search",   "Search the web",       "{\"query\": \"string\"}"), webSearch)
+    .tool(new ToolDefinition("calculator",   "Evaluate math",        "{\"expr\":  \"string\"}"), calculator)
+    // requestFactory: build the LLM request from current state (includes tool calls history)
+    .requestFactory(s -> LlmRequest.builder()
+        .model("gpt-4o")
+        .message(ChatMessage.user(s.userMessage()))
+        .build())
+    // responseFolder: fold LLM response text back into state
+    .responseFolder((s, r) -> s.withAssistantMessage(r.content()))
+    // toolResultFolder: fold a tool result back into state for the next LLM call
+    .toolResultFolder((s, name, result) -> s.withToolResult(name, result))
+    .build()
+    .buildGraph();
+
+ExecutionResult<AgentState> r = agentGraph.run(
+    new AgentState("What is the capital of France and 2+2?"));
+System.out.println(r.finalState().assistantMessage());`} />
+        <P>The graph structure produced by <Code>ReActAgent</Code> has three named nodes: <Code>llm</Code>, <Code>tools</Code>, and <Code>done</Code>. The loop terminates at <Code>done</Code> when the LLM returns no tool calls in its response.</P>
       </>
     ),
   },
@@ -1872,66 +2086,150 @@ String text = res.content();`} />
   rest: {
     crumb: 'INTEGRATION / REST API',
     title: 'REST API',
-    lede: 'The Spring Boot starter exposes a focused HTTP surface for traces, replay, resume, streaming, and UI support. The exact endpoints depend on which modules and beans are present.',
+    lede: 'The Spring Boot starter exposes a focused HTTP surface for traces, replay, resume, streaming, and diff. Endpoint availability depends on which modules and beans are present.',
     toc: [
-      { id: 'conditions', label: 'Endpoint conditions' },
-      { id: 'traces', label: 'Traces' },
-      { id: 'replay', label: 'Replay & resume' },
-      { id: 'stream', label: 'Streaming' },
-      { id: 'ui', label: 'UI endpoints' },
+      { id: 'conditions', label: 'Availability conditions' },
+      { id: 'traces', label: 'Trace CRUD' },
+      { id: 'diff', label: 'Diff endpoint' },
+      { id: 'replay', label: 'Replay endpoint' },
+      { id: 'resume', label: 'Resume endpoint' },
+      { id: 'stream', label: 'SSE streaming' },
+      { id: 'errors', label: 'Error responses' },
     ],
     body: () => (
       <>
-        <H2 id="conditions">When endpoints exist</H2>
-        <Table headers={['Endpoint group', 'Needs']} rows={[
-          ['Trace list/get/delete', 'Starter web config plus observability backing store.'],
-          ['Replay and resume', 'Everything above plus a single Graph<?> bean.'],
-          ['SSE stream', 'A graph bean and stream controller registration.'],
-          ['UI graph / complexity', 'tracegraph-ui on the classpath and UI enabled.'],
-        ]} />
+        <P>All endpoints are under the <Code>/tracegraph</Code> prefix. They are registered by <Code>TraceWebAutoConfiguration</Code> — guarded by <Code>@ConditionalOnWebApplication</Code>, <Code>@ConditionalOnBean(TraceStore)</Code>, and <Code>tracegraph.web.enabled=true</Code>. Replay and resume additionally require a single <Code>Graph&lt;?&gt;</Code> bean.</P>
 
-        <H2 id="traces">Trace endpoints</H2>
-        <Table headers={['Method', 'Path', 'Description']} rows={[
-          ['GET', '/tracegraph/traces', 'List executions, usually paginated via limit/offset.'],
-          ['GET', '/tracegraph/traces/{id}', 'Fetch a full ExecutionTrace payload.'],
-          ['DELETE', '/tracegraph/traces/{id}', 'Delete a stored execution.'],
-          ['GET', '/tracegraph/traces/{a}/diff/{b}', 'Diff two executions structurally.'],
-        ]} />
-        <Cb lang="json" src={`{
-  "executionId": "a1b2c3d4-...",
-  "status": "COMPLETED",
+        <H2 id="conditions">Availability conditions</H2>
+        <Table
+          headers={['Endpoint group', 'Required condition']}
+          rows={[
+            ['GET/DELETE /tracegraph/traces/**',       'TraceStore bean + web app + web.enabled=true'],
+            ['POST /tracegraph/traces/{id}/replay',    'Above + single Graph<?> bean'],
+            ['POST /tracegraph/traces/{id}/resume',    'Above + single Graph<?> bean'],
+            ['POST /tracegraph/traces/stream',         'Above + single Graph<?> bean'],
+            ['GET /tracegraph/traces/{a}/diff/{b}',    'TraceStore bean + web app + web.enabled=true'],
+          ]}
+        />
+
+        <H2 id="traces">Trace CRUD</H2>
+        <Table
+          headers={['Method', 'Path', 'Query params', 'Response']}
+          rows={[
+            ['GET',    '/tracegraph/traces',      'limit, offset',  '200 JSON array of executionIds; X-Total-Count header.'],
+            ['GET',    '/tracegraph/traces/{id}', '—',              '200 full ExecutionTrace JSON; 404 if not found.'],
+            ['DELETE', '/tracegraph/traces/{id}', '—',              '204 on success; 404 if not found.'],
+          ]}
+        />
+        <Cb lang="bash" src={`# list the 10 most recent traces
+curl "http://localhost:8080/tracegraph/traces?limit=10&offset=0"
+# X-Total-Count: 47
+
+# fetch a full trace
+curl "http://localhost:8080/tracegraph/traces/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+# delete a trace
+curl -X DELETE "http://localhost:8080/tracegraph/traces/3fa85f64-5717-4562-b3fc-2c963f66afa6"`} />
+        <Cb lang="json" src={`// GET /tracegraph/traces/{id} response shape
+{
+  "executionId":  "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status":       "COMPLETED",
+  "startedAt":    "2025-05-07T12:00:00.000Z",
+  "completedAt":  "2025-05-07T12:00:01.234Z",
   "steps": [
     {
-      "nodeName": "fetch",
-      "attempts": 1,
-      "before": { "input": "hello" },
-      "after":  { "input": "hello", "result": "world" }
+      "nodeName":  "validate",
+      "attempts":  1,
+      "before":    { "orderId": "ord-1", "valid": false },
+      "after":     { "orderId": "ord-1", "valid": true },
+      "usage":     null
+    },
+    {
+      "nodeName":  "charge",
+      "attempts":  2,
+      "before":    { "orderId": "ord-1", "valid": true, "charged": false },
+      "after":     { "orderId": "ord-1", "valid": true, "charged": true },
+      "usage":     null
     }
   ]
 }`} />
 
-        <H2 id="replay">Replay and resume endpoints</H2>
-        <Cb lang="bash" src={`curl -X POST "http://localhost:8080/tracegraph/traces/e9c4f1a2/replay?step=2"
-curl -X POST "http://localhost:8080/tracegraph/traces/e9c4f1a2/resume"`} />
-        <UL items={[
-          <>Replay returns a fresh execution ID and fork lineage.</>,
-          <>Resume returns 409 if the run is not currently interrupted.</>,
-          <>Both surfaces are operationally safest when traces and checkpoints are backed by durable stores.</>,
-        ]} />
+        <H2 id="diff">Diff endpoint</H2>
+        <P>Returns a <Code>TraceDiff</Code> JSON object comparing two stored executions. 404 if either ID is not found.</P>
+        <Cb lang="bash" src={`curl "http://localhost:8080/tracegraph/traces/id-a/diff/id-b"`} />
+        <Cb lang="json" src={`{
+  "divergenceIndex": 2,
+  "identical":       false,
+  "sameStatus":      true,
+  "sameFinalState":  false,
+  "commonPrefix":    [
+    { "nodeName": "validate", "attempts": 1 },
+    { "nodeName": "enrich",   "attempts": 1 }
+  ],
+  "leftRemainder":  [{ "nodeName": "charge-v1", "attempts": 3 }],
+  "rightRemainder": [{ "nodeName": "charge-v2", "attempts": 1 }]
+}`} />
 
-        <H2 id="stream">Streaming execution events</H2>
-        <P>The SSE endpoint emits <Code>NodeEnter</Code>, <Code>NodeExit</Code>, <Code>NodeRetry</Code>, <Code>Failed</Code>, and <Code>Complete</Code> events as JSON.</P>
-        <Cb lang="javascript" src={`const es = new EventSource('/tracegraph/traces/stream?execution=' + id);
-es.onmessage = (e) => {
-  const event = JSON.parse(e.data);
-  console.log(event.type, event.nodeName);
-};`} />
+        <H2 id="replay">Replay endpoint</H2>
+        <P>Re-runs a saved trace from a chosen step index. Returns the new execution ID and fork lineage. <Code>step=-1</Code> (default) means re-run from entry.</P>
+        <Cb lang="bash" src={`# replay from entry
+curl -X POST "http://localhost:8080/tracegraph/traces/3fa85f64.../replay"
 
-        <H2 id="ui">Trace UI support endpoints</H2>
-        <Table headers={['Method', 'Path', 'Description']} rows={[
-          ['GET', '/tracegraph/ui/graph', 'Returns the structural graph description.'],
-          ['GET', '/tracegraph/ui/complexity', 'Returns GraphComplexity metrics for the active graph.'],
-        ]} />
+# replay from step 2
+curl -X POST "http://localhost:8080/tracegraph/traces/3fa85f64.../replay?step=2"`} />
+        <Cb lang="json" src={`// response
+{
+  "executionId":           "9c1e4a77-...",
+  "status":                "COMPLETED",
+  "forkedFromExecutionId": "3fa85f64-...",
+  "forkedFromStepIndex":   2
+}`} />
+        <Table
+          headers={['Status code', 'Meaning']}
+          rows={[
+            ['200', 'Fork completed. Body contains ExecutionResult with fork lineage.'],
+            ['400', 'step query param is out of range for the trace.'],
+            ['404', 'The parent trace ID was not found.'],
+          ]}
+        />
+
+        <H2 id="resume">Resume endpoint</H2>
+        <P>Continues an interrupted execution. The execution must be in <Code>Status.INTERRUPTED</Code> state.</P>
+        <Cb lang="bash" src={`curl -X POST "http://localhost:8080/tracegraph/traces/3fa85f64.../resume"`} />
+        <Table
+          headers={['Status code', 'Meaning']}
+          rows={[
+            ['200', 'Run continued and completed. Body contains ExecutionResult.'],
+            ['404', 'Execution ID not found in checkpoint store.'],
+            ['409', 'Execution exists but is not INTERRUPTED (already completed or failed).'],
+          ]}
+        />
+
+        <H2 id="stream">SSE streaming</H2>
+        <P>Start a graph run and stream node lifecycle events as Server-Sent Events. Each event is a JSON <Code>NodeEvent&lt;S&gt;</Code> — one of <Code>NodeEnter</Code>, <Code>NodeExit</Code>, <Code>NodeRetry</Code>, <Code>Failed</Code>, or <Code>Complete</Code>.</P>
+        <Cb lang="bash" src={`# POST triggers a new run; events stream back as SSE
+curl -N -X POST "http://localhost:8080/tracegraph/traces/stream" \
+     -H "Content-Type: application/json" \
+     -d '{"orderId":"ord-1","valid":false,"charged":false}'`} />
+        <Cb lang="javascript" src={`// browser EventSource
+const es = new EventSource('/tracegraph/traces/stream?execution=' + id);
+es.addEventListener('NodeEnter',  e => console.log('enter',  JSON.parse(e.data).nodeName));
+es.addEventListener('NodeExit',   e => console.log('exit',   JSON.parse(e.data).nodeName));
+es.addEventListener('NodeRetry',  e => console.log('retry',  JSON.parse(e.data)));
+es.addEventListener('Failed',     e => { console.error(JSON.parse(e.data)); es.close(); });
+es.addEventListener('Complete',   e => { console.log('done',   JSON.parse(e.data)); es.close(); });`} />
+        <Callout><strong>Backpressure.</strong> The SSE publisher uses a <Code>SubmissionPublisher</Code>. When the consumer is slow, overflow drops oldest events. Durable state lives in the <Code>TraceStore</Code> — use the trace API to recover any missed steps after the run completes.</Callout>
+
+        <H2 id="errors">Common error responses</H2>
+        <Table
+          headers={['HTTP status', 'When']}
+          rows={[
+            ['400 Bad Request',  'Invalid limit/offset values (negative); step out of range.'],
+            ['404 Not Found',    'Execution ID not in store.'],
+            ['409 Conflict',     'Resume called on an execution that is not INTERRUPTED.'],
+            ['500 Server Error', 'Unexpected runtime failure. Check server logs for the executionId.'],
+          ]}
+        />
       </>
     ),
   },
