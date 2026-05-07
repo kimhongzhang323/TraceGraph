@@ -67,6 +67,7 @@ public class TraceGraphProperties {
      */
     public static class Web {
         private boolean enabled = true;
+        private final Cors cors = new Cors();
 
         public boolean isEnabled() {
             return enabled;
@@ -74,6 +75,31 @@ public class TraceGraphProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public Cors getCors() {
+            return cors;
+        }
+
+        public static class Cors {
+            private boolean enabled = true;
+            private String allowedOrigins = "http://localhost:5173,http://localhost:3000";
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getAllowedOrigins() {
+                return allowedOrigins;
+            }
+
+            public void setAllowedOrigins(String allowedOrigins) {
+                this.allowedOrigins = allowedOrigins;
+            }
         }
     }
 
