@@ -80,3 +80,7 @@ markdown_extensions:
 
 plugins:
   - search
+extra:
+  site_author: "TraceGraph contributors"
+  copyright: "© 2026 TraceGraph contributors · Apache-2.0"
+  site_version: "v0.3.0 · jdk-21+"
