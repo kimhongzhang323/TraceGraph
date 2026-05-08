@@ -108,12 +108,12 @@ TraceGraph 保持对 LLM 的低耦合。`LlmClient` 是最小的抽象（`comple
 
 六、Spring Boot 与 Web 集成
 
-`tracegraph-spring-boot-starter` 提供条件自动装配：默认注入 noop SPI bean（`NodeListener`、`CheckpointStore`、`TraceRecorder`、`MemoryStore`）。当你希望查看执行轨迹并通过 HTTP 操作时，可以启用 `TraceStore` 并使用内置的 `TraceController`：
+`tracegraph-spring-boot-starter` 提供条件自动装配：默认注入 noop SPI bean（`NodeListener`、`CheckpointStore`、`TraceRecorder`、`MemoryStore`）。当你希望查看追踪并通过 HTTP 操作时，可以启用 `TraceStore` 并使用内置的 `TraceController`：
 
-- `GET /tracegraph/traces` 列表
-- `GET /tracegraph/traces/{id}` 获取单个执行轨迹
-- `GET /tracegraph/traces/{a}/diff/{b}` 比较两个轨迹差异
-- `POST /tracegraph/traces/{id}/replay?step=N` 从步骤 N 回放（需要在服务器上配置相应的 Graph Bean）
++- `GET /tracegraph/traces` 列表
++- `GET /tracegraph/traces/{id}` 获取单个执行追踪
++- `GET /tracegraph/traces/{a}/diff/{b}` 比较两个追踪差异
++- `POST /tracegraph/traces/{id}/replay?step=N` 从步骤 N 回放（需要在服务器上配置相应的 Graph Bean）
 
 七、示例（学习路径）
 
@@ -123,7 +123,7 @@ TraceGraph 保持对 LLM 的低耦合。`LlmClient` 是最小的抽象（`comple
 
 八、术语建议（统一翻译）
 
-- Trace / ExecutionTrace：建议翻译为 “执行轨迹” 或 “执行追踪”（选一种并保持一致）。
+- Trace / ExecutionTrace：建议翻译为 “追踪”。（已统一为“追踪”）
 - Node：节点
 - Edge：边
 - Context：上下文
@@ -163,5 +163,5 @@ mkdocs serve -f docs/site/mkdocs.yml
 
 请选择下一步：
 - “扩展 core 文档”为完整中文（我将把 `tracegraph-core` README 与相关教程扩展为可读教学文档），或
-- “统一术语并替换” 给出你偏好的术语表（例如 `Trace` 用 `执行轨迹`），或
+- “统一术语并替换” 给出你偏好的术语表（例如 `Trace` 用 `追踪`），或
 - “准备 PR 文本” 我为你生成一个 PR 描述草案以便你在 GitHub 上打开 PR。
