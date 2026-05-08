@@ -1,8 +1,13 @@
-# tracegraph-connectors（连接器）
+# tracegraph-connectors（连接器模块）
 
-连接器模块提供对外服务（尤其是 LLM 提供商）的轻量级适配器：抽象 `LlmClient`，以及 OpenAI/Anthropic 的 HTTP 客户端实现。
+`tracegraph-connectors` 模块为 TraceGraph 提供对外服务（尤其是各大 LLM 提供商）的轻量级适配器和连接层。该模块抽象了 `LlmClient` 接口，并针对 OpenAI 和 Anthropic 等主流模型厂商提供了 HTTP 客户端的官方实现。
 
-要点：
+## 核心要点与设计架构：
 
-- 提供 `MockLlmClient` 作为测试替身。
-- Adapter 封装网络请求与错误（`LlmHttpException`），并暴露 `complete()` 与可选的 `stream()`。
+1. **LlmClient 抽象接口**：定义了 `complete()`（同步获取完整回复）与可选的 `stream()`（流式获取回复）方法，使得底层的图逻辑完全不需要关心使用的是哪家的模型。
+2. **OpenAI 和 Anthropic 支持**：内置了原生适配器，能够无缝处理鉴权、请求构建和响应解析。
+3. **测试替身 (Mocking)**：提供 `MockLlmClient`，使得开发者在编写图的单元测试时，无需消耗真实的 API Token 或依赖网络连通性。
+4. **错误处理封装**：将各家厂商复杂的网络错误与 HTTP 状态码统一封装为 `LlmHttpException`，便于在执行图中利用重试策略进行统一的错误恢复。
+5. **低耦合性**：此模块不强制依赖任何重量级的第三方 SDK，通过标准 HTTP 调用实现交互，保证了应用的启动速度与较小的依赖体积。
+
+无论是构建对话机器人还是复杂的推理代理，你都可以通过该模块快速接入底层模型能力。

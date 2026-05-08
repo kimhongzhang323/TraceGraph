@@ -4,10 +4,10 @@ title: LLM 与工具
 
 # LLM 与工具
 
-> AI 翻译草稿 — 请校对。
+
 # LLM 与工具
 
-> AI 翻译草稿 — 请校对。
+
 
 TraceGraph 与 LLM 的接入是通过 `LlmClient` 抽象完成的（`complete()`、`stream()`）。`tracegraph-connectors` 提供 OpenAI / Anthropic 实现。将 LLM 封装进 `ChatNode` 是常见做法：
 

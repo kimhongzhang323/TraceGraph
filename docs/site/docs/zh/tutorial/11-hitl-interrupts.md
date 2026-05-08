@@ -4,10 +4,8 @@ title: HITL 中断
 
 # HITL 中断（Human-in-the-loop）
 
-> AI 翻译草稿 — 请校对。
-# 人机交互（HITL）与中断
 
-> AI 翻译草稿 — 请校对。
+# 人机交互（HITL）与中断
 
 HITL（Human-In-The-Loop）在需要人工确认或审计的关键点非常有用。TraceGraph 提供 `Builder.interruptBefore(...)` / `interruptAfter(...)` 来在指定节点处暂停执行并写入带 `interruptPending=true` 的检查点。
 

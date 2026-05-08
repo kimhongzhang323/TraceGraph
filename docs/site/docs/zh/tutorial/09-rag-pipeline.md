@@ -4,10 +4,10 @@ title: RAG 管道
 
 # RAG 管道
 
-> AI 翻译草稿 — 请校对。
+
 # RAG 管道
 
-> AI 翻译草稿 — 请校对。
+
 
 RAG（Retrieval-Augmented Generation）是一种常见模式：先检索相关文档，再把检索到的上下文与问题一起发给 LLM，最后合成答案。在 TraceGraph 中，典型步骤是：
 

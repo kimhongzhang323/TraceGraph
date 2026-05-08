@@ -4,10 +4,10 @@ title: 内存
 
 # 内存
 
-> AI 翻译草稿 — 请校对。
+
 # Memory（跨执行内存）
 
-> AI 翻译草稿 — 请校对。
+
 
 `MemoryStore` 提供跨执行的键值存储，按 `scope` 隔离。常见实现：`InMemoryMemoryStore`（测试用）、`FileMemoryStore`（JSON 持久化）、`JdbcMemoryStore`（生产）。
 

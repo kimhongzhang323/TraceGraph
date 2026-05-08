@@ -1,9 +1,16 @@
-# tracegraph-memory（内存）
+# tracegraph-memory（跨执行内存存储）
 
-此模块包含 `MemoryStore` SPI 及几种实现：内存实现、基于文件的实现与 JDBC 实现。用于跨执行的键值持久化，常用于保存会话、缓存或外部上下文。
+`tracegraph-memory` 模块提供了强大的内存与状态持久化机制。在复杂的 Agent 工作流或长时对话中，节点往往需要保存跨越多次执行的上下文（例如用户会话历史、长期记忆、临时缓存等）。本模块通过 `MemoryStore` SPI 及多种存储后端实现，解决了这一痛点。
 
-要点：
+## 核心概念与特性：
 
-- API 以 `scope` 与 `key` 为单位组织数据。
-- `FileMemoryStore` 使用 JSON 与原子换名（*.tmp + ATOMIC_MOVE）来保证写入安全。
-- `JdbcMemoryStore` 提供可选的数据库后端并暴露 `initSchema()`。
+1. **多层级作用域隔离 (Scope & Key)**：
+   所有的内存数据都以 `scope` 和 `key` 两个维度进行组织。`scope` 可以是特定的会话 ID、用户 ID 或执行 ID，从而确保不同工作流之间的数据绝对隔离。
+
+2. **丰富的存储后端支持**：
+   - **InMemoryMemoryStore**：将数据保存在内存中，读写速度极快，适用于测试环境或单节点、无状态的短时任务。
+   - **FileMemoryStore**：基于本地文件系统的实现。使用 JSON 格式序列化数据，并通过临时文件 (`*.tmp`) 配合原子重命名 (`ATOMIC_MOVE`) 技术，确保在任何情况下都不会发生文件损坏或数据半写入问题。
+   - **JdbcMemoryStore**：适用于生产环境的分布式关系型数据库支持。可以对接 MySQL、PostgreSQL 等数据库。提供 `initSchema()` 方法帮助开发者快速初始化所需的数据表。
+
+3. **与图执行器的无缝集成**：
+   在图执行过程中，可以通过 `Context.memory()` 方法直接访问当前环境配置的 `MemoryStore`，从而在任何节点内进行读写操作，实现真正具有“记忆”的智能体应用。

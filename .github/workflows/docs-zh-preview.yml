@@ -35,13 +35,18 @@ jobs:
           # build the docs site; mkdocs config is at docs/site/mkdocs.yml
           mkdocs build -f docs/site/mkdocs.yml -d site
 
+      - name: Prepare deploy token
+        run: |
+          echo "Using GH_PAGES_PAT if set, otherwise GITHUB_TOKEN"
+        env:
+          GH_PAGES_PAT: ${{ secrets.GH_PAGES_PAT }}
+
       - name: Deploy to gh-pages-zh
         uses: peaceiris/actions-gh-pages@v4
         with:
-          # By default uses the auto-generated GITHUB_TOKEN. If your repository
-          # settings restrict Actions write permissions, create a PAT and store
-          # it as `GH_PAGES_PAT` and set it here instead.
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Use `GH_PAGES_PAT` if provided (recommended when org policies restrict GITHUB_TOKEN),
+          # otherwise fall back to the auto-generated `GITHUB_TOKEN`.
+          github_token: ${{ secrets.GH_PAGES_PAT || secrets.GITHUB_TOKEN }}
           publish_dir: ./site
           publish_branch: gh-pages-zh
           user_name: 'github-actions[bot]'
