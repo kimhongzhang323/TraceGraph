@@ -1,0 +1,38 @@
+name: Build and deploy Chinese docs preview
+
+on:
+  push:
+    branches: [ 'i18n/zh-autotranslate' ]
+  pull_request:
+    branches: [ 'main' ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install mkdocs and theme
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material
+
+      - name: Build site
+        run: |
+          # build the docs site; mkdocs config is at docs/site/mkdocs.yml
+          mkdocs build -f docs/site/mkdocs.yml -d site
+
+      - name: Deploy to gh-pages-zh
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages-zh
+          user_name: 'github-actions[bot]'
+          user_email: '41898282+github-actions[bot]@users.noreply.github.com'

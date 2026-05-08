@@ -7,6 +7,15 @@
 
 TraceGraph is a JVM-native agent runtime for building typed execution graphs with durable state, retries, checkpoints, memory, and observability hooks.
 
+---
+
+Documentation languages: English (default) and 中文（Chinese AI-draft）。
+
+- English README: [README.md](README.md)
+- 中文（AI 翻译草稿）: [README.zh.md](README.zh.md)
+
+If you prefer Chinese docs, open the `docs` site and select `中文` in the navigation to view the AI-translated pages (machine drafts require review).
+
 The project is aimed at teams that want graph-style orchestration on the JVM without giving up strong typing, testability, or production control. It is not trying to be a line-by-line clone of LangGraph. The focus here is reliability, debuggability, and clean integration with Java and Spring ecosystems.
 
 ## Contents
