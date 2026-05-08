@@ -1,16 +1,54 @@
-# tracegraph-memory（跨执行内存存储）
+# TraceGraph 内存 (Memory)
 
-`tracegraph-memory` 模块提供了强大的内存与状态持久化机制。在复杂的 Agent 工作流或长时对话中，节点往往需要保存跨越多次执行的上下文（例如用户会话历史、长期记忆、临时缓存等）。本模块通过 `MemoryStore` SPI 及多种存储后端实现，解决了这一痛点。
+`tracegraph-memory` 模块通过提供持久化、可插拔的内存机制，赋予 AI 代理（Agents）在多轮对话或长时间运行的工作流中“记住”事实、用户约束、对话历史和语义的能力。
 
-## 核心概念与特性：
+## 核心特性
 
-1. **多层级作用域隔离 (Scope & Key)**：
-   所有的内存数据都以 `scope` 和 `key` 两个维度进行组织。`scope` 可以是特定的会话 ID、用户 ID 或执行 ID，从而确保不同工作流之间的数据绝对隔离。
+- **分层/按作用域划分的内存**: 可以按执行追踪 (trace)、按用户 (user) 或按工作空间 (workspace) 存储键值对。您可以通过显式的 `context.memory(scope)` 调用来控制作用域。
+- **多种存储实现**:
+  - `InMemoryMemoryStore`: 由 `ConcurrentHashMap` 支持的易失性内存。非常适合单元测试和无状态的临时运行。
+  - `FileMemoryStore`: 使用 JSON 的基于文件的持久化。适合本地脚本和单节点应用。
+  - `JdbcMemoryStore`: 面向生产级关系型数据库环境（RDBMS）的 SQL 持久化层。
+- **序列化保证**: 基于 Jackson 的多态类型系统可保护异构对象，确保复杂的 Java Record 和 POJO 对象在序列化和反序列化之间干净利落。
 
-2. **丰富的存储后端支持**：
-   - **InMemoryMemoryStore**：将数据保存在内存中，读写速度极快，适用于测试环境或单节点、无状态的短时任务。
-   - **FileMemoryStore**：基于本地文件系统的实现。使用 JSON 格式序列化数据，并通过临时文件 (`*.tmp`) 配合原子重命名 (`ATOMIC_MOVE`) 技术，确保在任何情况下都不会发生文件损坏或数据半写入问题。
-   - **JdbcMemoryStore**：适用于生产环境的分布式关系型数据库支持。可以对接 MySQL、PostgreSQL 等数据库。提供 `initSchema()` 方法帮助开发者快速初始化所需的数据表。
+## 使用方法
 
-3. **与图执行器的无缝集成**：
-   在图执行过程中，可以通过 `Context.memory()` 方法直接访问当前环境配置的 `MemoryStore`，从而在任何节点内进行读写操作，实现真正具有“记忆”的智能体应用。
+节点在执行期间通过注入的 `Context`（上下文）对象访问内存存储。
+
+```java
+graph.node("savePreference", (state, ctx) -> {
+    // 保存到 user 级别的作用域
+    ctx.memory("user-123").put("theme", "dark");
+    return state;
+});
+
+graph.node("loadPreference", (state, ctx) -> {
+    // 从 user 级别的作用域读取
+    String theme = ctx.memory("user-123").get("theme", String.class);
+    System.out.println("用户偏好 " + theme);
+    return state;
+});
+```
+
+## 内存层架构图
+
+```mermaid
+graph LR
+    subgraph Execution Layer [执行层]
+        Context[Node Context 节点上下文]
+    end
+    
+    subgraph Stores [存储层]
+        MemAuth{MemoryStore 路由器}
+        Temp[(In-Memory 内存)]
+        File[(File System 文件系统)]
+        RDBMS[(JDBC SQL 数据库)]
+    end
+    
+    Context -->|"ctx.memory(scope).put(k, v)"| MemAuth
+    Context -->|"ctx.memory(scope).get(k)"| MemAuth
+    
+    MemAuth -.-> Temp
+    MemAuth -.-> File
+    MemAuth -.-> RDBMS
+```
