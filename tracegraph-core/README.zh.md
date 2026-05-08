@@ -77,5 +77,3 @@ ExecutionResult<OrderState> r = graph.run(new OrderState("o-1", false, false, fa
 - 测试：`tracegraph-core/src/test/java/...`。
 - 示例：`examples/quickstart`。
 
-如果你希望，我可以把 `tracegraph-core` README 中的每个章节进一步扩展为完整教程（逐节示例与练习题），或者接着把 tutorial 01/02 完整翻译并扩展为教学内容。你要我接着做哪一项？
-

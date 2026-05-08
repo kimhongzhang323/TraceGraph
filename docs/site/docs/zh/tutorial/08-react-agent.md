@@ -7,7 +7,7 @@ title: ReAct 代理
 
 # ReAct 代理
 
-> AI 翻译草稿 — 请校对。
+
 
 ReAct（Reason+Act）代理模式常见于需要工具调用的任务：LLM 提出下一步动作（reason），框架执行工具（act），并把结果反馈给 LLM 作为下一轮输入。TraceGraph 提供 `ReActAgent` 工厂来把 ReAct 工作流编译成一个 `Graph`。
 

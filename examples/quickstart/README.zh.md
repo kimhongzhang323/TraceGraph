@@ -30,4 +30,4 @@ mvn -f examples/quickstart/pom.xml -DskipTests exec:java
 mvn -f examples/quickstart/pom.xml -DskipTests exec:java -Dexec.mainClass=zh_examples.ExerciseImplementations
 ```
 
-说明：这些参考实现不依赖完整 TraceGraph runtime，只用于帮助理解教程中的代码片段。如需将它们编译为真实可运行示例，我可以把 `examples/quickstart/pom.xml` 更新为包含必要的依赖并实现真实的 `Graph` 构建与运行。
+说明：这些参考实现不依赖完整 TraceGraph runtime，只用于帮助理解教程中的代码片段。

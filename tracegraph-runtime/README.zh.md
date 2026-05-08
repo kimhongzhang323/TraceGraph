@@ -1,9 +1,17 @@
-# tracegraph-runtime（运行时）
+# tracegraph-runtime（执行运行时）
 
-`tracegraph-runtime` 提供检查点（checkpoint）与恢复（resume）相关的实现，以及运行时执行器的支持代码。它负责在长期执行或中断后恢复执行，并与核心执行语义集成。
+`tracegraph-runtime` 是 TraceGraph 的高级执行引擎扩展，主要职责是提供工业级工作流所必需的检查点（Checkpoint）、任务中断恢复（Resume）机制，以及与执行器底层运行相关的高级支持代码。它能确保在不可预知的崩溃或长时间等待时，工作流能够安全、可靠地继续。
 
-核心功能：
+## 核心能力与实现细节：
 
-- `CheckpointStore` SPI 与 `InMemoryCheckpointStore` 实现。
-- 恢复流程：恢复时从上次完成的节点继续，重新评估出边并继续执行。
-- 与重试/中断的语义交互需要注意：节点可能会在恢复后以 at-least-once 的形式重新执行。
+1. **检查点机制 (CheckpointStore)**：
+   - 定义了 `CheckpointStore` SPI，负责在图执行的过程中持久化当前进度和状态。内置的 `InMemoryCheckpointStore` 适用于简单的测试场景。
+   - 每次一个节点成功执行并生成新状态时，运行时都可以利用 Checkpoint 进行快照保存。
+
+2. **状态恢复与中断接续 (Resume Workflow)**：
+   - 当遇到进程崩溃、服务器重启，或者图逻辑主动请求挂起（例如等待用户输入）时，恢复流程会介入。
+   - 恢复时，执行器会自动从 **上次成功完成的最后一个节点** 提取状态并继续执行。它会重新评估该节点的出边条件（Edge predicates），以决定下一步去往哪里。
+
+3. **容错与重试的语义交互**：
+   - 引入 Checkpoint 后，与 `tracegraph-core` 的重试逻辑结合更为紧密。
+   - **注意**：由于恢复机制的设计，在某些极端崩溃场景下，图可能会以 `at-least-once`（至少执行一次）的语义恢复执行。因此，强烈建议节点的业务逻辑实现为**幂等**的，或者结合上下文中的 `idempotencyKey` 来实现外部系统的去重（如防止重复扣款）。

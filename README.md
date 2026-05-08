@@ -12,7 +12,7 @@ TraceGraph is a JVM-native agent runtime for building typed execution graphs wit
 Documentation languages: English (default) and 中文（Chinese AI-draft）。
 
 - English README: [README.md](README.md)
-- 中文（AI 翻译草稿）: [README.zh.md](README.zh.md)
+- 中文: [README.zh.md](README.zh.md)
 
 If you prefer Chinese docs, open the `docs` site and select `中文` in the navigation to view the AI-translated pages (machine drafts require review).
 
