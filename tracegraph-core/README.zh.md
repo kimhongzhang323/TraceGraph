@@ -7,10 +7,10 @@
 目录（本页）：简介 → 关键概念 → 主要类与入口 → 代码示例 → 设计注意事项 → 本地开发与测试
 
 核心概念与术语
-- Graph<S>: 有向执行图，按命名节点组织；通过 `Graph.builder()` 构建。
+- `Graph<S>`: 有向执行图，按命名节点组织；通过 `Graph.builder()` 构建。
 - Node: 图的基本单元。节点接收当前状态 `S` 和 `Context`，返回新的状态或路由指令。
 - Edge: 描述从一个节点到另一个节点的条件或无条件转移（可带谓词）。
-- ExecutionResult<S>: 表示一次执行的结果，包含 `executionId`、最终状态、路径、状态码与错误信息。
+- `ExecutionResult<S>`: 表示一次执行的结果，包含 `executionId`、最终状态、路径、状态码与错误信息。
 - Context: 每次节点执行时传入的运行时上下文，提供 `memory()`、`idempotencyKey()`、`reportUsage()` 等工具。
 
 主要 API 入口（先看这些文件）
