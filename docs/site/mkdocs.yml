@@ -26,6 +26,8 @@ theme:
     - content.code.copy
 
 nav:
+  - 中文:
+    - 主页: zh/index.md
   - Home: index.md
   - Getting Started:
     - Installation: getting-started/installation.md
