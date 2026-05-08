@@ -22,11 +22,15 @@ title: 图复杂度参考
 
 单次执行的近似总耗时（串行）:
 
-T_total ≈ Σ_i (T_cpu_i + T_io_i * (1 + expected_retries_i))
+$$
+T_{total} \approx \sum_{i} \left( T_{cpu\_i} + T_{io\_i} \times (1 + expected\_retries\_i) \right)
+$$
 
 并行分支的资源峰值近似：
 
-PeakWorkers ≈ baseWorkers + max_over_parallel_nodes(Σ branches)
+$$
+PeakWorkers \approx baseWorkers + \max_{parallel\_nodes} \left( \sum branches \right)
+$$
 
 注意：上式为粗略估算，真实行为取决于节点是否会阻塞线程或友好地在虚拟线程上阻塞。
 

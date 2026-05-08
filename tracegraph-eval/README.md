@@ -8,28 +8,30 @@ How do you know if your agent is actually getting better when you tweak its prom
 The `tracegraph-eval` module provides tools to scientifically **score** and **evaluate** your agents against a dataset of expected answers.
 
 ### Key Concepts
-- **Dataset**: A list of `(Input, Expected Output)` pairs.
-- **Scorer**: A function that compares the agent's actual output to the expected output (e.g., using exact match, regex, or even asking another LLM to score it!).
-- **Evaluation Run**: Running your agent across the entire dataset and generating an aggregate score (like 85% accuracy).
+- **Dataset**: A list of `(Input, Expected Output)` pairs used as the ground truth.
+- **Scorer (Judge)**: A function that compares the agent's actual output to the expected output. This could be an exact match, regex extraction, or even "LLM-as-a-Judge" (asking a larger model like GPT-4 to grade the output of a smaller model).
+- **Evaluation Run**: The process of running your agent across the entire dataset automatically and generating an aggregate score (like 85% accuracy).
 
 ## 🏗️ Evaluation Workflow
+
+The following diagram illustrates how the `EvalRunner` orchestrates the test dataset, your agent, and the scorer to produce a final report.
 
 ```mermaid
 flowchart TD
     Data[(Test Dataset)] --> Runner[Eval Runner]
     Agent[TraceGraph Agent] --> Runner
     
-    Runner -->|1. Feed Input| Agent
-    Agent -->|2. Return Actual Output| Runner
-    Runner -->|3. Send Expected & Actual| Scorer[Evaluation Scorer]
+    Runner -->|"1. Feed Input"| Agent
+    Agent -->|"2. Return Actual Output"| Runner
+    Runner -->|"3. Send Expected & Actual"| Scorer[Evaluation Scorer]
     
-    Scorer -->|4. Return Score (0.0 to 1.0)| Report[Final Eval Report]
+    Scorer -->|"4. Return Score (0.0 to 1.0)"| Report[Final Eval Report]
 ```
 
 ## 🚀 How to Use It
 
 ### 1. Creating a Scorer
-You can create a custom scorer to define how an output is graded.
+You can create a custom scorer to define exactly how an output is graded. TraceGraph supports creating multiple scorers and aggregating their results.
 
 ```java
 import site.tracegraph.eval.Scorer;
@@ -44,25 +46,34 @@ public class ExactMatchScorer implements Scorer {
 ```
 
 ### 2. Running an Evaluation
-Use the `EvalRunner` to execute your agent against a dataset.
+Use the `EvalRunner` to execute your agent against a batch dataset and print the resulting accuracy.
 
 ```java
 import site.tracegraph.eval.EvalRunner;
 import site.tracegraph.eval.Dataset;
+import site.tracegraph.eval.EvalReport;
 
 public class MyAgentEvaluation {
     public static void main(String[] args) {
-        TraceGraph myAgent = // ... initialize your agent
+        TraceGraph myAgent = // ... initialize your tracegraph agent
         
         // Load your test questions and answers
         Dataset dataset = Dataset.fromCsv("src/test/resources/eval-data.csv");
         
+        // Initialize runner with your agent and scorer
         EvalRunner runner = new EvalRunner(myAgent, new ExactMatchScorer());
         
-        // Run the evaluation!
+        // Run the evaluation across the entire dataset!
         EvalReport report = runner.evaluate(dataset);
         
-        System.out.println("Agent Accuracy: " + report.getAverageScore() * 100 + "%");
+        System.out.println("=================================");
+        System.out.println("Total Samples Evaluated: " + report.getTotalSamples());
+        System.out.println("Agent Accuracy: " + (report.getAverageScore() * 100) + "%");
+        System.out.println("Failed Examples: " + report.getFailedSamples().size());
+        System.out.println("=================================");
     }
 }
 ```
+
+## 🧠 Advanced: LLM-as-a-Judge
+For conversational agents, exact matching is usually too strict. Instead of `ExactMatchScorer`, you can configure an `LlmScorer`. This scorer passes the user's question, the expected output, and the actual output to an LLM, asking it to rate the actual output's correctness on a scale of 1 to 5. 

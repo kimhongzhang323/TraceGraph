@@ -1,74 +1,53 @@
 # TraceGraph :: Benchmarks
 
-## 📖 Introduction to Benchmarking
-Welcome to the `tracegraph-bench` module! When building AI agents and state graphs, performance matters. If an agent's state transitions take too long, or if JSON serialization uses too much memory, your application will lag.
+## 📖 What are Benchmarks?
+Welcome to `tracegraph-bench`! Building a framework that can run a single AI agent is one thing, but building a framework that can handle thousands of concurrent graph executions without exhausting memory is entirely different.
 
-This module uses **JMH (Java Microbenchmark Harness)** to run highly accurate, mathematically rigorous performance tests. It doesn't just measure how fast something is; it warms up the Java Virtual Machine (JVM) and avoids common benchmarking pitfalls (like dead code elimination).
+This module contains microbenchmarks for TraceGraph's core components (the execution engine, state management, and routing logic). It uses the **JMH (Java Microbenchmark Harness)** framework to precisely detect throughput bottlenecks, lock contention, and concurrency limits.
 
-### Why Do We Need This?
-- **Throughput Measurement**: How many state graph transitions can we process per second?
-- **Memory Profiling**: Are we creating too many temporary objects and triggering Garbage Collection pauses?
-- **Regression Testing**: If someone changes core routing logic, did they accidentally make it 10x slower?
+### Core Goals
+- **Prevent Performance Regressions**: Ensure that newly introduced code (like more complex routing logic) does not degrade the Operations Per Second (OPS) of the graph execution.
+- **Allocation Profiling**: Monitor Garbage Collection (GC) pressure and memory allocation rates as State objects are passed between nodes.
+- **Concurrency Optimization**: Verify the effectiveness of Virtual Threads and ensure shared components like `MemoryStore` do not become bottlenecks under high load.
 
-## 🏗️ Benchmarking Architecture
+## 🏗️ Testing Architecture
+
+Benchmarks do not simulate full HTTP requests; instead, they stress the core execution loop directly at the JVM level.
 
 ```mermaid
-flowchart TD
-    subgraph JMH Harness
-        Runner[JMH Benchmark Runner]
-        Warmup[JVM Warmup Phase]
-        Measurement[Measurement Iterations]
+sequenceDiagram
+    participant JMH as JMH Framework
+    participant Engine as TraceGraph Engine
+    participant Mem as InMemoryStore
+    
+    JMH->>JMH: Warmup JVM
+    loop Every Iteration
+        JMH->>Engine: Concurrently submit 10,000 graph executions
+        Engine->>Mem: Concurrently Read/Write Checkpoints
+        Engine-->>JMH: Return Execution Results
     end
-
-    subgraph Core Components
-        Graph[TraceGraph Core]
-        Connect[LLM Connectors]
-        Ser[State Serializers]
-    end
-
-    Runner --> Warmup
-    Warmup --> Measurement
-    Measurement --> Graph
-    Measurement --> Connect
-    Measurement --> Ser
-
-    Measurement --> Results[(Performance Report)]
+    JMH->>JMH: Generate Throughput and Latency Report
 ```
 
-## 🚀 Running the Benchmarks
+## 🚀 How to Run Benchmarks
 
-To run the benchmarks, you need to compile the Uber-JAR and execute it. 
+JMH tests should not be run via normal JUnit runners, as they require JVM warmup and isolation to produce statistically significant results.
 
-### 1. Build the Benchmark JAR
-Open your terminal and run:
+### 1. Compile the Project
+For the most accurate results, benchmarks should be packaged into an Uber JAR and run independently.
 ```bash
-mvn clean package -pl tracegraph-bench -am
+mvn clean install -DskipTests
+cd tracegraph-bench
 ```
-*This packages the benchmarks into a single runnable JAR file.*
 
-### 2. Run the Benchmarks
-Run the compiled JAR. Be aware this might take several minutes as JMH warms up the JVM.
+### 2. Execute Benchmarks
+Run the packaged benchmark JAR. Depending on the classes tested, this can take anywhere from a few minutes to half an hour.
 ```bash
-java -jar tracegraph-bench/target/benchmarks.jar
+java -jar target/benchmarks.jar
 ```
 
-### 3. Writing a Custom Benchmark
-Here is an example of what a benchmark looks like in the code:
-```java
-package site.tracegraph.bench;
-
-import org.openjdk.jmh.annotations.*;
-import java.util.concurrent.TimeUnit;
-
-@State(Scope.Thread)
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
-public class GraphStateBenchmark {
-
-    @Benchmark
-    public void testStateCopying() {
-        // Code to test the performance of copying graph state maps
-        // JMH will run this millions of times to find the average throughput.
-    }
-}
-```
+### 3. Understanding the Output
+JMH will output detailed statistics. Key metrics include:
+- `Score`: Represents the number of executions per second (for Throughput mode).
+- `Error`: The statistical variance of the measurement.
+- `GC Allocation Rate`: If the GC profiler is enabled, it shows how many MBs of objects are allocated per second.
