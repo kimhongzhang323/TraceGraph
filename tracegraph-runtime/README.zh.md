@@ -17,20 +17,20 @@
 
 ```mermaid
 graph TD
-    Start[Graph Execution 图执行] --> Fork[Parallel Node Trigger 触发并行节点]
+    Start["Graph Execution 图执行"] --> Fork["Parallel Node Trigger 触发并行节点"]
     
-    subgraph Concurrent Execution [并发执行 - 虚拟线程]
-        Fork --> Branch1[分支 A (如 获取用户数据)]
-        Fork --> Branch2[分支 B (如 获取天气)]
-        Fork --> Branch3[分支 C (如 获取新闻)]
+    subgraph Concurrent Execution ["并发执行 - 虚拟线程"]
+        Fork --> Branch1["分支 A (如 获取用户数据)"]
+        Fork --> Branch2["分支 B (如 获取天气)"]
+        Fork --> Branch3["分支 C (如 获取新闻)"]
     end
     
     Branch1 -.-> Join
     Branch2 -.-> Join
     Branch3 -.-> Join
     
-    Join((等待所有分支完成)) --> Merge[应用状态合并函数]
-    Merge --> Continue[继续图遍历]
+    Join(("等待所有分支完成")) --> Merge["应用状态合并函数"]
+    Merge --> Continue["继续图遍历"]
 ```
 
 ## 🚀 如何实现运行时特性

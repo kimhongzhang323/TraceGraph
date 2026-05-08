@@ -17,20 +17,20 @@ The runtime module makes it trivial to split your graph into parallel tracks and
 
 ```mermaid
 graph TD
-    Start[Graph Execution] --> Fork[Parallel Node Trigger]
+    Start["Graph Execution"] --> Fork["Parallel Node Trigger"]
     
-    subgraph Concurrent Execution [Virtual Threads]
-        Fork --> Branch1[Branch A (e.g. fetch User Data)]
-        Fork --> Branch2[Branch B (e.g. fetch Weather)]
-        Fork --> Branch3[Branch C (e.g. fetch News)]
+    subgraph Concurrent Execution ["Virtual Threads"]
+        Fork --> Branch1["Branch A (e.g. fetch User Data)"]
+        Fork --> Branch2["Branch B (e.g. fetch Weather)"]
+        Fork --> Branch3["Branch C (e.g. fetch News)"]
     end
     
     Branch1 -.-> Join
     Branch2 -.-> Join
     Branch3 -.-> Join
     
-    Join((Wait For All)) --> Merge[Apply State Merger Function]
-    Merge --> Continue[Continue Graph Traverse]
+    Join(("Wait For All")) --> Merge["Apply State Merger Function"]
+    Merge --> Continue["Continue Graph Traverse"]
 ```
 
 ## 🚀 How to Implement Runtime Features
