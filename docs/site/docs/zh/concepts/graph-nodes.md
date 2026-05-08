@@ -1,37 +1,74 @@
 ---
-title: 图与节点
+title: 节点 (Graph Nodes)
 ---
 
-# 图与节点
+# 节点 (Graph Nodes)
 
-本节详细解释 `Graph<S>` 与 `Node` 的语义、节点类型（同步、异步、路由、并行）及执行器的驱动流程，并辅以示例与调试技巧。
+节点是 TraceGraph 的基本构建块。整体图 (Graph) 充当编排器，而每个节点则代表一个独立的计算、逻辑或外部交互单元。
 
-1) `Graph<S>` 的结构
+## 节点剖析
 
-`Graph` 是由命名节点（String name）与带谓词的边组成的有向图。通过 `Graph.Builder` 定义节点、入口（entry）、终止（terminal）、默认重试策略、监听器与可选的 `TraceRecorder` / `CheckpointStore`。
+节点的主要职责是获取图的当前状态 (`State`)，执行某些操作（可能需要几毫秒或几分钟），然后返回更新后的状态 (`State`)。
 
-2) 节点类型回顾
+```mermaid
+graph LR
+    A[输入状态] --> N((节点执行))
+    N --> B[更新状态]
+    
+    style N fill:#f9f,stroke:#333,stroke-width:2px
+```
 
-- 同步节点（Sync Node）：接收 `(S, Context)`，直接返回 `S`。
-- 异步节点（Async Node）：返回 `CompletableFuture<S>`，适用于阻塞或 I/O 操作。
-- 路由节点（RoutingNode）：返回 `NodeResult.goTo(name, state)` 或 `NodeResult.of(state)`，可动态决定下一跳。
-- 并行节点（parallel）：声明多条分支并发执行，使用 `Merger` 合并分支返回的状态。
+## 节点类型
 
-3) 执行器驱动流程（高层次）
+TraceGraph 支持多种节点类型，使您能够将简单的代码逻辑与高级 AI 功能混合在一起。
 
-1. 从入口节点开始，调用节点函数。
-2. 节点返回后，写检查点（如果启用），然后解析出边，按声明顺序评估谓词并选择下一条边。
-3. 达到终止节点或没有后续边时，执行结束，返回 `ExecutionResult`。
+### 1. 函数节点 (Function Nodes)
 
-注意：在恢复路径上，执行器会从 `lastCompletedNode` 重新评估其出边，这要求边的谓词是纯函数（仅基于 `S`）且节点实现幂等或具备去重逻辑。
+最简单的节点类型。它执行标准 Java 代码，直接修改状态。将其用于数据解析、计算或格式化。
 
-4) 调试与可观测性建议
+```java
+graph.node("formatData", state -> {
+    String raw = state.getRawData();
+    state.setFormattedData(raw.trim().toUpperCase());
+    return state;
+});
+```
 
-- 在开发阶段把 `NodeListener` 设置为打印进入/退出事件，便于观察节点执行顺序。
-- 在节点开始与结束处记录 `ctx.reportUsage(...)` 与 `ctx.memory()` 变更，Trace 将显示状态变更。
+### 2. LLM 节点
 
-5) 示例：快速回顾
+专为与大语言模型交互而设计的节点。它们处理格式化提示词、解析结构化输出以及管理上下文 token 的复杂性。
 
-参见 `docs/tutorial/01-nodes-and-edges` 中的订单示例。把关键节点拆小、每个节点只做一件事，这样更容易测试与回放。
+```mermaid
+graph TD
+    S[图状态] --> PromptGen[提示词模板]
+    PromptGen --> LLM((LLM 客户端))
+    LLM --> Parser[输出解析器]
+    Parser --> S2[更新后状态]
+```
 
-练习：对一个包含 5 个节点的线性图，在 `NodeListener` 中打印进入/退出顺序，并故意在中间节点抛异常观察重试与失败的行为。
+### 3. 工具执行节点 (Tool Execution Nodes)
+
+在代理式工作流中，LLM 通常请求执行某个工具。工具节点负责接受这些请求，执行相应的本地函数或 API 调用，并将观察结果返回到状态中。
+
+### 4. 子图节点 (Sub-graph Nodes)
+
+对于复杂的应用程序，单个图可能会变得过于庞大。TraceGraph 允许您封装一个完整的图并将其作为单个节点嵌入到父图中。
+
+```mermaid
+graph TD
+    subgraph 父图 (Parent Graph)
+    A[开始] --> B(节点 1)
+    B --> C[[子图节点]]
+    C --> D(节点 2)
+    end
+    
+    subgraph 嵌套图 (Nested Graph)
+    C --> N1(内部节点 1)
+    N1 --> N2(内部节点 2)
+    end
+```
+
+## 节点最佳实践
+
+- **单一职责:** 一个节点应该做好一件事。不要在同一个节点中混合数据获取和 LLM 提示词。
+- **幂等性:** 如果发生故障，节点可能会重试。设计您的节点，使得运行它们两次会产生相同的结果，或者为外部副作用使用事务 ID。
