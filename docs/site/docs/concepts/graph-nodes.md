@@ -52,13 +52,13 @@ For complex applications, a single graph can become too large. TraceGraph allows
 
 ```mermaid
 graph TD
-    subgraph Parent Graph
+    subgraph ParentGraph [Parent Graph]
     A[Start] --> B(Node 1)
     B --> C[[Sub-graph Node]]
     C --> D(Node 2)
     end
     
-    subgraph Nested Graph
+    subgraph NestedGraph [Nested Graph]
     C --> N1(Inner Node 1)
     N1 --> N2(Inner Node 2)
     end

@@ -56,13 +56,13 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph 父图 (Parent Graph)
+    subgraph ParentGraph [父图 Parent Graph]
     A[开始] --> B(节点 1)
     B --> C[[子图节点]]
     C --> D(节点 2)
     end
     
-    subgraph 嵌套图 (Nested Graph)
+    subgraph NestedGraph [嵌套图 Nested Graph]
     C --> N1(内部节点 1)
     N1 --> N2(内部节点 2)
     end
