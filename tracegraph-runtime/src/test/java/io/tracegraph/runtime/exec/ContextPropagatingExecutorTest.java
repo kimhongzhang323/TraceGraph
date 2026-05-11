@@ -9,9 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,6 +31,13 @@ class ContextPropagatingExecutorTest {
         @Override public MemoryStore memory() { return MemoryStore.noop(); }
     };
 
+    private final List<ExecutorService> executorsToShutDown = new ArrayList<>();
+
+    private Executor trackingWrap(ExecutorService delegate, Context ctx) {
+        executorsToShutDown.add(delegate);
+        return ContextPropagatingExecutor.wrap(delegate, ctx);
+    }
+
     @BeforeEach
     void clearMdc() {
         MDC.clear();
@@ -37,6 +46,8 @@ class ContextPropagatingExecutorTest {
     @AfterEach
     void resetMdc() {
         MDC.clear();
+        executorsToShutDown.forEach(ExecutorService::shutdown);
+        executorsToShutDown.clear();
     }
 
     @Test
@@ -45,7 +56,7 @@ class ContextPropagatingExecutorTest {
         AtomicReference<String> captured = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
 
-        var executor = ContextPropagatingExecutor.wrap(Executors.newSingleThreadExecutor(), STUB_CONTEXT);
+        var executor = trackingWrap(Executors.newSingleThreadExecutor(), STUB_CONTEXT);
         executor.execute(() -> {
             captured.set(MDC.get("requestId"));
             latch.countDown();
@@ -88,7 +99,7 @@ class ContextPropagatingExecutorTest {
         AtomicBoolean ran = new AtomicBoolean(false);
         CountDownLatch latch = new CountDownLatch(1);
 
-        var executor = ContextPropagatingExecutor.wrap(Executors.newSingleThreadExecutor(), STUB_CONTEXT);
+        var executor = trackingWrap(Executors.newSingleThreadExecutor(), STUB_CONTEXT);
         executor.execute(() -> {
             ran.set(true);
             latch.countDown();
@@ -125,6 +136,21 @@ class ContextPropagatingExecutorTest {
 
         assertThat(captured.get()).isEqualTo("trace-99");
         wrapped.shutdown();
+    }
+
+    @Test
+    void injectsExecutionIdIntoMdc() throws InterruptedException {
+        AtomicReference<String> captured = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        var executor = trackingWrap(Executors.newSingleThreadExecutor(), STUB_CONTEXT);
+        executor.execute(() -> {
+            captured.set(MDC.get("tracegraph.executionId"));
+            latch.countDown();
+        });
+
+        latch.await();
+        assertThat(captured.get()).isEqualTo("exec-1");
     }
 
     @Test

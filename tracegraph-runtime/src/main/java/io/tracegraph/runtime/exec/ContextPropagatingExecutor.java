@@ -20,15 +20,17 @@ public final class ContextPropagatingExecutor {
 
     public static Executor wrap(Executor delegate, Context current) {
         Map<String, String> mdcSnapshot = MDC.getCopyOfContextMap();
-        return runnable -> delegate.execute(propagating(runnable, mdcSnapshot));
+        String executionId = current.executionId();
+        return runnable -> delegate.execute(propagating(runnable, mdcSnapshot, executionId));
     }
 
     public static ExecutorService wrap(ExecutorService delegate, Context current) {
         Map<String, String> mdcSnapshot = MDC.getCopyOfContextMap();
-        return new PropagatingExecutorService(delegate, mdcSnapshot);
+        String executionId = current.executionId();
+        return new PropagatingExecutorService(delegate, mdcSnapshot, executionId);
     }
 
-    private static Runnable propagating(Runnable runnable, Map<String, String> mdcSnapshot) {
+    private static Runnable propagating(Runnable runnable, Map<String, String> mdcSnapshot, String executionId) {
         return () -> {
             Map<String, String> previous = MDC.getCopyOfContextMap();
             try {
@@ -36,6 +38,9 @@ public final class ContextPropagatingExecutor {
                     MDC.clear();
                 } else {
                     MDC.setContextMap(mdcSnapshot);
+                }
+                if (executionId != null && !executionId.isEmpty()) {
+                    MDC.put("tracegraph.executionId", executionId);
                 }
                 runnable.run();
             } finally {
@@ -48,7 +53,7 @@ public final class ContextPropagatingExecutor {
         };
     }
 
-    private static <V> Callable<V> propagating(Callable<V> callable, Map<String, String> mdcSnapshot) {
+    private static <V> Callable<V> propagating(Callable<V> callable, Map<String, String> mdcSnapshot, String executionId) {
         return () -> {
             Map<String, String> previous = MDC.getCopyOfContextMap();
             try {
@@ -56,6 +61,9 @@ public final class ContextPropagatingExecutor {
                     MDC.clear();
                 } else {
                     MDC.setContextMap(mdcSnapshot);
+                }
+                if (executionId != null && !executionId.isEmpty()) {
+                    MDC.put("tracegraph.executionId", executionId);
                 }
                 return callable.call();
             } finally {
@@ -72,56 +80,58 @@ public final class ContextPropagatingExecutor {
 
         private final ExecutorService delegate;
         private final Map<String, String> mdcSnapshot;
+        private final String executionId;
 
-        PropagatingExecutorService(ExecutorService delegate, Map<String, String> mdcSnapshot) {
+        PropagatingExecutorService(ExecutorService delegate, Map<String, String> mdcSnapshot, String executionId) {
             this.delegate = delegate;
             this.mdcSnapshot = mdcSnapshot;
+            this.executionId = executionId;
         }
 
         @Override
         public void execute(Runnable command) {
-            delegate.execute(propagating(command, mdcSnapshot));
+            delegate.execute(propagating(command, mdcSnapshot, executionId));
         }
 
         @Override
         public <T> Future<T> submit(Callable<T> task) {
-            return delegate.submit(propagating(task, mdcSnapshot));
+            return delegate.submit(propagating(task, mdcSnapshot, executionId));
         }
 
         @Override
         public <T> Future<T> submit(Runnable task, T result) {
-            return delegate.submit(propagating(task, mdcSnapshot), result);
+            return delegate.submit(propagating(task, mdcSnapshot, executionId), result);
         }
 
         @Override
         public Future<?> submit(Runnable task) {
-            return delegate.submit(propagating(task, mdcSnapshot));
+            return delegate.submit(propagating(task, mdcSnapshot, executionId));
         }
 
         @Override
         public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
                 throws InterruptedException {
-            return delegate.invokeAll(tasks.stream().map(t -> propagating(t, mdcSnapshot)).toList());
+            return delegate.invokeAll(tasks.stream().map(t -> propagating(t, mdcSnapshot, executionId)).toList());
         }
 
         @Override
         public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                 long timeout, TimeUnit unit) throws InterruptedException {
             return delegate.invokeAll(
-                    tasks.stream().map(t -> propagating(t, mdcSnapshot)).toList(), timeout, unit);
+                    tasks.stream().map(t -> propagating(t, mdcSnapshot, executionId)).toList(), timeout, unit);
         }
 
         @Override
         public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
                 throws InterruptedException, ExecutionException {
-            return delegate.invokeAny(tasks.stream().map(t -> propagating(t, mdcSnapshot)).toList());
+            return delegate.invokeAny(tasks.stream().map(t -> propagating(t, mdcSnapshot, executionId)).toList());
         }
 
         @Override
         public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                 long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return delegate.invokeAny(
-                    tasks.stream().map(t -> propagating(t, mdcSnapshot)).toList(), timeout, unit);
+                    tasks.stream().map(t -> propagating(t, mdcSnapshot, executionId)).toList(), timeout, unit);
         }
 
         @Override
