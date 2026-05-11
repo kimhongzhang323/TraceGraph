@@ -72,6 +72,7 @@ class ContextPropagatingExecutorTest {
         CountDownLatch latch = new CountDownLatch(1);
 
         ExecutorService singleThread = Executors.newSingleThreadExecutor();
+        executorsToShutDown.add(singleThread);
         MDC.put("ctx", "caller");
         var wrapped = ContextPropagatingExecutor.wrap(singleThread, STUB_CONTEXT);
 
@@ -89,7 +90,6 @@ class ContextPropagatingExecutorTest {
         latch.await();
         // the second task's MDC should reflect the snapshot at wrap-time (has "ctx"="caller")
         assertThat(afterCtx.get()).isEqualTo("caller");
-        singleThread.shutdown();
     }
 
     @Test
@@ -112,6 +112,7 @@ class ContextPropagatingExecutorTest {
     @Test
     void executorServiceVariantDelegatesLifecycleMethods() {
         ExecutorService mockDelegate = Executors.newSingleThreadExecutor();
+        executorsToShutDown.add(mockDelegate);
         ExecutorService wrapped = ContextPropagatingExecutor.wrap(mockDelegate, STUB_CONTEXT);
 
         assertThat(wrapped.isShutdown()).isFalse();
@@ -128,14 +129,14 @@ class ContextPropagatingExecutorTest {
         MDC.put("traceId", "trace-99");
         AtomicReference<String> captured = new AtomicReference<>();
 
-        ExecutorService wrapped = ContextPropagatingExecutor.wrap(
-                Executors.newSingleThreadExecutor(), STUB_CONTEXT);
+        ExecutorService inner = Executors.newSingleThreadExecutor();
+        executorsToShutDown.add(inner);
+        ExecutorService wrapped = ContextPropagatingExecutor.wrap(inner, STUB_CONTEXT);
 
         var future = wrapped.submit(() -> captured.set(MDC.get("traceId")));
         future.get();
 
         assertThat(captured.get()).isEqualTo("trace-99");
-        wrapped.shutdown();
     }
 
     @Test
@@ -156,7 +157,7 @@ class ContextPropagatingExecutorTest {
     @Test
     void invokeAllPropagatesMdc() throws InterruptedException, ExecutionException {
         MDC.put("key", "value");
-        ExecutorService wrapped = ContextPropagatingExecutor.wrap(
+        ExecutorService wrapped = (ExecutorService) trackingWrap(
                 Executors.newFixedThreadPool(2), STUB_CONTEXT);
 
         var futures = wrapped.invokeAll(List.of(
@@ -167,6 +168,20 @@ class ContextPropagatingExecutorTest {
         for (var f : futures) {
             assertThat(f.get()).isEqualTo("value");
         }
-        wrapped.shutdown();
+    }
+
+    @Test
+    void invokeAnyPropagatesMdc() throws InterruptedException, ExecutionException {
+        MDC.put("correlationId", "corr-7");
+
+        ExecutorService wrapped = (ExecutorService) trackingWrap(
+                Executors.newFixedThreadPool(2), STUB_CONTEXT);
+
+        String result = wrapped.invokeAny(List.of(
+                () -> MDC.get("correlationId"),
+                () -> MDC.get("correlationId")
+        ));
+
+        assertThat(result).isEqualTo("corr-7");
     }
 }
