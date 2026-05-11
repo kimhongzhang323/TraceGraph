@@ -8,8 +8,6 @@ import { useAuth } from '@/hooks/useAuth'
 
 const Home         = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
 const Docs         = lazy(() => import('@/pages/Docs').then((m) => ({ default: m.Docs })))
-const TraceExplorer = lazy(() => import('@/pages/TraceExplorer').then((m) => ({ default: m.TraceExplorer })))
-const Studio       = lazy(() => import('@/pages/Studio').then((m) => ({ default: m.Studio })))
 const Changelog    = lazy(() => import('@/pages/Changelog').then((m) => ({ default: m.Changelog })))
 const ApiReference = lazy(() => import('@/pages/ApiReference').then((m) => ({ default: m.ApiReference })))
 const SignIn       = lazy(() => import('@/pages/SignIn').then((m) => ({ default: m.SignIn })))
@@ -108,9 +106,9 @@ function Layout() {
             <Route path="/api"            element={<ApiReference />} />
             <Route path="/changelog"      element={<Changelog />} />
 
-            {/* Auth-gated pages */}
-            <Route path="/trace"    element={<ProtectedRoute><TraceExplorer /></ProtectedRoute>} />
-            <Route path="/studio"   element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+            {/* Temporarily hidden — under testing */}
+            <Route path="/trace"    element={<Navigate to="/" replace />} />
+            <Route path="/studio"   element={<Navigate to="/" replace />} />
             <Route path="/profile"  element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
             {/* Guest-only pages — redirect signed-in users away */}

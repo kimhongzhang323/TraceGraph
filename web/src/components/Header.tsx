@@ -7,8 +7,6 @@ import { useAuth } from '@/hooks/useAuth'
 const NAV = [
   { id: 'home',      href: '/',          label: 'Overview' },
   { id: 'docs',      href: '/docs',      label: 'Docs' },
-  { id: 'trace',     href: '/trace',     label: 'Trace' },
-  { id: 'studio',    href: '/studio',    label: 'Studio' },
   { id: 'api',       href: '/api',       label: 'API' },
   { id: 'changelog', href: '/changelog', label: 'Changelog' },
 ]
@@ -88,7 +86,6 @@ export function Header({ route, theme, setTheme }: HeaderProps) {
                   <div className="py-1">
                     {([
                       ['Profile',   'user',       '/profile'],
-                      ['My traces', 'git-branch', '/profile'],
                       ['API keys',  'key',        '/profile'],
                       ['Security',  'shield',     '/profile'],
                       ['Billing',   'credit-card','/profile'],
