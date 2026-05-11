@@ -119,25 +119,25 @@ export function useAuth() {
       setUser(u)
       return { ok: true }
     } catch (err) {
-      // Fall back to demo mode when backend is not reachable
-      if (err instanceof ApiError && err.status === 0 || !(err instanceof ApiError)) {
-        const demoUser: AuthUser = {
-          email: credentials.email,
-          name: credentials.email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-          plan: 'Pro',
-          joined: '2026-02-14',
-          provider: method,
-          mfa: true,
-          avatarColor: avatarColor(credentials.email),
-        }
-        writeUser(demoUser)
-        setUser(demoUser)
-        return { ok: true }
+      // Auth-rejection errors (backend is up but rejected the credentials)
+      const authRejection = err instanceof ApiError && (err.status === 401 || err.status === 403 || err.status === 409)
+      if (authRejection) {
+        const msg = err.status === 401 ? 'Incorrect email or password.' : err.message
+        return { ok: false, error: msg }
       }
-      const msg = err instanceof ApiError
-        ? (err.status === 401 ? 'Incorrect email or password.' : err.message)
-        : 'Something went wrong. Try again.'
-      return { ok: false, error: msg }
+      // Everything else (404, 5xx, network error) = backend not reachable → demo mode
+      const demoUser: AuthUser = {
+        email: credentials.email,
+        name: credentials.email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        plan: 'Pro',
+        joined: '2026-02-14',
+        provider: method,
+        mfa: true,
+        avatarColor: avatarColor(credentials.email),
+      }
+      writeUser(demoUser)
+      setUser(demoUser)
+      return { ok: true }
     } finally {
       setLoading(false)
     }
@@ -155,27 +155,26 @@ export function useAuth() {
       setUser(u)
       return { ok: true }
     } catch (err) {
-      // Demo fallback
-      if (!(err instanceof ApiError) || err.status === 0) {
-        const demoUser: AuthUser = {
-          email: payload.email,
-          name: payload.name,
-          org: payload.org,
-          role: payload.role,
-          plan: 'Free',
-          joined: new Date().toISOString().slice(0, 10),
-          provider: 'password',
-          mfa: false,
-          avatarColor: avatarColor(payload.email),
-        }
-        writeUser(demoUser)
-        setUser(demoUser)
-        return { ok: true }
+      const authRejection = err instanceof ApiError && (err.status === 409 || err.status === 422)
+      if (authRejection) {
+        const msg = err.status === 409 ? 'An account with that email already exists.' : err.message
+        return { ok: false, error: msg }
       }
-      const msg = err instanceof ApiError
-        ? (err.status === 409 ? 'An account with that email already exists.' : err.message)
-        : 'Something went wrong. Try again.'
-      return { ok: false, error: msg }
+      // Backend unreachable → demo mode
+      const demoUser: AuthUser = {
+        email: payload.email,
+        name: payload.name,
+        org: payload.org,
+        role: payload.role,
+        plan: 'Free',
+        joined: new Date().toISOString().slice(0, 10),
+        provider: 'password',
+        mfa: false,
+        avatarColor: avatarColor(payload.email),
+      }
+      writeUser(demoUser)
+      setUser(demoUser)
+      return { ok: true }
     } finally {
       setLoading(false)
     }

@@ -12,6 +12,11 @@
       connect-src includes the optional external API origin via the env var;
       vercel.json sets the header-level CSP which takes precedence in production.
     -->
+    <!--
+      Security headers that work as meta tags (subset only).
+      frame-ancestors, X-Frame-Options, and HSTS must be HTTP headers —
+      those are set in vercel.json (production) and vite.config.ts (dev).
+    -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
                    script-src 'self';
@@ -19,14 +24,10 @@
                    font-src 'self' https://fonts.gstatic.com;
                    img-src 'self' data: blob:;
                    connect-src 'self' https:;
-                   frame-ancestors 'none';
                    base-uri 'self';
                    form-action 'self';" />
-
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <link rel="canonical" href="https://www.tracegraph.site/" />
     <meta property="og:type" content="website" />
