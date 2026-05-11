@@ -13,19 +13,12 @@
       vercel.json sets the header-level CSP which takes precedence in production.
     -->
     <!--
-      Security headers that work as meta tags (subset only).
-      frame-ancestors, X-Frame-Options, and HSTS must be HTTP headers —
-      those are set in vercel.json (production) and vite.config.ts (dev).
+      CSP, X-Frame-Options, and HSTS are enforced as HTTP headers:
+        production → vercel.json
+        dev        → vite.config.ts server.headers
+      Meta-tag CSP is intentionally omitted: it cannot enforce frame-ancestors,
+      and it would block Vite's HMR inline script injection in dev.
     -->
-    <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self';
-                   script-src 'self';
-                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-                   font-src 'self' https://fonts.gstatic.com;
-                   img-src 'self' data: blob:;
-                   connect-src 'self' https:;
-                   base-uri 'self';
-                   form-action 'self';" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
