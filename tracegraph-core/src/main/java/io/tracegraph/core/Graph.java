@@ -607,7 +607,9 @@ public final class Graph<S> {
         /**
          * Provide an executor service for async and parallel work.
          *
-         * <p>When omitted, TraceGraph creates a virtual-thread executor per run.
+         * <p>Caller owns the executor lifecycle — TraceGraph never calls {@code shutdown()} on it.
+         * When omitted, TraceGraph creates a virtual-thread-per-task executor per run and
+         * automatically closes it on completion.
          *
          * @param executor executor service to use
          * @return this builder
