@@ -132,7 +132,82 @@ export interface MeResponse {
   avatarColor: string
 }
 
+export interface UsageStats {
+  totalRuns: number
+  replayForks: number
+  failureRate: number   // 0–100
+  tokensUsed: number
+  runsWeekDelta: number
+  forksWeekDelta: number
+  failureRateDelta: number
+  p50TokensPerCall: number
+}
+
+export interface AuditEntry {
+  id: string
+  what: string
+  ip: string
+  when: string         // ISO timestamp
+  whenRelative: string // "12m ago"
+}
+
+export interface ApiKey {
+  id: string
+  name: string
+  prefix: string
+  scope: string
+  createdAt: string
+  lastUsedAt: string | null
+  lastUsedRelative: string | null
+}
+
+export interface Session {
+  id: string
+  device: string
+  browser: string
+  location: string
+  ip: string
+  lastActiveAt: string
+  lastActiveRelative: string
+  current: boolean
+}
+
+export interface BillingInfo {
+  plan: 'Free' | 'Pro' | 'Enterprise'
+  traceEventsUsed: number
+  traceEventsLimit: number
+  replayForksUnlimited: boolean
+  nextBillingDate: string | null
+  amount: number | null
+}
+
+export interface Prefs {
+  emailDigest: boolean
+  failureAlerts: boolean
+  betaFeatures: boolean
+}
+
 export const api = {
+  profile: {
+    stats:        () => request<UsageStats>('/auth/stats'),
+    audit:        () => request<AuditEntry[]>('/auth/audit'),
+    updateMe:     (patch: Partial<Pick<MeResponse, 'name' | 'org' | 'role'>>) =>
+                    request<MeResponse>('/auth/me', { method: 'PATCH', body: JSON.stringify(patch) }),
+    keys:         () => request<ApiKey[]>('/auth/keys'),
+    createKey:    (name: string, scope: string) =>
+                    request<ApiKey & { secret: string }>('/auth/keys', { method: 'POST', body: JSON.stringify({ name, scope }) }),
+    revokeKey:    (id: string) => request<void>(`/auth/keys/${id}`, { method: 'DELETE' }),
+    sessions:     () => request<Session[]>('/auth/sessions'),
+    revokeSession:(id: string) => request<void>(`/auth/sessions/${id}`, { method: 'DELETE' }),
+    revokeOthers: () => request<void>('/auth/sessions/others', { method: 'DELETE' }),
+    billing:      () => request<BillingInfo>('/auth/billing'),
+    prefs:        () => request<Prefs>('/auth/prefs'),
+    savePrefs:    (prefs: Prefs) =>
+                    request<Prefs>('/auth/prefs', { method: 'PUT', body: JSON.stringify(prefs) }),
+    changePassword:(current: string, next: string) =>
+                    request<void>('/auth/password', { method: 'POST', body: JSON.stringify({ current, next }) }),
+    deleteAccount: () => request<void>('/auth/account', { method: 'DELETE' }),
+  },
   auth: {
     signIn: (email: string, password: string) =>
       request<AuthTokens & { user: MeResponse }>('/auth/signin', {
