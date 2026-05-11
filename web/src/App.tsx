@@ -11,8 +11,12 @@ const TraceExplorer = lazy(() => import('@/pages/TraceExplorer').then((m) => ({ 
 const Studio = lazy(() => import('@/pages/Studio').then((m) => ({ default: m.Studio })))
 const Changelog = lazy(() => import('@/pages/Changelog').then((m) => ({ default: m.Changelog })))
 const ApiReference = lazy(() => import('@/pages/ApiReference').then((m) => ({ default: m.ApiReference })))
+const SignIn = lazy(() => import('@/pages/SignIn').then((m) => ({ default: m.SignIn })))
+const SignUp = lazy(() => import('@/pages/SignUp').then((m) => ({ default: m.SignUp })))
+const Forgot = lazy(() => import('@/pages/Forgot').then((m) => ({ default: m.Forgot })))
+const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.Profile })))
 
-const APP_ROUTES = ['docs', 'trace', 'studio', 'api', 'changelog']
+const APP_ROUTES = ['docs', 'trace', 'studio', 'api', 'changelog', 'signin', 'signup', 'forgot', 'profile']
 
 function routeId(pathname: string): string {
   const seg = pathname.split('/').filter(Boolean)[0] ?? ''
@@ -23,7 +27,8 @@ function Layout() {
   const [theme, setTheme] = useTheme()
   const location = useLocation()
   const route = routeId(location.pathname)
-  const hideFooter = route === 'trace' || route === 'studio'
+  const isAuth = route === 'signin' || route === 'signup' || route === 'forgot'
+  const hideFooter = route === 'trace' || route === 'studio' || isAuth
   const seo =
     route === 'docs'
       ? {
@@ -81,6 +86,10 @@ function Layout() {
             <Route path="/studio"      element={<Studio />} />
             <Route path="/api"         element={<ApiReference />} />
             <Route path="/changelog"   element={<Changelog />} />
+            <Route path="/signin"      element={<SignIn />} />
+            <Route path="/signup"      element={<SignUp />} />
+            <Route path="/forgot"      element={<Forgot />} />
+            <Route path="/profile"     element={<Profile />} />
             <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

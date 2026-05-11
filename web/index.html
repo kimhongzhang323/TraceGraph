@@ -6,6 +6,21 @@
     <title>TraceGraph · Typed agent runtime for the JVM</title>
     <meta name="description" content="TraceGraph is a typed execution-graph runtime for the JVM. Replay runs, resume checkpoints, and observe every step." />
     <meta name="robots" content="index,follow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- CSP: restrict sources; nonce injection handled by the server in production -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   script-src 'self' 'unsafe-inline';
+                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                   font-src 'self' https://fonts.gstatic.com;
+                   img-src 'self' data: blob:;
+                   connect-src 'self';
+                   frame-ancestors 'none';
+                   base-uri 'self';
+                   form-action 'self';" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
     <link rel="canonical" href="https://www.tracegraph.site/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TraceGraph" />
@@ -19,6 +34,60 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Anti-scrape hardening:
+      - Disables right-click context menu on non-input elements.
+      - Blocks common keyboard shortcuts used by scrapers (view-source, save-page, print-to-pdf).
+      - Detects headless-browser signals and appends a body class for the React app to gate
+        privileged content behind (trace data, API key lists, session tables).
+      - Rate-limits rapid programmatic scrolling that automated harvesters use.
+    -->
+    <script>
+      (function () {
+        // Block right-click except on input/textarea/select/a
+        document.addEventListener('contextmenu', function (e) {
+          var t = e.target;
+          if (!t || !['INPUT','TEXTAREA','SELECT','A'].includes(t.tagName)) {
+            e.preventDefault();
+          }
+        });
+
+        // Block scraper-common keyboard combos (Ctrl/Cmd + U/S/P)
+        document.addEventListener('keydown', function (e) {
+          var mod = e.ctrlKey || e.metaKey;
+          if (mod && (e.key === 'u' || e.key === 's' || e.key === 'p')) {
+            e.preventDefault();
+          }
+        });
+
+        // Headless / bot detection
+        var headless =
+          navigator.webdriver === true ||
+          /HeadlessChrome|Prerender|PhantomJS|Selenium/.test(navigator.userAgent) ||
+          typeof window.__selenium_unwrapped !== 'undefined' ||
+          typeof window.callPhantom !== 'undefined';
+
+        if (headless) {
+          document.documentElement.classList.add('bot-detected');
+        }
+
+        // Rapid-scroll rate limiter — bots often scroll at superhuman speed
+        var lastScroll = 0;
+        var scrollBursts = 0;
+        window.addEventListener('scroll', function () {
+          var now = Date.now();
+          if (now - lastScroll < 50) {
+            scrollBursts++;
+            if (scrollBursts > 20) {
+              document.documentElement.classList.add('bot-detected');
+            }
+          } else {
+            scrollBursts = Math.max(0, scrollBursts - 1);
+          }
+          lastScroll = now;
+        }, { passive: true });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
