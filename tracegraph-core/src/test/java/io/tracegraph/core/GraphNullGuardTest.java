@@ -37,4 +37,12 @@ class GraphNullGuardTest {
                 .isThrownBy(() -> graph.stream(null))
                 .withMessage("initial state");
     }
+
+    @Test
+    void streamWithIdNullInitialThrows() {
+        Graph<String> graph = singleNodeGraph();
+        assertThatNullPointerException()
+                .isThrownBy(() -> graph.stream(null, "id"))
+                .withMessage("initial state");
+    }
 }

@@ -420,6 +420,7 @@ public final class Executor<S> {
         return RoutingNodeOutcome.failure(new NodeExecutionException(name, last));
     }
 
+    @Deprecated(since = "0.4.0", forRemoval = true)
     public static String newExecutionId() {
         return UUID.randomUUID().toString();
     }
