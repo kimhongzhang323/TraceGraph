@@ -20,10 +20,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * A typed, immutable graph of {@link Node}s connected by {@link Edge}s. Constructed via the fluent
@@ -59,6 +61,7 @@ public final class Graph<S> {
     private final ExecutorService userExecutor;
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
+    private final Supplier<String> executionIdFactory;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -82,6 +85,7 @@ public final class Graph<S> {
         this.userExecutor = b.userExecutor;
         this.interruptBefore = Set.copyOf(b.interruptBefore);
         this.interruptAfter = Set.copyOf(b.interruptAfter);
+        this.executionIdFactory = b.executionIdFactory;
     }
 
     /**
@@ -101,7 +105,8 @@ public final class Graph<S> {
      * @return execution result
      */
     public ExecutionResult<S> run(S initial) {
-        return run(initial, Executor.newExecutionId());
+        Objects.requireNonNull(initial, "initial state");
+        return run(initial, executionIdFactory.get());
     }
 
     /**
@@ -112,6 +117,7 @@ public final class Graph<S> {
      * @return execution result
      */
     public ExecutionResult<S> run(S initial, String executionId) {
+        Objects.requireNonNull(initial, "initial state");
         Objects.requireNonNull(executionId, "executionId");
         return executor().run(initial, executionId);
     }
@@ -140,6 +146,7 @@ public final class Graph<S> {
      */
     public ExecutionResult<S> runFrom(String startNode, S seed, String executionId) {
         Objects.requireNonNull(startNode, "startNode");
+        Objects.requireNonNull(seed, "initial state");
         Objects.requireNonNull(executionId, "executionId");
         return executor().runFrom(startNode, seed, executionId);
     }
@@ -151,7 +158,8 @@ public final class Graph<S> {
      * @return publisher of execution events
      */
     public Flow.Publisher<NodeEvent<S>> stream(S initial) {
-        return stream(initial, Executor.newExecutionId());
+        Objects.requireNonNull(initial, "initial state");
+        return stream(initial, executionIdFactory.get());
     }
 
     /**
@@ -162,6 +170,7 @@ public final class Graph<S> {
      * @return publisher of execution events
      */
     public Flow.Publisher<NodeEvent<S>> stream(S initial, String executionId) {
+        Objects.requireNonNull(initial, "initial state");
         Objects.requireNonNull(executionId, "executionId");
         java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(1);
         SubmissionPublisher<NodeEvent<S>> pub = new SubmissionPublisher<>() {
@@ -233,6 +242,7 @@ public final class Graph<S> {
         b.userExecutor = this.userExecutor;
         b.interruptBefore.addAll(this.interruptBefore);
         b.interruptAfter.addAll(this.interruptAfter);
+        b.executionIdFactory = this.executionIdFactory;
         return new Graph<>(b);
     }
 
@@ -365,6 +375,7 @@ public final class Graph<S> {
         private TraceRecorder traceRecorder;
         private MemoryStore memoryStore;
         private ExecutorService userExecutor;
+        private Supplier<String> executionIdFactory = () -> UUID.randomUUID().toString();
 
         private Builder() {}
 
@@ -622,6 +633,11 @@ public final class Graph<S> {
         public Builder<S> subgraph(String name, Graph<S> inner, RetryPolicy retryPolicy) {
             Objects.requireNonNull(inner, "inner");
             register(name, NodeKind.subgraph(inner), retryPolicy);
+            return this;
+        }
+
+        public Builder<S> executionIdFactory(Supplier<String> factory) {
+            this.executionIdFactory = Objects.requireNonNull(factory, "factory");
             return this;
         }
 
