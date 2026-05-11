@@ -21,47 +21,35 @@ class MdcNodeListenerTest {
     }
 
     @Test
-    void onEnterPutsExecutionIdKeyIntoMdc() {
-        MdcNodeListener listener = new MdcNodeListener();
-        listener.onEnter("myNode", "state");
-        assertThat(MDC.get(MdcNodeListener.DEFAULT_EXECUTION_ID_KEY)).isNotNull();
-    }
-
-    @Test
-    void onExitRemovesBothKeys() {
+    void onExitRemovesNodeKey() {
         MdcNodeListener listener = new MdcNodeListener();
         listener.onEnter("myNode", "state");
         listener.onExit("myNode", "state");
         assertThat(MDC.get(MdcNodeListener.DEFAULT_NODE_KEY)).isNull();
-        assertThat(MDC.get(MdcNodeListener.DEFAULT_EXECUTION_ID_KEY)).isNull();
     }
 
     @Test
-    void onErrorRemovesBothKeys() {
+    void onErrorRemovesNodeKey() {
         MdcNodeListener listener = new MdcNodeListener();
         listener.onEnter("myNode", "state");
         listener.onError("myNode", new RuntimeException("boom"));
         assertThat(MDC.get(MdcNodeListener.DEFAULT_NODE_KEY)).isNull();
-        assertThat(MDC.get(MdcNodeListener.DEFAULT_EXECUTION_ID_KEY)).isNull();
     }
 
     @Test
-    void customKeyNamesAreRespected() {
-        MdcNodeListener listener = new MdcNodeListener("custom.execId", "custom.node");
+    void customKeyNameIsRespected() {
+        MdcNodeListener listener = new MdcNodeListener("custom.node");
         listener.onEnter("nodeA", "state");
         assertThat(MDC.get("custom.node")).isEqualTo("nodeA");
-        assertThat(MDC.get("custom.execId")).isNotNull();
         listener.onExit("nodeA", "state");
         assertThat(MDC.get("custom.node")).isNull();
-        assertThat(MDC.get("custom.execId")).isNull();
     }
 
     @Test
-    void defaultConstructorUsesDefaultConstants() {
+    void defaultConstructorUsesDefaultNodeKey() {
         MdcNodeListener listener = new MdcNodeListener();
         listener.onEnter("n", "s");
         assertThat(MDC.get(MdcNodeListener.DEFAULT_NODE_KEY)).isEqualTo("n");
-        assertThat(MDC.get(MdcNodeListener.DEFAULT_EXECUTION_ID_KEY)).isNotNull();
     }
 
     @Test
