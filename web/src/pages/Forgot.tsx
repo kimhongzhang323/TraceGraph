@@ -1,10 +1,32 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
 import { Icon } from '@/components/Icon'
+import { api, ApiError } from '@/lib/api'
 
 export function Forgot() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErr(null)
+    if (!email.includes('@')) { setErr('Enter a valid email address'); return }
+    setLoading(true)
+    try {
+      await api.auth.forgotPassword(email)
+    } catch (error) {
+      // Show success even on 404 — avoids email enumeration
+      if (error instanceof ApiError && error.status !== 0) {
+        // Only surface genuine server errors, not "not found"
+        if (error.status >= 500) { setErr('Server error — try again in a moment.'); setLoading(false); return }
+      }
+    } finally {
+      setLoading(false)
+    }
+    setSent(true)
+  }
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] grid lg:grid-cols-[1fr_520px]">
@@ -38,16 +60,19 @@ export function Forgot() {
           <h1 className="text-[24px] font-medium tracking-tight text-ink-950 dark:text-white">Forgot your password?</h1>
           <p className="mt-1.5 text-[13.5px] text-ink-500">No worries — enter your email below.</p>
           {!sent ? (
-            <form onSubmit={(e) => { e.preventDefault(); setSent(true) }} className="mt-7">
+            <form onSubmit={submit} className="mt-7">
               <label className="block mb-3.5">
                 <div className="mb-1.5">
                   <span className="text-[12.5px] font-medium text-ink-700 dark:text-ink-300">Email</span>
                 </div>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email"
-                  className="w-full h-11 px-3.5 rounded-lg border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-950 text-[14px] text-ink-950 dark:text-white outline-none focus:border-ink-950 dark:focus:border-white transition-colors" />
+                  className={`w-full h-11 px-3.5 rounded-lg border bg-white dark:bg-ink-950 text-[14px] text-ink-950 dark:text-white outline-none transition-colors ${
+                    err ? 'border-rose-400 dark:border-rose-700' : 'border-ink-200 dark:border-ink-800 focus:border-ink-950 dark:focus:border-white'
+                  }`} />
+                {err && <div className="mt-1.5 text-[11.5px] text-rose-600 dark:text-rose-400">{err}</div>}
               </label>
-              <Button as="button" size="lg" variant="primary" className="w-full justify-center mt-2" iconRight="arrow-right">
-                Send reset link
+              <Button as="button" size="lg" variant="primary" className="w-full justify-center mt-2" iconRight="arrow-right" disabled={loading}>
+                {loading ? 'Sending…' : 'Send reset link'}
               </Button>
             </form>
           ) : (
@@ -55,8 +80,12 @@ export function Forgot() {
               <Icon name="mail-check" size={18} className="text-emerald-700 dark:text-emerald-400 mb-2" />
               <h3 className="text-[15px] font-medium text-ink-950 dark:text-white">Check your inbox</h3>
               <p className="mt-1 text-[12.5px] text-ink-600 dark:text-ink-400">
-                If an account exists for <strong>{email}</strong>, a reset link is on the way.
+                If an account exists for <strong>{email}</strong>, a reset link is on the way. It expires in 30 minutes.
               </p>
+              <button onClick={() => { setSent(false); setEmail('') }}
+                className="mt-3 text-[12px] text-ink-500 underline underline-offset-2 hover:text-ink-950 dark:hover:text-white">
+                Try a different email
+              </button>
             </div>
           )}
           <p className="mt-6 text-[12.5px] text-ink-500">

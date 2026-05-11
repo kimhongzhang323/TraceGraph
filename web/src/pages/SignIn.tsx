@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/Button'
 import { Icon } from '@/components/Icon'
-import { writeUser } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 
 const AUTH_METHODS = [
   { id: 'google',    label: 'Continue with Google',    icon: 'chrome' },
@@ -80,31 +80,64 @@ function Divider({ children }: { children: React.ReactNode }) {
 
 export function SignIn() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { signIn, loading } = useAuth()
+  const from = (location.state as { from?: string } | null)?.from ?? '/profile'
+
   const [method, setMethod] = useState<'password' | 'magic' | 'passkey'>('password')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [remember, setRemember] = useState(true)
   const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [magicSent, setMagicSent] = useState(false)
 
-  const doSignIn = (e?: React.FormEvent) => {
+  const doSignIn = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setErr(null)
-    if (!email.includes('@')) return setErr('Enter a valid email')
-    if (method === 'password' && pw.length < 8) return setErr('Password must be at least 8 characters')
-    setBusy(true)
-    setTimeout(() => {
-      writeUser({
-        email,
-        name: email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-        plan: 'Pro',
-        joined: '2026-02-14',
-        provider: method,
-        mfa: true,
-        avatarColor: '#0d8f63',
-      })
-      navigate('/profile')
-    }, 600)
+
+    if (!email.includes('@')) { setErr('Enter a valid email'); return }
+    if (method === 'password' && pw.length < 8) { setErr('Password must be at least 8 characters'); return }
+
+    const result = await signIn(method, { email, password: pw })
+    if (result.magicLinkSent) { setMagicSent(true); return }
+    if (!result.ok) { setErr(result.error ?? 'Sign in failed'); return }
+
+    if (!remember) {
+      // Session-only: clear token on tab close
+      window.addEventListener('beforeunload', () => {
+        localStorage.removeItem('tg-token')
+        localStorage.removeItem('tg-refresh')
+      }, { once: true })
+    }
+
+    navigate(from, { replace: true })
+  }
+
+  const doOAuth = async (provider: string) => {
+    setErr(null)
+    const result = await signIn('oauth', { email: `demo@${provider}.com`, provider })
+    if (!result.ok) { setErr(result.error ?? 'OAuth failed'); return }
+    navigate(from, { replace: true })
+  }
+
+  if (magicSent) {
+    return (
+      <AuthShell side={<></>}>
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4">
+            <Icon name="mail-check" size={22} className="text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h1 className="text-[22px] font-medium tracking-tight text-ink-950 dark:text-white">Check your inbox</h1>
+          <p className="mt-2 text-[13.5px] text-ink-500 leading-relaxed">
+            We sent a magic link to <strong className="text-ink-700 dark:text-ink-300">{email}</strong>.
+            It expires in 10 minutes.
+          </p>
+          <button onClick={() => setMagicSent(false)} className="mt-6 text-[12.5px] text-ink-500 underline underline-offset-2 hover:text-ink-950 dark:hover:text-white">
+            Try a different method
+          </button>
+        </div>
+      </AuthShell>
+    )
   }
 
   return (
@@ -134,8 +167,8 @@ export function SignIn() {
 
       <div className="mt-7 space-y-2.5">
         {AUTH_METHODS.map((m) => (
-          <button key={m.id} onClick={() => doSignIn()}
-            className="w-full h-11 rounded-lg border hairline bg-white dark:bg-ink-950 hover:bg-ink-50 dark:hover:bg-ink-900 flex items-center justify-center gap-3 text-[14px] text-ink-950 dark:text-white transition-colors">
+          <button key={m.id} onClick={() => doOAuth(m.id)} disabled={loading}
+            className="w-full h-11 rounded-lg border hairline bg-white dark:bg-ink-950 hover:bg-ink-50 dark:hover:bg-ink-900 flex items-center justify-center gap-3 text-[14px] text-ink-950 dark:text-white transition-colors disabled:opacity-60">
             <Icon name={m.icon} size={16} />
             <span>{m.label}</span>
           </button>
@@ -146,7 +179,7 @@ export function SignIn() {
 
       <div className="flex gap-1.5 mb-5 p-0.5 bg-ink-100 dark:bg-ink-900 rounded-lg">
         {([['password', 'Password', 'lock'], ['magic', 'Magic link', 'mail'], ['passkey', 'Passkey', 'fingerprint']] as const).map(([id, label, icon]) => (
-          <button key={id} onClick={() => setMethod(id)}
+          <button key={id} onClick={() => { setMethod(id); setErr(null) }}
             className={`flex-1 h-8 rounded-md text-[12.5px] inline-flex items-center justify-center gap-1.5 transition-colors ${
               method === id ? 'bg-white dark:bg-ink-950 text-ink-950 dark:text-white shadow-sm' : 'text-ink-600 dark:text-ink-400'
             }`}>
@@ -175,8 +208,8 @@ export function SignIn() {
             Keep me signed in for 14 days
           </label>
         )}
-        <Button as="button" size="lg" variant="primary" className="w-full justify-center">
-          {busy ? 'Signing in…' : method === 'magic' ? 'Send magic link' : method === 'passkey' ? 'Use passkey' : 'Sign in'}
+        <Button as="button" size="lg" variant="primary" className="w-full justify-center" disabled={loading}>
+          {loading ? 'Signing in…' : method === 'magic' ? 'Send magic link' : method === 'passkey' ? 'Use passkey' : 'Sign in'}
         </Button>
       </form>
 

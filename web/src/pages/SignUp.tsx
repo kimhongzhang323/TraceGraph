@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/Button'
 import { Icon } from '@/components/Icon'
-import { writeUser } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 
 const OAUTH = [
   { id: 'google',    label: 'Google',    icon: 'chrome' },
@@ -62,6 +62,7 @@ type FormData = { name: string; email: string; pw: string; org: string; role: st
 
 export function SignUp() {
   const navigate = useNavigate()
+  const { signIn, signUp, loading } = useAuth()
   const [step, setStep] = useState(1)
   const [data, setData] = useState<FormData>({ name: '', email: '', pw: '', org: '', role: 'engineer', tos: false, marketing: false })
   const [err, setErr] = useState<string | null>(null)
@@ -74,19 +75,11 @@ export function SignUp() {
     }
   }
 
-  const finish = () => {
-    writeUser({
-      email: data.email || 'user@example.com',
-      name: data.name || 'New User',
-      org: data.org || undefined,
-      role: data.role,
-      plan: 'Free',
-      joined: new Date().toISOString().slice(0, 10),
-      provider: 'password',
-      mfa: false,
-      avatarColor: '#0d8f63',
-    })
-    navigate('/profile')
+  const doOAuth = async (provider: string) => {
+    setErr(null)
+    const result = await signIn('oauth', { email: `demo@${provider}.com`, provider })
+    if (!result.ok) { setErr(result.error ?? 'OAuth failed'); return }
+    navigate('/profile', { replace: true })
   }
 
   const goStep2 = (e: React.FormEvent) => {
@@ -99,9 +92,22 @@ export function SignUp() {
     setStep(2)
   }
 
+  const finish = async () => {
+    setErr(null)
+    const result = await signUp({
+      name: data.name,
+      email: data.email,
+      password: data.pw,
+      org: data.org || undefined,
+      role: data.role,
+      marketing: data.marketing,
+    })
+    if (!result.ok) { setErr(result.error ?? 'Sign up failed'); return }
+    navigate('/profile', { replace: true })
+  }
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] grid lg:grid-cols-[1fr_520px]">
-      {/* Left panel */}
       <div className="hidden lg:flex relative overflow-hidden bg-ink-950 text-white">
         <div className="absolute inset-0 grid-bg opacity-30" />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 50% at 30% 30%, rgba(13,143,99,0.25), transparent 60%)' }} />
@@ -134,7 +140,6 @@ export function SignUp() {
         </div>
       </div>
 
-      {/* Right panel */}
       <div className="flex items-center justify-center px-6 py-14 bg-white dark:bg-ink-950">
         <div className="w-full max-w-[400px]">
           <div className="flex items-center justify-between mb-7">
@@ -153,8 +158,8 @@ export function SignUp() {
             <>
               <div className="grid grid-cols-2 gap-2.5 mb-5">
                 {OAUTH.map((m) => (
-                  <button key={m.id} onClick={finish}
-                    className="h-11 rounded-lg border hairline bg-white dark:bg-ink-950 hover:bg-ink-50 dark:hover:bg-ink-900 flex items-center justify-center gap-2 text-[12.5px] text-ink-950 dark:text-white transition-colors">
+                  <button key={m.id} onClick={() => doOAuth(m.id)} disabled={loading}
+                    className="h-11 rounded-lg border hairline bg-white dark:bg-ink-950 hover:bg-ink-50 dark:hover:bg-ink-900 flex items-center justify-center gap-2 text-[12.5px] text-ink-950 dark:text-white transition-colors disabled:opacity-60">
                     <Icon name={m.icon} size={14} />{m.label}
                   </button>
                 ))}
@@ -192,7 +197,7 @@ export function SignUp() {
                   <span>Send me product updates (you can unsubscribe at any time).</span>
                 </label>
                 {err && <div className="mb-3 text-[12px] text-rose-600 dark:text-rose-400">{err}</div>}
-                <Button as="button" size="lg" variant="primary" className="w-full justify-center" iconRight="arrow-right">Continue</Button>
+                <Button as="button" size="lg" variant="primary" className="w-full justify-center" iconRight="arrow-right" disabled={loading}>Continue</Button>
               </form>
             </>
           )}
@@ -229,8 +234,8 @@ export function SignUp() {
                   ['Hardware security key', 'key', 'WebAuthn · FIDO2'],
                   ['Skip for now', 'x', 'Reduces your account security'],
                 ] as const).map(([t, ic, sub], i) => (
-                  <button key={i} onClick={finish}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors ${i > 0 ? 'border-t hairline' : ''}`}>
+                  <button key={i} onClick={finish} disabled={loading}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors disabled:opacity-60 ${i > 0 ? 'border-t hairline' : ''}`}>
                     <span className="w-8 h-8 rounded-md bg-ink-100 dark:bg-ink-900 flex items-center justify-center text-ink-700 dark:text-ink-300 shrink-0">
                       <Icon name={ic} size={14} />
                     </span>
@@ -242,6 +247,7 @@ export function SignUp() {
                   </button>
                 ))}
               </div>
+              {err && <div className="mb-3 text-[12px] text-rose-600 dark:text-rose-400">{err}</div>}
               <Button as="button" size="md" variant="ghost" onClick={() => setStep(1)} icon="arrow-left">Back</Button>
             </>
           )}

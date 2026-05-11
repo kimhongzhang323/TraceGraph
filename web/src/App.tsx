@@ -4,30 +4,49 @@ import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { Seo } from '@/components/Seo'
 import { useTheme } from '@/hooks/useTheme'
+import { useAuth } from '@/hooks/useAuth'
 
-const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
-const Docs = lazy(() => import('@/pages/Docs').then((m) => ({ default: m.Docs })))
+const Home         = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
+const Docs         = lazy(() => import('@/pages/Docs').then((m) => ({ default: m.Docs })))
 const TraceExplorer = lazy(() => import('@/pages/TraceExplorer').then((m) => ({ default: m.TraceExplorer })))
-const Studio = lazy(() => import('@/pages/Studio').then((m) => ({ default: m.Studio })))
-const Changelog = lazy(() => import('@/pages/Changelog').then((m) => ({ default: m.Changelog })))
+const Studio       = lazy(() => import('@/pages/Studio').then((m) => ({ default: m.Studio })))
+const Changelog    = lazy(() => import('@/pages/Changelog').then((m) => ({ default: m.Changelog })))
 const ApiReference = lazy(() => import('@/pages/ApiReference').then((m) => ({ default: m.ApiReference })))
-const SignIn = lazy(() => import('@/pages/SignIn').then((m) => ({ default: m.SignIn })))
-const SignUp = lazy(() => import('@/pages/SignUp').then((m) => ({ default: m.SignUp })))
-const Forgot = lazy(() => import('@/pages/Forgot').then((m) => ({ default: m.Forgot })))
-const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.Profile })))
+const SignIn       = lazy(() => import('@/pages/SignIn').then((m) => ({ default: m.SignIn })))
+const SignUp       = lazy(() => import('@/pages/SignUp').then((m) => ({ default: m.SignUp })))
+const Forgot       = lazy(() => import('@/pages/Forgot').then((m) => ({ default: m.Forgot })))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword').then((m) => ({ default: m.ResetPassword })))
+const Profile      = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.Profile })))
 
-const APP_ROUTES = ['docs', 'trace', 'studio', 'api', 'changelog', 'signin', 'signup', 'forgot', 'profile']
+const APP_ROUTES = ['docs', 'trace', 'studio', 'api', 'changelog', 'signin', 'signup', 'forgot', 'reset-password', 'profile']
 
 function routeId(pathname: string): string {
   const seg = pathname.split('/').filter(Boolean)[0] ?? ''
   return APP_ROUTES.includes(seg) ? seg : 'home'
 }
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  const location = useLocation()
+  if (!user) {
+    return <Navigate to="/signin" state={{ from: location.pathname }} replace />
+  }
+  return <>{children}</>
+}
+
+function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  if (user) {
+    return <Navigate to="/profile" replace />
+  }
+  return <>{children}</>
+}
+
 function Layout() {
   const [theme, setTheme] = useTheme()
   const location = useLocation()
   const route = routeId(location.pathname)
-  const isAuth = route === 'signin' || route === 'signup' || route === 'forgot'
+  const isAuth = route === 'signin' || route === 'signup' || route === 'forgot' || route === 'reset-password'
   const hideFooter = route === 'trace' || route === 'studio' || isAuth
   const seo =
     route === 'docs'
@@ -79,18 +98,24 @@ function Layout() {
       <main className="flex-1">
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/"            element={<Home />} />
-            <Route path="/docs"        element={<Docs />} />
-            <Route path="/docs/:id"    element={<Docs />} />
-            <Route path="/trace"       element={<TraceExplorer />} />
-            <Route path="/studio"      element={<Studio />} />
-            <Route path="/api"         element={<ApiReference />} />
-            <Route path="/changelog"   element={<Changelog />} />
-            <Route path="/signin"      element={<SignIn />} />
-            <Route path="/signup"      element={<SignUp />} />
-            <Route path="/forgot"      element={<Forgot />} />
-            <Route path="/profile"     element={<Profile />} />
-            <Route path="*"            element={<Navigate to="/" replace />} />
+            <Route path="/"               element={<Home />} />
+            <Route path="/docs"           element={<Docs />} />
+            <Route path="/docs/:id"       element={<Docs />} />
+            <Route path="/api"            element={<ApiReference />} />
+            <Route path="/changelog"      element={<Changelog />} />
+
+            {/* Auth-gated pages */}
+            <Route path="/trace"    element={<ProtectedRoute><TraceExplorer /></ProtectedRoute>} />
+            <Route path="/studio"   element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+            <Route path="/profile"  element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+            {/* Guest-only pages — redirect signed-in users away */}
+            <Route path="/signin"         element={<GuestOnlyRoute><SignIn /></GuestOnlyRoute>} />
+            <Route path="/signup"         element={<GuestOnlyRoute><SignUp /></GuestOnlyRoute>} />
+            <Route path="/forgot"         element={<GuestOnlyRoute><Forgot /></GuestOnlyRoute>} />
+            <Route path="/reset-password" element={<GuestOnlyRoute><ResetPassword /></GuestOnlyRoute>} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>
