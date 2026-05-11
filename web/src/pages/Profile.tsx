@@ -4,7 +4,7 @@ import { Button } from '@/components/Button'
 import { Icon } from '@/components/Icon'
 import { Badge } from '@/components/Badge'
 import { StatusDot } from '@/components/StatusDot'
-import { useAuth, writeUser } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 import type { AuthUser } from '@/hooks/useAuth'
 
 const RECENT_TRACES = [
