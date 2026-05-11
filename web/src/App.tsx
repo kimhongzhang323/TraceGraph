@@ -36,7 +36,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  if (user) {
+  const location = useLocation()
+  // ?switch=1 lets a signed-in user force their way to the auth page
+  // (e.g. broken session, want to change account) without clearing storage manually.
+  const forceShow = new URLSearchParams(location.search).get('switch') === '1'
+  if (user && !forceShow) {
     return <Navigate to="/profile" replace />
   }
   return <>{children}</>

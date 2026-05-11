@@ -163,7 +163,11 @@ export function SignIn() {
       }
     >
       <h1 className="text-[24px] font-medium tracking-tight text-ink-950 dark:text-white">Welcome back</h1>
-      <p className="mt-1.5 text-[13.5px] text-ink-500">New here? <a className="text-ink-950 dark:text-white underline underline-offset-2" href="/signup">Create an account</a></p>
+      <p className="mt-1.5 text-[13.5px] text-ink-500">
+        New here? <a className="text-ink-950 dark:text-white underline underline-offset-2" href="/signup">Create an account</a>
+        {' · '}
+        <a className="text-ink-500 underline underline-offset-2 hover:text-ink-950 dark:hover:text-white" href="/profile">Back to app ↗</a>
+      </p>
 
       <div className="mt-7 space-y-2.5">
         {AUTH_METHODS.map((m) => (

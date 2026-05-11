@@ -67,8 +67,17 @@ export function useAuth() {
         writeLocal(u)
         setUser(u)
       })
-      .catch(() => {
-        // Token may be expired — let refresh logic handle it on next request
+      .catch((err: unknown) => {
+        // Hard 401 with no refresh token = dead session; clear it so ProtectedRoute
+        // kicks the user to /signin instead of letting them through with broken state.
+        if (err instanceof ApiError && err.status === 401 && !tokenStore.getRefresh()) {
+          tokenStore.clear()
+          writeLocal(null)
+          setUser(null)
+          window.dispatchEvent(new Event('tg-auth-changed'))
+        }
+        // Network errors or other transient failures: keep the cached user (demo mode
+        // or backend temporarily down) — don't log the user out.
       })
   }, [])
 
