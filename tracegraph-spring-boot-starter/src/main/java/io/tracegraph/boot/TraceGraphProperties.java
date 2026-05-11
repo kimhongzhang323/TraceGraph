@@ -13,6 +13,7 @@ public class TraceGraphProperties {
     private final Memory memory = new Memory();
     private final Llm llm = new Llm();
     private final Rag rag = new Rag();
+    private final Mdc mdc = new Mdc();
 
     public Web getWeb() {
         return web;
@@ -28,6 +29,10 @@ public class TraceGraphProperties {
 
     public Rag getRag() {
         return rag;
+    }
+
+    public Mdc getMdc() {
+        return mdc;
     }
 
     /**
@@ -182,6 +187,16 @@ public class TraceGraphProperties {
                 this.table = table;
             }
         }
+    }
+
+    /**
+     * MDC node listener auto-configuration properties.
+     */
+    public static class Mdc {
+        private boolean enabled = true;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
     }
 
     /**
