@@ -44,17 +44,6 @@ class GeminiLlmClientTest {
                 .build();
     }
 
-    private void respond(int statusCode, String responseBody) {
-        server.createContext(PATH, ex -> {
-            byte[] bytes = responseBody.getBytes(StandardCharsets.UTF_8);
-            ex.getResponseHeaders().set("Content-Type", "application/json");
-            ex.sendResponseHeaders(statusCode, bytes.length);
-            ex.getResponseBody().write(bytes);
-            ex.close();
-        });
-        server.start();
-    }
-
     private void respond(String responseBody, AtomicReference<String> capturedBody) {
         server.createContext(PATH, ex -> {
             byte[] reqBytes = ex.getRequestBody().readAllBytes();

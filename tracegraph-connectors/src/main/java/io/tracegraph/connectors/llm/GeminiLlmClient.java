@@ -19,6 +19,7 @@ import java.util.Objects;
 
 public final class GeminiLlmClient implements LlmClient {
 
+    // Preview model name — update to stable once gemini-3-flash is GA
     private static final String DEFAULT_MODEL = "gemini-3-flash-preview";
     static final String DEFAULT_BASE_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/";
@@ -75,7 +76,7 @@ public final class GeminiLlmClient implements LlmClient {
         }
 
         try {
-            return parseResponse(mapper.readTree(response.body()));
+            return parseResponse(mapper.readTree(response.body()), mapper);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to parse Gemini response", e);
         }
@@ -127,7 +128,7 @@ public final class GeminiLlmClient implements LlmClient {
         return body;
     }
 
-    private LlmResponse parseResponse(JsonNode root) {
+    private static LlmResponse parseResponse(JsonNode root, ObjectMapper mapper) {
         JsonNode candidates = root.path("candidates");
         if (!candidates.isArray() || candidates.isEmpty()) {
             throw new IllegalStateException("Gemini response missing 'candidates'");
@@ -150,7 +151,7 @@ public final class GeminiLlmClient implements LlmClient {
                     } catch (IOException e) {
                         throw new UncheckedIOException("Failed to serialize tool call args", e);
                     }
-                    toolCalls.add(new ToolCall("", name, args));
+                    toolCalls.add(new ToolCall(name, name, args));
                 }
             }
         }
