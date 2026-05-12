@@ -1,8 +1,13 @@
 package io.tracegraph.connectors.structured;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.tracegraph.connectors.llm.ChatMessage;
+import io.tracegraph.connectors.llm.LlmClient;
+import io.tracegraph.connectors.llm.LlmRequest;
 import io.tracegraph.connectors.llm.LlmResponse;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public final class StructuredOutput<T> {
@@ -42,6 +47,32 @@ public final class StructuredOutput<T> {
             throw new StructuredOutputException(
                     "Failed to parse LLM response as " + type.getSimpleName() + ": " + e.getMessage(), e);
         }
+    }
+
+    public T extractWithRetry(LlmClient client, LlmRequest request, int maxAttempts) {
+        if (maxAttempts < 1) throw new IllegalArgumentException("maxAttempts must be >= 1");
+        List<ChatMessage> messages = new ArrayList<>(request.messages());
+        StructuredOutputException lastError = null;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            LlmRequest currentRequest = LlmRequest.builder()
+                    .model(request.model())
+                    .messages(List.copyOf(messages))
+                    .temperature(request.temperature())
+                    .maxTokens(request.maxTokens())
+                    .tools(request.tools())
+                    .build();
+            LlmResponse response = client.complete(currentRequest);
+            try {
+                return extract(response);
+            } catch (StructuredOutputException e) {
+                lastError = e;
+                messages.add(ChatMessage.assistant(response.content()));
+                messages.add(ChatMessage.user(
+                        "Your previous response could not be parsed: " + e.getMessage()
+                        + ". Please respond with valid JSON matching the expected schema."));
+            }
+        }
+        throw lastError;
     }
 
     public String jsonSchema() {

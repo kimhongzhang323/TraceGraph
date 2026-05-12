@@ -19,7 +19,8 @@ import java.util.Objects;
 
 public final class GeminiLlmClient implements LlmClient {
 
-    private static final String DEFAULT_MODEL = "gemini-1.5-flash";
+    // Preview model name — update to stable once gemini-3-flash is GA
+    private static final String DEFAULT_MODEL = "gemini-3-flash-preview";
     static final String DEFAULT_BASE_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/";
 
@@ -46,11 +47,6 @@ public final class GeminiLlmClient implements LlmClient {
 
     @Override
     public LlmResponse complete(LlmRequest request) {
-        if (request.hasTools()) {
-            throw new UnsupportedOperationException(
-                    "Tool calling not yet supported by GeminiLlmClient");
-        }
-
         URI endpoint = URI.create(baseUrl + model + ":generateContent?key=" + apiKey);
 
         byte[] body;
@@ -80,7 +76,7 @@ public final class GeminiLlmClient implements LlmClient {
         }
 
         try {
-            return parseResponse(mapper.readTree(response.body()));
+            return parseResponse(mapper.readTree(response.body()), mapper);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to parse Gemini response", e);
         }
@@ -116,10 +112,23 @@ public final class GeminiLlmClient implements LlmClient {
         generationConfig.put("temperature", request.temperature());
         generationConfig.put("maxOutputTokens", request.maxTokens());
         body.put("generationConfig", generationConfig);
+        if (request.hasTools()) {
+            List<Map<String, Object>> functionDeclarations = new ArrayList<>();
+            for (ToolDefinition td : request.tools()) {
+                Map<String, Object> fn = new LinkedHashMap<>();
+                fn.put("name", td.name());
+                fn.put("description", td.description());
+                if (!td.parametersSchema().isEmpty()) {
+                    fn.put("parameters", td.parametersSchema());
+                }
+                functionDeclarations.add(fn);
+            }
+            body.put("tools", List.of(Map.of("functionDeclarations", functionDeclarations)));
+        }
         return body;
     }
 
-    private static LlmResponse parseResponse(JsonNode root) {
+    private static LlmResponse parseResponse(JsonNode root, ObjectMapper mapper) {
         JsonNode candidates = root.path("candidates");
         if (!candidates.isArray() || candidates.isEmpty()) {
             throw new IllegalStateException("Gemini response missing 'candidates'");
@@ -128,31 +137,49 @@ public final class GeminiLlmClient implements LlmClient {
         JsonNode contentNode = first.path("content");
         JsonNode parts = contentNode.path("parts");
         StringBuilder sb = new StringBuilder();
+        List<ToolCall> toolCalls = new ArrayList<>();
         if (parts.isArray()) {
             for (JsonNode part : parts) {
-                sb.append(part.path("text").asText(""));
+                if (part.has("text")) {
+                    sb.append(part.path("text").asText(""));
+                } else if (part.has("functionCall")) {
+                    JsonNode fc = part.path("functionCall");
+                    String name = fc.path("name").asText("");
+                    String args;
+                    try {
+                        args = mapper.writeValueAsString(fc.path("args"));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException("Failed to serialize tool call args", e);
+                    }
+                    toolCalls.add(new ToolCall(name, name, args));
+                }
             }
         }
         String content = sb.toString();
 
         String finishReasonRaw = first.path("finishReason").asText("");
-        String finishStr = switch (finishReasonRaw) {
-            case "STOP" -> "stop";
-            case "MAX_TOKENS" -> "length";
-            default -> finishReasonRaw.toLowerCase(Locale.ROOT);
-        };
-        LlmResponse.FinishReason finish = switch (finishStr) {
-            case "stop" -> LlmResponse.FinishReason.STOP;
-            case "length" -> LlmResponse.FinishReason.LENGTH;
-            default -> LlmResponse.FinishReason.OTHER;
-        };
+        LlmResponse.FinishReason finish;
+        if (!toolCalls.isEmpty()) {
+            finish = LlmResponse.FinishReason.TOOL_CALLS;
+        } else {
+            String finishStr = switch (finishReasonRaw) {
+                case "STOP" -> "stop";
+                case "MAX_TOKENS" -> "length";
+                default -> finishReasonRaw.toLowerCase(Locale.ROOT);
+            };
+            finish = switch (finishStr) {
+                case "stop" -> LlmResponse.FinishReason.STOP;
+                case "length" -> LlmResponse.FinishReason.LENGTH;
+                default -> LlmResponse.FinishReason.OTHER;
+            };
+        }
 
         JsonNode usageMeta = root.path("usageMetadata");
         int promptTokens = usageMeta.path("promptTokenCount").asInt(0);
         int completionTokens = usageMeta.path("candidatesTokenCount").asInt(0);
 
         return new LlmResponse(content, finish, new LlmResponse.Usage(promptTokens, completionTokens),
-                List.of());
+                List.copyOf(toolCalls));
     }
 
     public static final class Builder {

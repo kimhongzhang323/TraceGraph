@@ -39,7 +39,7 @@ public class TraceGraphProperties {
      * LLM client auto-configuration properties.
      */
     public static class Llm {
-        public enum Provider { OPENAI, ANTHROPIC }
+        public enum Provider { OPENAI, ANTHROPIC, GEMINI, DEEPSEEK }
 
         private boolean enabled = true;
         private Provider provider;
@@ -204,9 +204,38 @@ public class TraceGraphProperties {
      */
     public static class Rag {
         private final Embedding embedding = new Embedding();
+        private final VectorStoreConfig vectorstore = new VectorStoreConfig();
 
         public Embedding getEmbedding() {
             return embedding;
+        }
+
+        public VectorStoreConfig getVectorstore() {
+            return vectorstore;
+        }
+
+        /**
+         * VectorStore backend selection properties.
+         */
+        public static class VectorStoreConfig {
+            public enum Provider { INMEMORY, QDRANT, WEAVIATE, PINECONE, PGVECTOR }
+
+            private Provider provider = Provider.INMEMORY;
+            private String baseUrl;
+            private String apiKey;
+            private String indexHost;
+
+            public Provider getProvider() { return provider; }
+            public void setProvider(Provider provider) { this.provider = provider; }
+
+            public String getBaseUrl() { return baseUrl; }
+            public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+
+            public String getApiKey() { return apiKey; }
+            public void setApiKey(String apiKey) { this.apiKey = apiKey; }
+
+            public String getIndexHost() { return indexHost; }
+            public void setIndexHost(String indexHost) { this.indexHost = indexHost; }
         }
 
         /**
