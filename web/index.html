@@ -6,6 +6,22 @@
     <title>TraceGraph · Typed agent runtime for the JVM</title>
     <meta name="description" content="TraceGraph is a typed execution-graph runtime for the JVM. Replay runs, resume checkpoints, and observe every step." />
     <meta name="robots" content="index,follow" />
+
+    <!--
+      CSP: no unsafe-inline on scripts (anti-scrape moved to /src/antiscrape.js).
+      connect-src includes the optional external API origin via the env var;
+      vercel.json sets the header-level CSP which takes precedence in production.
+    -->
+    <!--
+      CSP, X-Frame-Options, and HSTS are enforced as HTTP headers:
+        production → vercel.json
+        dev        → vite.config.ts server.headers
+      Meta-tag CSP is intentionally omitted: it cannot enforce frame-ancestors,
+      and it would block Vite's HMR inline script injection in dev.
+    -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
     <link rel="canonical" href="https://www.tracegraph.site/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TraceGraph" />
@@ -13,12 +29,14 @@
     <meta property="og:description" content="TraceGraph is a typed execution-graph runtime for the JVM. Replay runs, resume checkpoints, and observe every step." />
     <meta property="og:url" content="https://www.tracegraph.site/" />
     <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/antiscrape.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

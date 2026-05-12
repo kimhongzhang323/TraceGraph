@@ -14,10 +14,18 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/tracegraph': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-      },
+      '/tracegraph': { target: 'http://localhost:8082', changeOrigin: true },
+      '/auth':        { target: 'http://localhost:8082', changeOrigin: true },
+    },
+    headers: {
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+      'X-Robots-Tag': 'noindex',
+      // unsafe-inline required in dev for Vite HMR inline script injection.
+      // Production uses the strict policy in vercel.json (no unsafe-inline).
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https: ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     },
   },
   build: {

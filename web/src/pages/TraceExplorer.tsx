@@ -3,6 +3,7 @@ import { Panel, Badge, Button } from '@/components'
 import { Seo } from '@/components/Seo'
 import { MOCK_TRACE, MOCK_TRACE_LIST } from '@/data/mock'
 import { api } from '@/lib/api'
+import { useBotDetected } from '@/hooks/useBotDetected'
 import type { ExecutionTrace, TraceDiff, TraceStep, TraceSummary } from '@/types'
 
 type ViewMode = 'inspect' | 'diff'
@@ -65,6 +66,9 @@ function normaliseTrace(raw: unknown): ExecutionTrace {
 }
 
 export function TraceExplorer() {
+  const isBot = useBotDetected()
+  if (isBot) return <div className="flex items-center justify-center h-[60vh] text-ink-400 mono text-[13px]">Access denied.</div>
+
   const [activeIdx, setActiveIdx] = useState(0)
   const [trace, setTrace] = useState<ExecutionTrace>(MOCK_TRACE)
   const [traceList, setTraceList] = useState<TraceSummary[]>(MOCK_TRACE_LIST)

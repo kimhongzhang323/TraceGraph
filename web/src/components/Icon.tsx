@@ -1,17 +1,43 @@
 import {
   Activity,
+  AlertTriangle,
+  Apple,
+  ArrowLeft,
   ArrowRight,
   Box,
-  FileCode2,
+  Building2,
+  Check,
+  Chrome,
+  CreditCard,
   Database,
+  FileCode2,
+  Fingerprint,
+  GitBranch,
   Github,
   History,
+  Key,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Mail,
+  MailCheck,
+  Monitor,
   Moon,
   Package,
   Play,
-  ScanSearch,
+  Plus,
+  Redo2,
   RefreshCw,
+  ScanSearch,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  Smartphone,
+  Square,
   Sun,
+  Trash2,
+  User,
+  X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -22,31 +48,65 @@ interface IconProps {
   strokeWidth?: number
 }
 
-export function Icon({ name, size = 16, className = '', strokeWidth = 1.75 }: IconProps) {
-  const iconMap: Record<string, LucideIcon> = {
-    activity: Activity,
-    'arrow-right': ArrowRight,
-    box: Box,
-    database: Database,
-    'file-code': FileCode2,
-    github: Github,
-    history: History,
-    moon: Moon,
-    package: Package,
-    play: Play,
-    'refresh-cw': RefreshCw,
-    search: ScanSearch,
-    sun: Sun,
-  }
+const ICON_MAP: Record<string, LucideIcon> = {
+  activity:             Activity,
+  'alert-triangle':     AlertTriangle,
+  apple:                Apple,
+  'arrow-left':         ArrowLeft,
+  'arrow-right':        ArrowRight,
+  box:                  Box,
+  'building-2':         Building2,
+  check:                Check,
+  chrome:               Chrome,
+  'credit-card':        CreditCard,
+  database:             Database,
+  'file-code':          FileCode2,
+  fingerprint:          Fingerprint,
+  'git-branch':         GitBranch,
+  github:               Github,
+  history:              History,
+  key:                  Key,
+  'layout-dashboard':   LayoutDashboard,
+  lock:                 Lock,
+  'log-out':            LogOut,
+  mail:                 Mail,
+  'mail-check':         MailCheck,
+  monitor:              Monitor,
+  moon:                 Moon,
+  package:              Package,
+  play:                 Play,
+  plus:                 Plus,
+  'redo-2':             Redo2,
+  'refresh-cw':         RefreshCw,
+  search:               ScanSearch,
+  shield:               Shield,
+  'shield-check':       ShieldCheck,
+  'sliders-horizontal': SlidersHorizontal,
+  smartphone:           Smartphone,
+  square:               Square,
+  sun:                  Sun,
+  'trash-2':            Trash2,
+  user:                 User,
+  x:                    X,
+}
 
-  const LucideIcon = iconMap[name]
+export function Icon({ name, size = 16, className = '', strokeWidth = 1.75 }: IconProps) {
+  const LucideIcon = ICON_MAP[name]
 
   if (!LucideIcon) {
-    return <span className={`inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }} />
+    return (
+      <span
+        className={`inline-flex items-center justify-center ${className}`}
+        style={{ width: size, height: size }}
+      />
+    )
   }
 
   return (
-    <span className={`inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+    <span
+      className={`inline-flex items-center justify-center ${className}`}
+      style={{ width: size, height: size }}
+    >
       <LucideIcon size={size} strokeWidth={strokeWidth} aria-hidden="true" focusable="false" />
     </span>
   )
