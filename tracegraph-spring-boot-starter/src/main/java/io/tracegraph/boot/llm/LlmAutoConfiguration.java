@@ -2,6 +2,8 @@ package io.tracegraph.boot.llm;
 
 import io.tracegraph.boot.TraceGraphProperties;
 import io.tracegraph.connectors.llm.AnthropicLlmClient;
+import io.tracegraph.connectors.llm.DeepSeekLlmClient;
+import io.tracegraph.connectors.llm.GeminiLlmClient;
 import io.tracegraph.connectors.llm.LlmClient;
 import io.tracegraph.connectors.llm.OpenAiLlmClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -41,6 +43,29 @@ public class LlmAutoConfiguration {
         if (llm.getApiKey() != null) b.apiKey(llm.getApiKey());
         if (llm.getRequestTimeout() != null) b.requestTimeout(llm.getRequestTimeout());
         if (llm.getAnthropicVersion() != null) b.anthropicVersion(llm.getAnthropicVersion());
+        return b.build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LlmClient.class)
+    @ConditionalOnProperty(prefix = "tracegraph.llm", name = "provider", havingValue = "gemini")
+    public LlmClient geminiLlmClient(TraceGraphProperties properties) {
+        TraceGraphProperties.Llm llm = properties.getLlm();
+        GeminiLlmClient.Builder b = GeminiLlmClient.builder();
+        if (llm.getApiKey() != null) b.apiKey(llm.getApiKey());
+        if (llm.getRequestTimeout() != null) b.requestTimeout(llm.getRequestTimeout());
+        return b.build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LlmClient.class)
+    @ConditionalOnProperty(prefix = "tracegraph.llm", name = "provider", havingValue = "deepseek")
+    public LlmClient deepSeekLlmClient(TraceGraphProperties properties) {
+        TraceGraphProperties.Llm llm = properties.getLlm();
+        DeepSeekLlmClient.Builder b = DeepSeekLlmClient.builder();
+        if (llm.getApiKey() != null) b.apiKey(llm.getApiKey());
+        if (llm.getEndpoint() != null) b.endpoint(java.net.URI.create(llm.getEndpoint()));
+        if (llm.getRequestTimeout() != null) b.requestTimeout(llm.getRequestTimeout());
         return b.build();
     }
 }
