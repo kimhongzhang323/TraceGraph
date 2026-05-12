@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +44,17 @@ class GeminiLlmClientTest {
                 .build();
     }
 
+    private void respond(int statusCode, String responseBody) {
+        server.createContext(PATH, ex -> {
+            byte[] bytes = responseBody.getBytes(StandardCharsets.UTF_8);
+            ex.getResponseHeaders().set("Content-Type", "application/json");
+            ex.sendResponseHeaders(statusCode, bytes.length);
+            ex.getResponseBody().write(bytes);
+            ex.close();
+        });
+        server.start();
+    }
+
     private void respond(String responseBody, AtomicReference<String> capturedBody) {
         server.createContext(PATH, ex -> {
             byte[] reqBytes = ex.getRequestBody().readAllBytes();
@@ -56,6 +68,45 @@ class GeminiLlmClientTest {
             ex.close();
         });
         server.start();
+    }
+
+    @Test
+    void sendsToolDefinitionsAndParsesToolCall() {
+        String toolModel = "gemini-3-flash-preview";
+        String toolPath = "/v1beta/models/" + toolModel + ":generateContent";
+        server.createContext(toolPath, ex -> {
+            byte[] bytes = ("""
+                    {"candidates":[{"content":{"parts":[{"functionCall":{"name":"get_weather","args":{"city":"London"}}}],
+                     "role":"model"},"finishReason":"STOP"}],
+                     "usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":5}}""")
+                    .getBytes(StandardCharsets.UTF_8);
+            ex.getResponseHeaders().set("Content-Type", "application/json");
+            ex.sendResponseHeaders(200, bytes.length);
+            ex.getResponseBody().write(bytes);
+            ex.close();
+        });
+        server.start();
+
+        ToolDefinition tool = new ToolDefinition("get_weather", "Get the weather",
+                Map.of("type", "object", "properties",
+                        Map.of("city", Map.of("type", "string"))));
+
+        GeminiLlmClient client = GeminiLlmClient.builder()
+                .apiKey("k")
+                .model(toolModel)
+                .baseUrl(baseUrl)
+                .build();
+        LlmRequest request = LlmRequest.builder()
+                .model(toolModel)
+                .messages(List.of(ChatMessage.user("What is the weather in London?")))
+                .tools(List.of(tool))
+                .build();
+        LlmResponse r = client.complete(request);
+
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.TOOL_CALLS);
+        assertThat(r.toolCalls()).hasSize(1);
+        assertThat(r.toolCalls().get(0).name()).isEqualTo("get_weather");
+        assertThat(r.toolCalls().get(0).arguments()).contains("London");
     }
 
     @Test
