@@ -72,6 +72,15 @@ public class TraceGraphProperties {
      */
     public static class Web {
         private boolean enabled = true;
+        /**
+         * Static API key that protects all /tracegraph/** endpoints.
+         * When set, every request must supply either:
+         *   X-Api-Key: &lt;value&gt;
+         * or
+         *   Authorization: Bearer &lt;value&gt;
+         * Leave unset (default) to disable authentication entirely.
+         */
+        private String apiKey;
         private final Cors cors = new Cors();
         private final RateLimit rateLimit = new RateLimit();
         private final Replay replay = new Replay();
@@ -82,6 +91,14 @@ public class TraceGraphProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
         }
 
         public Cors getCors() {
