@@ -38,6 +38,16 @@
   </Match>
 
   <!--
+    POTENTIAL_XML_INJECTION on EvalReport.toJUnitXml: every appended value
+    flows through the local escape() helper, which replaces &, <, >, and ".
+    SpotBugs taint analysis doesn't follow custom escapers — false positive.
+  -->
+  <Match>
+    <Bug pattern="POTENTIAL_XML_INJECTION"/>
+    <Class name="io.tracegraph.eval.EvalReport"/>
+  </Match>
+
+  <!--
     PREDICTABLE_RANDOM on RetryingLlmClient: jitter for exponential backoff is
     not a security concern. ThreadLocalRandom is the right tool here.
   -->
