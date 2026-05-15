@@ -37,9 +37,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: spotbugs-report
-          path: |
-            **/target/spotbugsXml.xml
-            **/target/spotbugs.xml
+          path: "**/target/spotbugsXml.xml"
           if-no-files-found: ignore
 
   api-compat:
@@ -58,3 +56,11 @@ jobs:
 
       - name: Check API compatibility
         run: mvn -B -ntp -Papi-check verify -DskipTests
+
+      - name: Upload Revapi report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: revapi-report
+          path: "**/target/revapi-report.txt"
+          if-no-files-found: ignore
