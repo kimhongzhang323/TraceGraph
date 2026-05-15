@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>site.tracegraph</groupId>
+        <artifactId>tracegraph-parent</artifactId>
+        <version>0.3.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>tracegraph-bom</artifactId>
+    <packaging>pom</packaging>
+    <name>TraceGraph :: BOM</name>
+    <description>Bill of Materials for TraceGraph — import this in your dependencyManagement to align all module versions.</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-runtime</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-memory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-observability</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-connectors</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-rag</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-eval</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-a2a</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>site.tracegraph</groupId>
+                <artifactId>tracegraph-ui</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

@@ -1,10 +1,7 @@
 package io.tracegraph.connectors.prompt;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,82 +9,141 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Immutable prompt template with simple {@code {{variable}}} substitution.
+ * Immutable string template with {@code {variable}} placeholder substitution.
  *
- * <p>Templates track the variable names discovered in the prompt body so callers can validate
- * inputs up front, render deterministic versions, and checksum prompt content for caching or audit.
+ * <p>Variables are enclosed in single braces: {@code {name}}, {@code {topic}}.
+ * All declared variables must be supplied at render time or
+ * {@link #render(Map)} throws {@link IllegalArgumentException}.
+ *
+ * <pre>{@code
+ * PromptTemplate t = PromptTemplate.of("Summarize {topic} in {language}.");
+ * String prompt = t.render(Map.of("topic", "AI safety", "language", "English"));
+ * }</pre>
  */
-public record PromptTemplate(String id, String version, String body, List<String> variables) {
+public final class PromptTemplate {
 
-    private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\{(\\w+)}}");
+    private static final Pattern VAR = Pattern.compile("\\{\\{([^{}]+)}}|\\{([^{}]+)}");
 
-    public PromptTemplate {
+    private final String id;
+    private final String version;
+    private final String template;
+
+    private PromptTemplate(String id, String version, String template) {
+        this.id = id;
+        this.version = version;
+        this.template = Objects.requireNonNull(template, "template");
+    }
+
+    /** Anonymous template without a registry id or version. */
+    public static PromptTemplate of(String template) {
+        return new PromptTemplate(null, null, template);
+    }
+
+    /** Named and versioned template, typically loaded by {@link PromptLibrary}. */
+    public static PromptTemplate of(String id, String version, String template) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(version, "version");
-        Objects.requireNonNull(body, "body");
-        variables = variables == null ? List.of() : List.copyOf(variables);
+        return new PromptTemplate(id, version, template);
+    }
+
+    /** Registry id, or {@code null} for anonymous templates. */
+    public String id() {
+        return id;
+    }
+
+    /** Version tag, or {@code null} for anonymous templates. */
+    public String version() {
+        return version;
     }
 
     /**
-     * Render the template by replacing each {@code {{name}}} placeholder with the provided value.
+     * Render the template by substituting all {@code {variable}} placeholders.
      *
-     * @param values variable values keyed by placeholder name
-     * @return rendered prompt text
+     * @param variables map from variable name to replacement value
+     * @return rendered string
+     * @throws IllegalArgumentException if any placeholder has no corresponding entry in the map
      */
-    public String render(Map<String, String> values) {
-        Matcher m = PLACEHOLDER.matcher(body);
+    public String render(Map<String, String> variables) {
+        Objects.requireNonNull(variables, "variables");
+        Matcher m = VAR.matcher(template);
         StringBuilder sb = new StringBuilder();
         while (m.find()) {
-            String key = m.group(1);
-            String val = values.get(key);
-            if (val == null) {
-                throw new IllegalArgumentException("Missing variable: " + key);
+            String key = m.group(1) != null ? m.group(1) : m.group(2);
+            String value = variables.get(key);
+            if (value == null) {
+                throw new IllegalArgumentException(
+                        "Missing variable '" + key + "' — required by template: " + template);
             }
-            m.appendReplacement(sb, Matcher.quoteReplacement(val));
+            m.appendReplacement(sb, Matcher.quoteReplacement(value));
         }
         m.appendTail(sb);
         return sb.toString();
     }
 
     /**
-     * Return a short stable checksum of the prompt body.
+     * Return a fluent builder for single-variable renders without constructing a map.
      *
-     * @return first 16 hex characters of the prompt body's SHA-256 hash
+     * @return builder seeded with this template
      */
-    public String checksum() {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(body.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (byte b : hash) {
-                hex.append(String.format("%02x", b));
-            }
-            return hex.substring(0, 16);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
+    public RenderBuilder with(String variable, String value) {
+        return new RenderBuilder(this).with(variable, value);
+    }
+
+    public String template() {
+        return template;
     }
 
     /**
-     * Build a template and infer variables from the prompt body.
+     * Return all unique placeholder variable names referenced in this template, in encounter order.
      *
-     * @param id logical template identifier
-     * @param version caller-defined version string
-     * @param body prompt body containing zero or more {@code {{variable}}} placeholders
-     * @return template with inferred variable list
+     * @return ordered list of variable names; empty if the template has no placeholders
      */
-    public static PromptTemplate of(String id, String version, String body) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(version, "version");
-        Objects.requireNonNull(body, "body");
-        Matcher m = PLACEHOLDER.matcher(body);
+    public List<String> variables() {
         List<String> vars = new ArrayList<>();
+        Matcher m = VAR.matcher(template);
         while (m.find()) {
-            String v = m.group(1);
-            if (!vars.contains(v)) {
-                vars.add(v);
-            }
+            String key = m.group(1) != null ? m.group(1) : m.group(2);
+            if (!vars.contains(key)) vars.add(key);
         }
-        return new PromptTemplate(id, version, body, Collections.unmodifiableList(vars));
+        return List.copyOf(vars);
+    }
+
+    @Override
+    public String toString() {
+        return id != null ? "PromptTemplate{id=" + id + ", v=" + version + "}" : "PromptTemplate{" + template + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof PromptTemplate p)) return false;
+        return Objects.equals(id, p.id) && Objects.equals(version, p.version) && template.equals(p.template);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, version, template);
+    }
+
+    /**
+     * Fluent accumulator for variable bindings.
+     */
+    public static final class RenderBuilder {
+        private final PromptTemplate owner;
+        private final Map<String, String> vars = new HashMap<>();
+
+        private RenderBuilder(PromptTemplate owner) {
+            this.owner = owner;
+        }
+
+        public RenderBuilder with(String variable, String value) {
+            Objects.requireNonNull(variable, "variable");
+            Objects.requireNonNull(value, "value");
+            vars.put(variable, value);
+            return this;
+        }
+
+        public String render() {
+            return owner.render(vars);
+        }
     }
 }
