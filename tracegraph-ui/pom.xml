@@ -11,6 +11,10 @@
     <artifactId>tracegraph-ui</artifactId>
     <name>TraceGraph :: UI</name>
 
+    <properties>
+        <automatic.module.name>io.tracegraph.ui</automatic.module.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>

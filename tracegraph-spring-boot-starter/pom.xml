@@ -10,6 +10,10 @@
     </parent>
     <artifactId>tracegraph-spring-boot-starter</artifactId>
     <name>TraceGraph :: Spring Boot Starter</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.boot</automatic.module.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>

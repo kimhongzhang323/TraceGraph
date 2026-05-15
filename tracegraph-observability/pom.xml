@@ -10,6 +10,10 @@
     </parent>
     <artifactId>tracegraph-observability</artifactId>
     <name>TraceGraph :: Observability</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.observability</automatic.module.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>

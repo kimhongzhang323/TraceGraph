@@ -11,6 +11,10 @@
     <artifactId>tracegraph-demo</artifactId>
     <name>TraceGraph :: Demo</name>
 
+    <properties>
+        <automatic.module.name>io.tracegraph.demo</automatic.module.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>

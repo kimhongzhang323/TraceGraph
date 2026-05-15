@@ -14,6 +14,7 @@
   <name>TraceGraph :: Benchmarks</name>
 
   <properties>
+    <automatic.module.name>io.tracegraph.bench</automatic.module.name>
     <jmh.version>1.37</jmh.version>
   </properties>
 

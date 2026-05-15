@@ -10,6 +10,10 @@
     </parent>
     <artifactId>tracegraph-rag</artifactId>
     <name>TraceGraph :: RAG</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.rag</automatic.module.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>
