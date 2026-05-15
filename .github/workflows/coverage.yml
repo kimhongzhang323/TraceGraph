@@ -42,6 +42,8 @@ jobs:
             tracegraph-observability/target/site/jacoco/jacoco.xml,
             tracegraph-connectors/target/site/jacoco/jacoco.xml,
             tracegraph-spring-boot-starter/target/site/jacoco/jacoco.xml,
-            tracegraph-rag/target/site/jacoco/jacoco.xml
+            tracegraph-rag/target/site/jacoco/jacoco.xml,
+            tracegraph-eval/target/site/jacoco/jacoco.xml,
+            tracegraph-a2a/target/site/jacoco/jacoco.xml
           fail_ci_if_error: false
           verbose: false
