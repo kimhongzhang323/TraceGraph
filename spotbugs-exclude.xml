@@ -38,6 +38,23 @@
   </Match>
 
   <!--
+    JMH-generated benchmark classes (jmh_generated package) contain padding
+    fields (p1..p255) by design — anti-false-sharing layout. Not our code.
+  -->
+  <Match>
+    <Package name="~.*jmh_generated.*"/>
+  </Match>
+
+  <!--
+    PATH_TRAVERSAL_IN on BenchReport.main: this is a CLI tool that takes a
+    file path argument by design. Not a remote-input vulnerability.
+  -->
+  <Match>
+    <Bug pattern="PATH_TRAVERSAL_IN"/>
+    <Class name="io.tracegraph.bench.BenchReport"/>
+  </Match>
+
+  <!--
     POTENTIAL_XML_INJECTION on EvalReport.toJUnitXml: every appended value
     flows through the local escape() helper, which replaces &, <, >, and ".
     SpotBugs taint analysis doesn't follow custom escapers — false positive.
