@@ -36,4 +36,13 @@
     </Or>
   </Match>
 
+  <!--
+    PREDICTABLE_RANDOM on RetryingLlmClient: jitter for exponential backoff is
+    not a security concern. ThreadLocalRandom is the right tool here.
+  -->
+  <Match>
+    <Bug pattern="PREDICTABLE_RANDOM"/>
+    <Class name="io.tracegraph.connectors.llm.RetryingLlmClient"/>
+  </Match>
+
 </FindBugsFilter>

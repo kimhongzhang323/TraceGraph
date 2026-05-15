@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -68,7 +69,7 @@ public final class OpenAiLlmClient implements LlmClient {
         }
 
         if (response.statusCode() / 100 != 2) {
-            throw new LlmHttpException(response.statusCode(), new String(response.body()));
+            throw new LlmHttpException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
         }
 
         try {
