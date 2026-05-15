@@ -623,18 +623,11 @@
                                   "revapi.ignore": [
                                     {
                                       "code": "java.method.varargOverloadsOnlyDifferInVarargParameter",
-                                      "package": "com.fasterxml.jackson.*",
                                       "justification": "Jackson's own vararg overload pattern in a transitive dep — not TraceGraph's API"
                                     },
                                     {
                                       "code": "java.class.externalClassExposedInAPI",
-                                      "package": "org.slf4j.*",
-                                      "justification": "SLF4J types intentionally exposed in public API (Logger, Marker, etc.)"
-                                    },
-                                    {
-                                      "code": "java.class.externalClassExposedInAPI",
-                                      "package": "io.tracegraph.*",
-                                      "justification": "Sibling TraceGraph module types (core, spi) intentionally part of runtime's API surface"
+                                      "justification": "SLF4J and sibling module types intentionally exposed in public API"
                                     }
                                   ]
                                 }

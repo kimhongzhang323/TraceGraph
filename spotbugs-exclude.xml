@@ -22,4 +22,18 @@
     <Package name="~io\.tracegraph\..*"/>
   </Match>
 
+  <!--
+    SQL_INJECTION_JDBC on Jdbc*Store classes: table names are construction-time
+    configuration, not user input. JDBC parameterization only works for values,
+    not identifiers (table/column names), so string interpolation is unavoidable.
+  -->
+  <Match>
+    <Bug pattern="SQL_INJECTION_JDBC"/>
+    <Or>
+      <Class name="io.tracegraph.runtime.JdbcCheckpointStore"/>
+      <Class name="io.tracegraph.memory.JdbcMemoryStore"/>
+      <Class name="io.tracegraph.observability.replay.JdbcTraceStore"/>
+    </Or>
+  </Match>
+
 </FindBugsFilter>
