@@ -12,6 +12,10 @@
 
     <artifactId>tracegraph-e2e</artifactId>
     <name>TraceGraph (e2e)</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.e2e</automatic.module.name>
+    </properties>
     <description>End-to-end integration tests for TraceGraph</description>
 
     <dependencyManagement>

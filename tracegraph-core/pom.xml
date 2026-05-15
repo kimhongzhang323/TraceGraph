@@ -13,6 +13,10 @@
     <artifactId>tracegraph-core</artifactId>
     <name>TraceGraph :: Core</name>
 
+    <properties>
+        <automatic.module.name>io.tracegraph.core</automatic.module.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>

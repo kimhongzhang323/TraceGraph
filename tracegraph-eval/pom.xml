@@ -11,6 +11,10 @@
     </parent>
     <artifactId>tracegraph-eval</artifactId>
     <name>TraceGraph :: Eval</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.eval</automatic.module.name>
+    </properties>
     <description>Evaluation framework for TraceGraph agents.</description>
     <dependencies>
         <dependency>

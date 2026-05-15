@@ -10,6 +10,10 @@
     </parent>
     <artifactId>tracegraph-connectors</artifactId>
     <name>TraceGraph :: Connectors</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.connectors</automatic.module.name>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>site.tracegraph</groupId>

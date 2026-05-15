@@ -11,6 +11,10 @@
     </parent>
     <artifactId>tracegraph-a2a</artifactId>
     <name>TraceGraph :: A2A</name>
+
+    <properties>
+        <automatic.module.name>io.tracegraph.a2a</automatic.module.name>
+    </properties>
     <description>Agent-to-Agent protocol support for TraceGraph.</description>
     <dependencies>
         <dependency>
