@@ -33,6 +33,7 @@
       <Class name="io.tracegraph.runtime.JdbcCheckpointStore"/>
       <Class name="io.tracegraph.memory.JdbcMemoryStore"/>
       <Class name="io.tracegraph.observability.replay.JdbcTraceStore"/>
+      <Class name="io.tracegraph.rag.PgVectorStore"/>
     </Or>
   </Match>
 

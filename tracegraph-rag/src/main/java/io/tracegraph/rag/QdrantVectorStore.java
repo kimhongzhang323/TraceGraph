@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,7 +140,7 @@ public final class QdrantVectorStore implements VectorStore {
     }
 
     private static String toPointId(String id) {
-        return UUID.nameUUIDFromBytes(id.getBytes()).toString();
+        return UUID.nameUUIDFromBytes(id.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     public static Builder builder() {
