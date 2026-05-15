@@ -44,6 +44,9 @@
     </issueManagement>
 
     <distributionManagement>
+        <!-- SNAPSHOT deploys go to GitHub Packages via the snapshot.yml CI workflow.
+             Release deploys go to Maven Central via the release profile + release.yml.
+             No <repository> entry here is intentional. -->
         <snapshotRepository>
             <id>github</id>
             <url>https://maven.pkg.github.com/kimhongzhang323/TraceGraph</url>
