@@ -1,0 +1,69 @@
+package io.tracegraph.boot.web;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * Rejects requests to /tracegraph/** that do not carry the configured API key.
+ *
+ * <p>Accepted header forms:
+ * <ul>
+ *   <li>{@code X-Api-Key: <key>}</li>
+ *   <li>{@code Authorization: Bearer <key>}</li>
+ * </ul>
+ *
+ * <p>OPTIONS (CORS preflight) requests are always passed through.
+ */
+class ApiKeyAuthFilter extends OncePerRequestFilter {
+
+    private static final String HEADER_X_API_KEY = "X-Api-Key";
+    private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    private final String expectedKey;
+
+    ApiKeyAuthFilter(String expectedKey) {
+        this.expectedKey = expectedKey;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        String provided = extractKey(request);
+        if (provided == null || !provided.equals(expectedKey)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Unauthorized — missing or invalid API key\"}");
+            return;
+        }
+
+        chain.doFilter(request, response);
+    }
+
+    private static String extractKey(HttpServletRequest request) {
+        String xApiKey = request.getHeader(HEADER_X_API_KEY);
+        if (xApiKey != null && !xApiKey.isBlank()) {
+            return xApiKey.strip();
+        }
+        String auth = request.getHeader(HEADER_AUTHORIZATION);
+        if (auth != null && auth.startsWith(BEARER_PREFIX)) {
+            return auth.substring(BEARER_PREFIX.length()).strip();
+        }
+        return null;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return !request.getRequestURI().startsWith("/tracegraph");
+    }
+}

@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.DispatcherServlet;
 
@@ -22,6 +23,16 @@ import org.springframework.web.servlet.DispatcherServlet;
 @ConditionalOnProperty(prefix = "tracegraph.web", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(TraceGraphProperties.class)
 public class TraceWebAutoConfiguration {
+
+    @Bean
+    @ConditionalOnProperty(prefix = "tracegraph.web", name = "api-key")
+    public FilterRegistrationBean<ApiKeyAuthFilter> apiKeyAuthFilter(TraceGraphProperties props) {
+        ApiKeyAuthFilter filter = new ApiKeyAuthFilter(props.getWeb().getApiKey());
+        FilterRegistrationBean<ApiKeyAuthFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.addUrlPatterns("/tracegraph/*");
+        reg.setOrder(1);
+        return reg;
+    }
 
     @Bean
     @ConditionalOnMissingBean
