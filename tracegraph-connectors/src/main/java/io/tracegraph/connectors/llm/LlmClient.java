@@ -1,5 +1,6 @@
 package io.tracegraph.connectors.llm;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
@@ -23,6 +24,21 @@ public interface LlmClient {
 
     /** Blocking completion call. */
     LlmResponse complete(LlmRequest request);
+
+    /**
+     * Non-blocking completion call backed by a virtual thread.
+     *
+     * <p>The default implementation submits {@link #complete(LlmRequest)} to a new virtual thread
+     * and wraps the result in a {@link CompletableFuture}. Providers may override this for tighter
+     * integration with their async HTTP clients.
+     *
+     * @param request the LLM request
+     * @return future that completes with the response or exceptionally on error
+     */
+    default CompletableFuture<LlmResponse> completeAsync(LlmRequest request) {
+        return CompletableFuture.supplyAsync(() -> complete(request),
+                Thread::startVirtualThread);
+    }
 
     /**
      * Streaming completion call.
