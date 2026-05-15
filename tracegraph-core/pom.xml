@@ -51,7 +51,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Djdk.tracePinnedThreads=full</argLine>
+                    <argLine>@{argLine} -Djdk.tracePinnedThreads=full</argLine>
                 </configuration>
             </plugin>
         </plugins>
