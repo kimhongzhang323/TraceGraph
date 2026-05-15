@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclusion filter for TraceGraph.
+
+  EI_EXPOSE_REP / EI_EXPOSE_REP2 on records: Java records are transparent data
+  carriers by design. SpotBugs flags List/Map/Throwable accessors as mutable
+  exposure, but for these value-object records the accessor IS the contract.
+  Suppressed across the board; callers must not mutate returned collections.
+
+  MS_EXPOSE_REP on singleton fields: no-op/noop singleton instances (INSTANCE)
+  are intentionally returned directly — immutable by construction.
+-->
+<FindBugsFilter>
+
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    <Package name="~io\.tracegraph\..*"/>
+  </Match>
+
+  <Match>
+    <Bug pattern="MS_EXPOSE_REP"/>
+    <Package name="~io\.tracegraph\..*"/>
+  </Match>
+
+</FindBugsFilter>
