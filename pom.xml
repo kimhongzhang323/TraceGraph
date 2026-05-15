@@ -101,6 +101,9 @@
         <testcontainers.version>1.21.0</testcontainers.version>
         <archunit.version>1.4.0</archunit.version>
 
+        <!-- default empty so @{argLine} in child modules resolves when coverage profile is inactive -->
+        <argLine></argLine>
+
         <!-- Quality plugins -->
         <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
         <spotbugs.version>4.9.3</spotbugs.version>
