@@ -42,6 +42,36 @@ public final class ReplayRunner<S> {
         return reRunFromInternal(stepIndex, seedOverride);
     }
 
+    /**
+     * Injects {@code seedOverride} as the output of step {@code stepIndex} and re-executes
+     * from the following node. Useful for fork-with-state-edit: the seed replaces what
+     * step N produced and the graph continues from step N+1 onward.
+     * {@code stepIndex == -1} behaves identically to {@link #reRunFrom(int, Object)}.
+     *
+     * @throws IndexOutOfBoundsException if stepIndex is out of range or there is no next step
+     */
+    public ExecutionResult<S> reRunAfter(int stepIndex, S seedOverride) {
+        if (stepIndex < -1 || stepIndex >= parent.steps().size()) {
+            throw new IndexOutOfBoundsException(
+                    "stepIndex " + stepIndex + " out of range [-1, " + (parent.steps().size() - 1) + "]");
+        }
+        if (stepIndex == -1) {
+            return reRunFromInternal(-1, seedOverride);
+        }
+        int nextIdx = stepIndex + 1;
+        if (nextIdx >= parent.steps().size()) {
+            throw new IndexOutOfBoundsException(
+                    "Cannot reRunAfter last step (" + stepIndex + ") — no subsequent node exists");
+        }
+        String nextNode = parent.steps().get(nextIdx).nodeName();
+        String newId = UUID.randomUUID().toString();
+        TraceRecorder recorder = graph.traceRecorder();
+        if (recorder instanceof RecordingTraceRecorder rec) {
+            rec.stageForkLineage(newId, parent.executionId(), stepIndex);
+        }
+        return graph.runFrom(nextNode, seedOverride, newId);
+    }
+
     private ExecutionResult<S> reRunFromInternal(int stepIndex, S seed) {
         if (stepIndex < -1 || stepIndex >= parent.steps().size()) {
             throw new IndexOutOfBoundsException(

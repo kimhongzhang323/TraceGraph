@@ -75,6 +75,62 @@ public class TraceReplayController {
     }
 
     /**
+     * Forks a saved trace from a chosen step, optionally with a seed state override supplied
+     * as a JSON request body. The fork gets a fresh executionId and lineage metadata.
+     * 404 for unknown trace; 400 for out-of-range step or undeserializable body.
+     */
+    @PostMapping("/{id}/fork")
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public ResponseEntity<?> fork(
+            @PathVariable("id") String id,
+            @RequestParam(name = "step", defaultValue = "-1") int stepIndex,
+            HttpServletRequest request) throws IOException {
+
+        Optional<ExecutionTrace<?>> parent = store.load(id);
+        if (parent.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        ExecutionTrace<?> trace = parent.get();
+        int maxIndex = trace.steps().size() - 1;
+        if (stepIndex < -1 || stepIndex > maxIndex) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        byte[] rawBodyBytes = request.getInputStream().readAllBytes();
+        String rawBody = rawBodyBytes.length > 0
+                ? new String(rawBodyBytes, StandardCharsets.UTF_8).trim() : null;
+
+        ReplayRunner runner = ReplayRunner.of((ExecutionTrace) trace, (Graph) graph);
+        ExecutionResult result;
+        if (rawBody != null && !rawBody.isEmpty()) {
+            @SuppressWarnings("rawtypes")
+            Optional<Class> stateType = ((Graph) graph).stateType();
+            if (stateType.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "stateType not configured on graph — cannot deserialize seed override"));
+            }
+            if (objectMapper == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "No ObjectMapper available — cannot deserialize seed override"));
+            }
+            Object seed;
+            try {
+                //noinspection unchecked
+                seed = objectMapper.readValue(rawBody, (Class<Object>) stateType.get());
+            } catch (Exception e) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Cannot deserialize seed override: " + e.getMessage()));
+            }
+            result = runner.reRunAfter(stepIndex, seed);
+        } else {
+            result = runner.reRunFrom(stepIndex);
+        }
+
+        return ResponseEntity.ok(new ForkResponse(
+                result.executionId(), id, stepIndex, result.status().name(), result.finalState()));
+    }
+
+    /**
      * Resume an INTERRUPTED execution. When a JSON body is supplied it is deserialized to the
      * graph's state type (requires {@link Graph.Builder#stateType(Class)} to be configured) and
      * injected as the state override before execution continues — this is the HITL state-edit
@@ -145,4 +201,10 @@ public class TraceReplayController {
     public record ResumeResponse(String executionId,
                                  String status,
                                  Object finalState) {}
+
+    public record ForkResponse(String executionId,
+                               String forkedFromExecutionId,
+                               int forkedFromStepIndex,
+                               String status,
+                               Object finalState) {}
 }

@@ -410,6 +410,18 @@ public final class Graph<S> {
         private Builder() {}
 
         /**
+         * Declares the runtime class of the state type, enabling REST-layer JSON deserialization
+         * for endpoints that accept state as a request body (e.g. fork with seed override).
+         *
+         * @param stateType the concrete state class
+         * @return this builder
+         */
+        public Builder<S> stateType(Class<S> stateType) {
+            this.stateType = Objects.requireNonNull(stateType, "stateType");
+            return this;
+        }
+
+        /**
          * Register a synchronous node.
          *
          * @param name unique node name
@@ -670,21 +682,6 @@ public final class Graph<S> {
 
         public Builder<S> executionIdFactory(Supplier<String> factory) {
             this.executionIdFactory = Objects.requireNonNull(factory, "factory");
-            return this;
-        }
-
-        /**
-         * Declare the runtime class of the state type {@code <S>}.
-         *
-         * <p>Required only when using the REST state-edit resume endpoint
-         * ({@code POST /tracegraph/traces/{id}/resume} with a JSON body), which needs this class
-         * to deserialize the incoming state override. Has no effect on normal graph execution.
-         *
-         * @param stateType concrete state class
-         * @return this builder
-         */
-        public Builder<S> stateType(Class<S> stateType) {
-            this.stateType = Objects.requireNonNull(stateType, "stateType");
             return this;
         }
 
