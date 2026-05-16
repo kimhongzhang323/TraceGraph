@@ -1,0 +1,49 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+concurrency:
+  group: coverage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  jacoco:
+    name: JaCoCo + Codecov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Temurin JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build and collect coverage
+        run: mvn -B -ntp -Pcoverage verify
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: >-
+            tracegraph-core/target/site/jacoco/jacoco.xml,
+            tracegraph-runtime/target/site/jacoco/jacoco.xml,
+            tracegraph-memory/target/site/jacoco/jacoco.xml,
+            tracegraph-observability/target/site/jacoco/jacoco.xml,
+            tracegraph-connectors/target/site/jacoco/jacoco.xml,
+            tracegraph-spring-boot-starter/target/site/jacoco/jacoco.xml,
+            tracegraph-rag/target/site/jacoco/jacoco.xml,
+            tracegraph-eval/target/site/jacoco/jacoco.xml,
+            tracegraph-a2a/target/site/jacoco/jacoco.xml
+          fail_ci_if_error: false
+          verbose: false

@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,6 +27,7 @@ public final class OllamaLlmClient implements LlmClient {
 
     private final URI endpoint;
     private final String apiKey;
+    private final String defaultModel;
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final Duration requestTimeout;
@@ -33,6 +35,7 @@ public final class OllamaLlmClient implements LlmClient {
     private OllamaLlmClient(Builder b) {
         this.endpoint = Objects.requireNonNull(b.endpoint, "endpoint");
         this.apiKey = b.apiKey;
+        this.defaultModel = b.model;
         this.httpClient = b.httpClient != null ? b.httpClient
                 : HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.requestTimeout = b.requestTimeout;
@@ -47,7 +50,7 @@ public final class OllamaLlmClient implements LlmClient {
     public LlmResponse complete(LlmRequest request) {
         byte[] body;
         try {
-            body = mapper.writeValueAsBytes(toRequestBody(request));
+            body = mapper.writeValueAsBytes(toRequestBody(request, defaultModel));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize Ollama request", e);
         }
@@ -69,7 +72,7 @@ public final class OllamaLlmClient implements LlmClient {
         }
 
         if (response.statusCode() / 100 != 2) {
-            throw new LlmHttpException(response.statusCode(), new String(response.body()));
+            throw new LlmHttpException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
         }
 
         try {
@@ -107,9 +110,10 @@ public final class OllamaLlmClient implements LlmClient {
         return out;
     }
 
-    private static Map<String, Object> toRequestBody(LlmRequest request) {
+    private static Map<String, Object> toRequestBody(LlmRequest request, String defaultModel) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("model", request.model());
+        String model = request.model();
+        body.put("model", (model == null || model.isEmpty()) ? defaultModel : model);
         body.put("messages", toMessages(request));
         body.put("temperature", request.temperature());
         body.put("max_tokens", request.maxTokens());

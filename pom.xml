@@ -43,6 +43,16 @@
         <url>https://github.com/kimhongzhang323/TraceGraph/issues</url>
     </issueManagement>
 
+    <distributionManagement>
+        <!-- SNAPSHOT deploys go to GitHub Packages via the snapshot.yml CI workflow.
+             Release deploys go to Maven Central via the release profile + release.yml.
+             No <repository> entry here is intentional. -->
+        <snapshotRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/kimhongzhang323/TraceGraph</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <modules>
         <module>tracegraph-bom</module>
         <module>tracegraph-core</module>
@@ -91,10 +101,14 @@
         <testcontainers.version>1.21.0</testcontainers.version>
         <archunit.version>1.4.0</archunit.version>
 
+        <!-- default empty so @{argLine} in child modules resolves when coverage profile is inactive -->
+        <argLine></argLine>
+
         <!-- Quality plugins -->
         <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
         <spotbugs.version>4.9.3</spotbugs.version>
         <license-maven-plugin.version>4.6</license-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -306,6 +320,7 @@
                         <effort>Max</effort>
                         <threshold>Medium</threshold>
                         <xmlOutput>true</xmlOutput>
+                        <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
                         <plugins>
                             <plugin>
                                 <groupId>com.h3xstream.findsecbugs</groupId>
@@ -336,6 +351,11 @@
                             </licenseSet>
                         </licenseSets>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.pitest</groupId>
@@ -542,16 +562,35 @@
                             </execution>
                         </executions>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
                     <plugin>
-                        <groupId>com.mycila</groupId>
-                        <artifactId>license-maven-plugin</artifactId>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>license-check</id>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
                                 <phase>verify</phase>
                                 <goals>
-                                    <goal>check</goal>
+                                    <goal>report</goal>
                                 </goals>
+                                <configuration>
+                                    <excludes>
+                                        <exclude>io/tracegraph/demo/**</exclude>
+                                        <exclude>io/tracegraph/bench/**</exclude>
+                                    </excludes>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -578,6 +617,22 @@
                                 <version>0.15.1</version>
                             </dependency>
                         </dependencies>
+                        <configuration>
+                            <analysisConfiguration>
+                                {
+                                  "revapi.ignore": [
+                                    {
+                                      "code": "java.method.varargOverloadsOnlyDifferInVarargParameter",
+                                      "justification": "Jackson's own vararg overload pattern in a transitive dep — not TraceGraph's API"
+                                    },
+                                    {
+                                      "code": "java.class.externalClassExposedInAPI",
+                                      "justification": "SLF4J and sibling module types intentionally exposed in public API"
+                                    }
+                                  ]
+                                }
+                            </analysisConfiguration>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>check</id>

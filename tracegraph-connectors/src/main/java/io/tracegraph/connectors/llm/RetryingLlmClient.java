@@ -2,8 +2,8 @@ package io.tracegraph.connectors.llm;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.Flow;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Decorator that wraps any {@link LlmClient} with automatic retry on transient failures.
@@ -33,14 +33,12 @@ public final class RetryingLlmClient implements LlmClient {
     private final int maxAttempts;
     private final Duration baseDelay;
     private final Duration maxDelay;
-    private final Random rng;
 
     private RetryingLlmClient(Builder b) {
         this.delegate = b.delegate;
         this.maxAttempts = b.maxAttempts;
         this.baseDelay = b.baseDelay;
         this.maxDelay = b.maxDelay;
-        this.rng = new Random();
     }
 
     public static Builder wrap(LlmClient delegate) {
@@ -79,7 +77,7 @@ public final class RetryingLlmClient implements LlmClient {
     private long jitteredDelay(int attempt) {
         long cap = Math.min(maxDelay.toMillis(),
                 baseDelay.toMillis() * (1L << Math.min(attempt, 30)));
-        return (long) (rng.nextDouble() * cap);
+        return (long) (ThreadLocalRandom.current().nextDouble() * cap);
     }
 
     private static void sleep(long ms) {
