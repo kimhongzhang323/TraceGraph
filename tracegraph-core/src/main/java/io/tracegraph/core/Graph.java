@@ -181,6 +181,17 @@ public final class Graph<S> {
     }
 
     /**
+     * Returns the runtime state class configured via {@link Builder#stateType(Class)}, or empty if
+     * not set. Used by REST adapters that need to deserialize a JSON body into the graph's state
+     * type (e.g. the time-travel fork and HITL resume-with-state-edit endpoints).
+     *
+     * @return the configured state class, or {@link Optional#empty()}
+     */
+    public Optional<Class<S>> stateType() {
+        return Optional.ofNullable(stateType);
+    }
+
+    /**
      * Stream node lifecycle events while executing from the entry node.
      *
      * @param initial initial state
@@ -408,6 +419,18 @@ public final class Graph<S> {
         private Class<S> stateType;
 
         private Builder() {}
+
+        /**
+         * Declares the runtime class of the state type, enabling REST-layer JSON deserialization
+         * for endpoints that accept state as a request body (e.g. fork with seed override).
+         *
+         * @param stateType the concrete state class
+         * @return this builder
+         */
+        public Builder<S> stateType(Class<S> stateType) {
+            this.stateType = Objects.requireNonNull(stateType, "stateType");
+            return this;
+        }
 
         /**
          * Register a synchronous node.
