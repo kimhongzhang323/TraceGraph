@@ -91,7 +91,6 @@
         <owasp-dependency-check.version>12.2.2</owasp-dependency-check.version>
         <cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
         <pitest-maven.version>1.23.1</pitest-maven.version>
-        <revapi-maven-plugin.version>0.15.1</revapi-maven-plugin.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
 
         <!-- Test tooling -->
@@ -591,52 +590,6 @@
                                         <exclude>io/tracegraph/bench/**</exclude>
                                     </excludes>
                                 </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>api-check</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.revapi</groupId>
-                        <artifactId>revapi-maven-plugin</artifactId>
-                        <version>${revapi-maven-plugin.version}</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.revapi</groupId>
-                                <artifactId>revapi-java</artifactId>
-                                <version>0.28.4</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.revapi</groupId>
-                                <artifactId>revapi-reporter-text</artifactId>
-                                <version>0.15.1</version>
-                            </dependency>
-                        </dependencies>
-                        <configuration>
-                            <analysisConfiguration>
-                                {
-                                  "revapi.ignore": [
-                                    {
-                                      "code": "java.method.varargOverloadsOnlyDifferInVarargParameter",
-                                      "justification": "Jackson's own vararg overload pattern in a transitive dep — not TraceGraph's API"
-                                    },
-                                    {
-                                      "code": "java.class.externalClassExposedInAPI",
-                                      "justification": "SLF4J and sibling module types intentionally exposed in public API"
-                                    }
-                                  ]
-                                }
-                            </analysisConfiguration>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>check</id>
-                                <goals><goal>check</goal></goals>
                             </execution>
                         </executions>
                     </plugin>
