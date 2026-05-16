@@ -152,6 +152,40 @@ public final class Executor<S> {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
+    public ExecutionResult<S> resume(String executionId, S stateOverride) {
+        var maybe = checkpointStore.latest(executionId);
+        if (maybe.isEmpty()) return null;
+
+        Checkpoint<S> cp = (Checkpoint<S>) maybe.get();
+        S state = stateOverride;
+        String last = cp.lastCompletedNode();
+        boolean skipFirstInterruptBefore = cp.interruptPending();
+
+        traceRecorder.recordStart(executionId, state);
+
+        ExecutionResult<S> result;
+        if (!skipFirstInterruptBefore && terminals.contains(last)) {
+            result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+        } else if (skipFirstInterruptBefore) {
+            String next = last.isEmpty() ? entry : pickNext(last, state);
+            if (next == null) {
+                result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+            } else {
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true));
+            }
+        } else {
+            String next = pickNext(last, state);
+            if (next == null) {
+                result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
+            } else {
+                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false));
+            }
+        }
+        traceRecorder.recordComplete(executionId, result.status(), result.finalState());
+        return result;
+    }
+
     private ExecutionResult<S> withExecutor(java.util.function.Function<ExecutorService, ExecutionResult<S>> work) {
         if (userExecutor != null) {
             return work.apply(userExecutor);

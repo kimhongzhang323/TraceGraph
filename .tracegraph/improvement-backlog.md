@@ -12,7 +12,7 @@ research-angle: developer-experience
 
 ## Active backlog
 
-- [ ] **Human-in-the-loop state-edit endpoint** (LangGraph Studio parity) — extend `TraceReplayController` with `POST /tracegraph/traces/{id}/resume` body to override state at an `interruptPending` checkpoint before resuming. Address weakness: HITL today is resume-only, no state mutation.
+- [x] **Human-in-the-loop state-edit endpoint** (LangGraph Studio parity) — extend `TraceReplayController` with `POST /tracegraph/traces/{id}/resume` body to override state at an `interruptPending` checkpoint before resuming. Address weakness: HITL today is resume-only, no state mutation.
 - [ ] **Time-travel fork endpoint** (LangGraph time-travel) — `POST /tracegraph/traces/{id}/fork?step=N` returning new executionId; wraps existing `ReplayRunner.reRunFrom`. Weakness: replay is library-only, no REST surface.
 - [ ] **Structured output node** (Spring AI `BeanOutputConverter`, BAML) — `StructuredOutputNode<S, T>` in `tracegraph-connectors` that wraps an `LlmClient`, injects a JSON schema into the prompt, parses + validates response into `T` via Jackson, retries on parse failure (configurable, default 1). Tests with `MockLlmClient`.
 - [ ] **Vector-store SPI** (LangChain4j `EmbeddingStore`, Spring AI `VectorStore`) — `VectorStore` SPI in `tracegraph-core/spi` (`add`, `similaritySearch(queryEmbedding, k)`), `InMemoryVectorStore` (cosine, brute-force) in `tracegraph-connectors`. Wire via `Graph.Builder.vectorStore(...)` exposed on `Context`.
