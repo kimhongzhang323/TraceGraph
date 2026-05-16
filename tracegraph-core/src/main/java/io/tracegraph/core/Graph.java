@@ -62,6 +62,7 @@ public final class Graph<S> {
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
     private final Supplier<String> executionIdFactory;
+    private final Class<S> stateType;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -86,6 +87,7 @@ public final class Graph<S> {
         this.interruptBefore = Set.copyOf(b.interruptBefore);
         this.interruptAfter = Set.copyOf(b.interruptAfter);
         this.executionIdFactory = b.executionIdFactory;
+        this.stateType = b.stateType;
     }
 
     /**
@@ -132,6 +134,33 @@ public final class Graph<S> {
         Objects.requireNonNull(executionId, "executionId");
         ExecutionResult<S> result = executor().resume(executionId);
         return Optional.ofNullable(result);
+    }
+
+    /**
+     * Resume a previously checkpointed execution, replacing the saved state with a caller-supplied
+     * override before continuing. This is the HITL state-edit entry point: a human reviews the
+     * interrupted state, edits it, and resumes with the corrected version.
+     *
+     * @param executionId   execution id to resume
+     * @param stateOverride state to inject in place of the checkpoint's saved state
+     * @return resumed execution result when a checkpoint exists, otherwise an empty optional
+     */
+    public Optional<ExecutionResult<S>> resume(String executionId, S stateOverride) {
+        Objects.requireNonNull(executionId, "executionId");
+        Objects.requireNonNull(stateOverride, "stateOverride");
+        ExecutionResult<S> result = executor().resume(executionId, stateOverride);
+        return Optional.ofNullable(result);
+    }
+
+    /**
+     * Returns the runtime state class configured via {@link Builder#stateType(Class)}, or empty if
+     * not set. Used by REST adapters that need to deserialize a JSON body into the graph's state
+     * type (e.g. the HITL resume-with-state-edit endpoint).
+     *
+     * @return the configured state class, or {@link Optional#empty()}
+     */
+    public Optional<Class<S>> stateType() {
+        return Optional.ofNullable(stateType);
     }
 
     /**
@@ -376,6 +405,7 @@ public final class Graph<S> {
         private MemoryStore memoryStore;
         private ExecutorService userExecutor;
         private Supplier<String> executionIdFactory = () -> UUID.randomUUID().toString();
+        private Class<S> stateType;
 
         private Builder() {}
 
@@ -640,6 +670,21 @@ public final class Graph<S> {
 
         public Builder<S> executionIdFactory(Supplier<String> factory) {
             this.executionIdFactory = Objects.requireNonNull(factory, "factory");
+            return this;
+        }
+
+        /**
+         * Declare the runtime class of the state type {@code <S>}.
+         *
+         * <p>Required only when using the REST state-edit resume endpoint
+         * ({@code POST /tracegraph/traces/{id}/resume} with a JSON body), which needs this class
+         * to deserialize the incoming state override. Has no effect on normal graph execution.
+         *
+         * @param stateType concrete state class
+         * @return this builder
+         */
+        public Builder<S> stateType(Class<S> stateType) {
+            this.stateType = Objects.requireNonNull(stateType, "stateType");
             return this;
         }
 
