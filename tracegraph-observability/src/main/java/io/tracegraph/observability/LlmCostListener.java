@@ -2,18 +2,28 @@ package io.tracegraph.observability;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.tracegraph.core.spi.NodeListener;
+import io.tracegraph.core.spi.TraceRecorder;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A {@link NodeListener} that aggregates LLM token usage across an execution.
+ * A {@link NodeListener} and {@link TraceRecorder} that aggregates LLM token usage across an
+ * execution at three granularities: per-execution totals, per-node totals (global across all
+ * executions), and per-execution-per-node breakdown for billing.
  * <p>
- * Token usage is automatically captured via {@link #onUsage} when wired into a graph
- * that contains {@code ChatNode} instances. Usage can also be recorded manually via
- * {@link #recordUsage(String, int, int)} and {@link #recordNodeUsage(String, int, int)}.
+ * Token usage is automatically captured via {@link #onUsage} (executionId-blind, populates the
+ * per-node global bucket) and {@link #recordUsage(String, String, int, int)} via the
+ * {@link TraceRecorder} hook (executionId-aware, populates all three buckets). Wire the listener
+ * via {@code Graph.Builder.listener(...)} and {@code Graph.Builder.traceRecorder(...)} to get the
+ * per-execution-per-node breakdown surfaced through {@link #snapshot(String)}.
+ * <p>
+ * Usage can also be recorded manually via {@link #recordUsage(String, int, int)},
+ * {@link #recordNodeUsage(String, int, int)}, and {@link #recordUsage(String, String, int, int)}.
  * <p>
  * When constructed with a {@link MeterRegistry}, counters are emitted to Micrometer on
  * every usage event. Consumers without Micrometer on the classpath use the no-arg
@@ -23,10 +33,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Thread-safe; designed to be composed with other listeners via
  * {@link Listeners#compose(NodeListener...)}.
  */
-public final class LlmCostListener implements NodeListener {
+public final class LlmCostListener implements NodeListener, TraceRecorder {
 
     private final ConcurrentMap<String, UsageCounter> executionTotals = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, UsageCounter> nodeTotals = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ConcurrentMap<String, UsageCounter>> perExecutionPerNode =
+            new ConcurrentHashMap<>();
     private final MeterRegistry meterRegistry;
 
     /** Creates a listener that accumulates in-memory totals only. */
@@ -80,6 +92,32 @@ public final class LlmCostListener implements NodeListener {
         }
     }
 
+    /**
+     * Record token usage for a specific node within a specific execution. Updates the
+     * per-execution total and the per-execution-per-node breakdown surfaced by
+     * {@link #snapshot(String)}. Does <strong>not</strong> update the global per-node bucket —
+     * that flows through {@link #onUsage(String, int, int)} from the {@link NodeListener} hook.
+     * Wire the listener via both {@code Graph.Builder.listener(...)} and
+     * {@code Graph.Builder.traceRecorder(...)} to populate all three buckets without
+     * double-counting.
+     *
+     * @param executionId      the execution ID
+     * @param nodeName         the node name
+     * @param promptTokens     input tokens consumed
+     * @param completionTokens output tokens generated
+     */
+    @Override
+    public void recordUsage(String executionId, String nodeName,
+                            int promptTokens, int completionTokens) {
+        Objects.requireNonNull(executionId, "executionId");
+        Objects.requireNonNull(nodeName, "nodeName");
+        recordUsage(executionId, promptTokens, completionTokens);
+        perExecutionPerNode
+                .computeIfAbsent(executionId, k -> new ConcurrentHashMap<>())
+                .computeIfAbsent(nodeName, k -> new UsageCounter())
+                .add(promptTokens, completionTokens);
+    }
+
     /** Get aggregated prompt tokens for an execution. */
     public int promptTokens(String executionId) {
         UsageCounter c = executionTotals.get(executionId);
@@ -109,6 +147,41 @@ public final class LlmCostListener implements NodeListener {
         return c == null ? 0 : c.completionTokens.get();
     }
 
+    /**
+     * Return an immutable per-node usage breakdown for {@code executionId}. Returns an empty
+     * map if no usage was recorded for that execution. Built from data captured via
+     * {@link #recordUsage(String, String, int, int)} or the {@link TraceRecorder#recordUsage}
+     * hook fired by the executor.
+     */
+    public Map<String, Usage> usageByNode(String executionId) {
+        ConcurrentMap<String, UsageCounter> perNode = perExecutionPerNode.get(executionId);
+        if (perNode == null) return Map.of();
+        Map<String, Usage> result = new HashMap<>(perNode.size());
+        for (Map.Entry<String, UsageCounter> e : perNode.entrySet()) {
+            result.put(e.getKey(), e.getValue().snapshot());
+        }
+        return Map.copyOf(result);
+    }
+
+    /**
+     * Return the rolled-up usage for {@code executionId} as a {@link Usage} record. Reads the
+     * per-execution totals bucket — returns {@link Usage#ZERO} when the execution is unknown.
+     */
+    public Usage totalUsage(String executionId) {
+        UsageCounter c = executionTotals.get(executionId);
+        return c == null ? Usage.ZERO : c.snapshot();
+    }
+
+    /**
+     * Return an immutable {@link CostReport} for {@code executionId} with the per-node
+     * breakdown and the rolled-up total. Returns a report with empty {@code usageByNode} and
+     * {@link Usage#ZERO} total when the execution is unknown.
+     */
+    public CostReport snapshot(String executionId) {
+        Objects.requireNonNull(executionId, "executionId");
+        return new CostReport(executionId, usageByNode(executionId), totalUsage(executionId));
+    }
+
     @Override
     public void onUsage(String nodeName, int promptTokens, int completionTokens) {
         recordNodeUsage(nodeName, promptTokens, completionTokens);
@@ -127,6 +200,10 @@ public final class LlmCostListener implements NodeListener {
         void add(int prompt, int completion) {
             promptTokens.addAndGet(prompt);
             completionTokens.addAndGet(completion);
+        }
+
+        Usage snapshot() {
+            return new Usage(promptTokens.get(), completionTokens.get());
         }
     }
 }
