@@ -56,6 +56,8 @@ public final class JdbcTraceStore<S> implements TraceStore {
                 + "completed_at TIMESTAMP NOT NULL, "
                 + "forked_from_execution_id VARCHAR(255), "
                 + "forked_from_step_index INT NOT NULL, "
+                + "parent_execution_id VARCHAR(255), "
+                + "parent_step_index INT NOT NULL DEFAULT -1, "
                 + "data_json TEXT NOT NULL"
                 + ")";
         try (Connection c = dataSource.getConnection();
@@ -78,12 +80,14 @@ public final class JdbcTraceStore<S> implements TraceStore {
         }
         String update = "UPDATE " + table
                 + " SET status = ?, started_at = ?, completed_at = ?, "
-                + "forked_from_execution_id = ?, forked_from_step_index = ?, data_json = ? "
+                + "forked_from_execution_id = ?, forked_from_step_index = ?, "
+                + "parent_execution_id = ?, parent_step_index = ?, data_json = ? "
                 + "WHERE execution_id = ?";
         String insert = "INSERT INTO " + table
                 + " (execution_id, status, started_at, completed_at, "
-                + "forked_from_execution_id, forked_from_step_index, data_json) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                + "forked_from_execution_id, forked_from_step_index, "
+                + "parent_execution_id, parent_step_index, data_json) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Timestamp started = Timestamp.from(trace.startedAt());
         Timestamp completed = Timestamp.from(trace.completedAt());
         try (Connection c = dataSource.getConnection()) {
@@ -97,8 +101,10 @@ public final class JdbcTraceStore<S> implements TraceStore {
                     ps.setTimestamp(3, completed);
                     ps.setString(4, trace.forkedFromExecutionId());
                     ps.setInt(5, trace.forkedFromStepIndex());
-                    ps.setString(6, json);
-                    ps.setString(7, trace.executionId());
+                    ps.setString(6, trace.parentExecutionId());
+                    ps.setInt(7, trace.parentStepIndex());
+                    ps.setString(8, json);
+                    ps.setString(9, trace.executionId());
                     rows = ps.executeUpdate();
                 }
                 if (rows == 0) {
@@ -109,7 +115,9 @@ public final class JdbcTraceStore<S> implements TraceStore {
                         ps.setTimestamp(4, completed);
                         ps.setString(5, trace.forkedFromExecutionId());
                         ps.setInt(6, trace.forkedFromStepIndex());
-                        ps.setString(7, json);
+                        ps.setString(7, trace.parentExecutionId());
+                        ps.setInt(8, trace.parentStepIndex());
+                        ps.setString(9, json);
                         ps.executeUpdate();
                     }
                 }
@@ -177,7 +185,8 @@ public final class JdbcTraceStore<S> implements TraceStore {
                   Status status, ErrorDto error,
                   List<StepDto<S>> steps,
                   Instant startedAt, Instant completedAt,
-                  String forkedFromExecutionId, int forkedFromStepIndex) {
+                  String forkedFromExecutionId, int forkedFromStepIndex,
+                  String parentExecutionId, Integer parentStepIndex) {
 
         static <S> Dto<S> from(ExecutionTrace<S> t) {
             List<StepDto<S>> steps = new ArrayList<>(t.steps().size());
@@ -185,15 +194,18 @@ public final class JdbcTraceStore<S> implements TraceStore {
             return new Dto<>(t.executionId(), t.initialState(), t.finalState(),
                     t.status(), ErrorDto.from(t.error()),
                     steps, t.startedAt(), t.completedAt(),
-                    t.forkedFromExecutionId(), t.forkedFromStepIndex());
+                    t.forkedFromExecutionId(), t.forkedFromStepIndex(),
+                    t.parentExecutionId(), t.parentStepIndex());
         }
 
         ExecutionTrace<S> toTrace() {
             List<TraceStep<S>> out = new ArrayList<>(steps == null ? 0 : steps.size());
             if (steps != null) for (StepDto<S> s : steps) out.add(s.toStep());
+            int parentIdx = parentStepIndex == null ? -1 : parentStepIndex;
             return new ExecutionTrace<>(executionId, initialState, finalState,
                     status, ErrorDto.toThrowable(error), out, startedAt, completedAt,
-                    forkedFromExecutionId, forkedFromStepIndex);
+                    forkedFromExecutionId, forkedFromStepIndex,
+                    parentExecutionId, parentIdx);
         }
     }
 

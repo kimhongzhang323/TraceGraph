@@ -16,6 +16,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     private final TraceStore store;
     private final ConcurrentMap<String, Builder> active = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ForkLineage> pendingLineage = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ParentLineage> pendingParent = new ConcurrentHashMap<>();
 
     @Override
     public void recordUsage(String executionId, String nodeName, int promptTokens, int completionTokens) {
@@ -95,13 +96,23 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         ForkLineage lineage = pendingLineage.remove(executionId);
         String forkedFromId = lineage == null ? null : lineage.parentExecutionId();
         int forkedFromIdx = lineage == null ? -1 : lineage.parentStepIndex();
+        ParentLineage parent = pendingParent.remove(executionId);
+        String parentId = parent == null ? null : parent.parentExecutionId();
+        int parentIdx = parent == null ? -1 : parent.parentStepIndex();
         ExecutionTrace<?> trace = new ExecutionTrace(
                 b.executionId, b.initialState, finalState,
                 status, b.error,
                 List.copyOf(b.steps),
                 b.startedAt, Instant.now(),
-                forkedFromId, forkedFromIdx);
+                forkedFromId, forkedFromIdx,
+                parentId, parentIdx);
         store.save(trace);
+    }
+
+    @Override
+    public void recordChildOf(String childExecutionId, String parentExecutionId, int parentStepIndex) {
+        if (parentExecutionId == null) return;
+        pendingParent.put(childExecutionId, new ParentLineage(parentExecutionId, parentStepIndex));
     }
 
     void stageForkLineage(String executionId, String parentExecutionId, int parentStepIndex) {
@@ -109,6 +120,8 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     }
 
     private record ForkLineage(String parentExecutionId, int parentStepIndex) {}
+
+    private record ParentLineage(String parentExecutionId, int parentStepIndex) {}
 
     private static final class Builder {
         final String executionId;

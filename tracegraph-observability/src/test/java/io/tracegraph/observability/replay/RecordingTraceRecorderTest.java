@@ -62,6 +62,62 @@ class RecordingTraceRecorderTest {
     }
 
     @Test
+    void subgraphChildTraceCarriesParentLineage() {
+        InMemoryTraceStore store = new InMemoryTraceStore();
+        RecordingTraceRecorder recorder = new RecordingTraceRecorder(store);
+
+        Graph<String> inner = Graph.<String>builder()
+                .node("i1", (s, ctx) -> s + ".i1")
+                .node("i2", (s, ctx) -> s + ".i2")
+                .entry("i1").edge("i1", "i2").terminal("i2")
+                .traceRecorder(recorder)
+                .build();
+
+        Graph<String> outer = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .subgraph("sub", inner)
+                .node("b", (s, ctx) -> s + ".b")
+                .entry("a").edge("a", "sub").edge("sub", "b").terminal("b")
+                .traceRecorder(recorder)
+                .build();
+
+        ExecutionResult<String> result = outer.run("seed");
+        String parentEid = result.executionId();
+
+        @SuppressWarnings("unchecked")
+        ExecutionTrace<String> parentTrace = (ExecutionTrace<String>) store.load(parentEid).orElseThrow();
+        @SuppressWarnings("unchecked")
+        ExecutionTrace<String> childTrace = (ExecutionTrace<String>) store.load(parentEid + ":sub").orElseThrow();
+
+        assertThat(parentTrace.isChild()).isFalse();
+        assertThat(parentTrace.parentExecutionId()).isNull();
+        assertThat(parentTrace.parentStepIndex()).isEqualTo(-1);
+
+        assertThat(childTrace.isChild()).isTrue();
+        assertThat(childTrace.parentExecutionId()).isEqualTo(parentEid);
+        assertThat(childTrace.parentStepIndex()).isEqualTo(1);
+        assertThat(parentTrace.steps().get(1).nodeName()).isEqualTo("sub");
+    }
+
+    @Test
+    void nonSubgraphTraceHasNoParentLineage() {
+        InMemoryTraceStore store = new InMemoryTraceStore();
+        Graph<String> graph = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .entry("a").terminal("a")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+
+        ExecutionResult<String> result = graph.run("seed");
+
+        @SuppressWarnings("unchecked")
+        ExecutionTrace<String> trace = (ExecutionTrace<String>) store.load(result.executionId()).orElseThrow();
+        assertThat(trace.isChild()).isFalse();
+        assertThat(trace.parentExecutionId()).isNull();
+        assertThat(trace.parentStepIndex()).isEqualTo(-1);
+    }
+
+    @Test
     void concurrentRunsKeepDistinctTraces() throws Exception {
         InMemoryTraceStore store = new InMemoryTraceStore();
         Graph<String> graph = Graph.<String>builder()

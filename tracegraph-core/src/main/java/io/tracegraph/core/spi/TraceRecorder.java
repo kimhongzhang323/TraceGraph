@@ -38,6 +38,18 @@ public interface TraceRecorder {
 
     default void recordComplete(String executionId, Status status, Object finalState) {}
 
+    /**
+     * Signals that {@code childExecutionId} is about to start as a subgraph invocation embedded
+     * in {@code parentExecutionId} at {@code parentStepIndex}. Replay-shaped recorders may
+     * stash this lineage and apply it when the child completes, mirroring the fork lineage
+     * pattern.
+     *
+     * <p>Called once per subgraph attempt (i.e. before each {@code recordStart} of the inner
+     * graph); the recorder may treat repeated calls for the same {@code childExecutionId}
+     * idempotently.
+     */
+    default void recordChildOf(String childExecutionId, String parentExecutionId, int parentStepIndex) {}
+
     static TraceRecorder noop() {
         return NoopTraceRecorderAccess.instance();
     }

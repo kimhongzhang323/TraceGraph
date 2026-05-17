@@ -7,6 +7,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [0.3.0] - Unreleased
 
 ### Added
+- **Multi-agent trace correlation** (`tracegraph-observability`): `ExecutionTrace` gained `parentExecutionId` / `parentStepIndex` components (mirrors the existing `forkedFromExecutionId` lineage). Subgraph child traces auto-populate this lineage via a new `TraceRecorder.recordChildOf(...)` SPI hook the executor calls before invoking the inner graph. `JsonFileTraceStore` / `JdbcTraceStore` round-trip the fields (JDBC schema adds `parent_execution_id` and `parent_step_index` columns). `OtlpTraceExporter` emits `tracegraph.parent.execution.id` / `tracegraph.parent.step.index` span attributes on child traces.
 - **A2A protocol** (`tracegraph-a2a`): `Agent<S>`, `AgentBus` SPI, `InMemoryAgentBus` with virtual-thread dispatch, `AgentMessage` record with `of()`/`reply()` factories, `AgentTimeoutException`.
 - **A2A HTTP transport**: `A2AHttpClient`, `A2AMessage`, `A2AHttpException` for wire-compatible Google A2A JSON exchange.
 - **Spring Boot A2A auto-config**: `A2AAutoConfiguration` registers `InMemoryAgentBus`; `A2AController` exposes `POST /a2a/messages`.

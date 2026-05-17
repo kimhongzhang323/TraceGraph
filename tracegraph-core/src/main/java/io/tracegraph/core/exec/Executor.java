@@ -258,7 +258,7 @@ public final class Executor<S> {
             NodeOutcome<S> outcome;
             if (node instanceof NodeKind.Subgraph<S> subgraphKind) {
                 SubgraphOutcome<S> so = invokeSubgraphWithRetry(
-                        subgraphKind.inner(), state, current, executionId, policy);
+                        subgraphKind.inner(), state, current, executionId, policy, path.size() - 1);
                 if (so.failure != null) {
                     outcome = NodeOutcome.failure(so.failure);
                 } else {
@@ -408,11 +408,13 @@ public final class Executor<S> {
     }
 
     private SubgraphOutcome<S> invokeSubgraphWithRetry(Graph<S> inner, S state, String name,
-                                                        String executionId, RetryPolicy policy) {
+                                                        String executionId, RetryPolicy policy,
+                                                        int parentStepIndex) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
             try {
                 String childEid = executionId + ":" + name;
+                inner.traceRecorder().recordChildOf(childEid, executionId, parentStepIndex);
                 ExecutionResult<S> result = inner.run(state, childEid);
                 if (result.status() != Status.COMPLETED) {
                     Throwable cause = result.error() != null ? result.error()

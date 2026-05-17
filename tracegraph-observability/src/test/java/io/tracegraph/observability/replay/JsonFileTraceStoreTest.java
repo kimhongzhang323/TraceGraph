@@ -8,6 +8,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,6 +108,26 @@ class JsonFileTraceStoreTest {
         assertThat(forkTrace.forkedFromExecutionId()).isEqualTo(first.executionId());
         assertThat(forkTrace.forkedFromStepIndex()).isEqualTo(0);
         assertThat(forkTrace.isFork()).isTrue();
+    }
+
+    @Test
+    void roundTripsParentLineage(@TempDir Path tmp) {
+        JsonFileTraceStore<String> store = JsonFileTraceStore.of(tmp, String.class);
+        Instant t = Instant.parse("2026-04-28T12:00:00Z");
+        ExecutionTrace<String> child = new ExecutionTrace<>(
+                "child-1", "s0", "s1", Status.COMPLETED, null,
+                List.of(TraceStep.leaf(0, "n", 1, "s0", "s1", Duration.ofMillis(5), null)),
+                t, t.plusSeconds(1),
+                null, -1,
+                "parent-42", 3);
+        store.save(child);
+
+        @SuppressWarnings("unchecked")
+        ExecutionTrace<String> loaded = (ExecutionTrace<String>) store.load("child-1").orElseThrow();
+        assertThat(loaded.isChild()).isTrue();
+        assertThat(loaded.parentExecutionId()).isEqualTo("parent-42");
+        assertThat(loaded.parentStepIndex()).isEqualTo(3);
+        assertThat(loaded.isFork()).isFalse();
     }
 
     @Test
