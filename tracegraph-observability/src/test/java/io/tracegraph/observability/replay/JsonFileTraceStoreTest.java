@@ -8,6 +8,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,29 +111,23 @@ class JsonFileTraceStoreTest {
     }
 
     @Test
-    void roundTripsParentLineageForSubgraphChild(@TempDir Path tmp) {
+    void roundTripsParentLineage(@TempDir Path tmp) {
         JsonFileTraceStore<String> store = JsonFileTraceStore.of(tmp, String.class);
-        RecordingTraceRecorder recorder = new RecordingTraceRecorder(store);
-
-        Graph<String> inner = Graph.<String>builder()
-                .node("i", (s, ctx) -> s + ".i").entry("i").terminal("i")
-                .traceRecorder(recorder)
-                .build();
-        Graph<String> outer = Graph.<String>builder()
-                .node("a", (s, ctx) -> s + ".a")
-                .subgraph("sub", inner)
-                .entry("a").edge("a", "sub").terminal("sub")
-                .traceRecorder(recorder)
-                .build();
-
-        ExecutionResult<String> r = outer.run("seed");
+        Instant t = Instant.parse("2026-04-28T12:00:00Z");
+        ExecutionTrace<String> child = new ExecutionTrace<>(
+                "child-1", "s0", "s1", Status.COMPLETED, null,
+                List.of(TraceStep.leaf(0, "n", 1, "s0", "s1", Duration.ofMillis(5), null)),
+                t, t.plusSeconds(1),
+                null, -1,
+                "parent-42", 3);
+        store.save(child);
 
         @SuppressWarnings("unchecked")
-        ExecutionTrace<String> childTrace =
-                (ExecutionTrace<String>) store.load(r.executionId() + ":sub").orElseThrow();
-        assertThat(childTrace.isChild()).isTrue();
-        assertThat(childTrace.parentExecutionId()).isEqualTo(r.executionId());
-        assertThat(childTrace.parentStepIndex()).isEqualTo(1);
+        ExecutionTrace<String> loaded = (ExecutionTrace<String>) store.load("child-1").orElseThrow();
+        assertThat(loaded.isChild()).isTrue();
+        assertThat(loaded.parentExecutionId()).isEqualTo("parent-42");
+        assertThat(loaded.parentStepIndex()).isEqualTo(3);
+        assertThat(loaded.isFork()).isFalse();
     }
 
     @Test
