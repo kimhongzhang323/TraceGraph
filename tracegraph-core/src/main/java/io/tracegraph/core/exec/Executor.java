@@ -51,6 +51,7 @@ public final class Executor<S> {
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
     private final boolean sensitiveDataLogging;
+    private final java.util.function.Supplier<String> correlationIdFactory;
     private final Sleeper sleeper;
 
     public Executor(Map<String, NodeKind<S>> nodes,
@@ -70,7 +71,7 @@ public final class Executor<S> {
                     Set<String> interruptAfter) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
                 checkpointStore, traceRecorder, memoryStore, vectorStore, userExecutor, interruptBefore,
-                interruptAfter, false, Sleeper.realtime());
+                interruptAfter, false, () -> null, Sleeper.realtime());
     }
 
     public Executor(Map<String, NodeKind<S>> nodes,
@@ -91,7 +92,29 @@ public final class Executor<S> {
                     boolean sensitiveDataLogging) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
                 checkpointStore, traceRecorder, memoryStore, vectorStore, userExecutor, interruptBefore,
-                interruptAfter, sensitiveDataLogging, Sleeper.realtime());
+                interruptAfter, sensitiveDataLogging, () -> null, Sleeper.realtime());
+    }
+
+    public Executor(Map<String, NodeKind<S>> nodes,
+                    Map<String, List<Edge<S>>> edgesByFrom,
+                    Set<String> terminals,
+                    String entry,
+                    NodeListener listener,
+                    int maxSteps,
+                    Map<String, RetryPolicy> nodePolicies,
+                    RetryPolicy defaultPolicy,
+                    CheckpointStore checkpointStore,
+                    TraceRecorder traceRecorder,
+                    MemoryStore memoryStore,
+                    VectorStore vectorStore,
+                    ExecutorService userExecutor,
+                    Set<String> interruptBefore,
+                    Set<String> interruptAfter,
+                    boolean sensitiveDataLogging,
+                    java.util.function.Supplier<String> correlationIdFactory) {
+        this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
+                checkpointStore, traceRecorder, memoryStore, vectorStore, userExecutor, interruptBefore,
+                interruptAfter, sensitiveDataLogging, correlationIdFactory, Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -110,6 +133,7 @@ public final class Executor<S> {
              Set<String> interruptBefore,
              Set<String> interruptAfter,
              boolean sensitiveDataLogging,
+             java.util.function.Supplier<String> correlationIdFactory,
              Sleeper sleeper) {
         this.nodes = nodes;
         this.edgesByFrom = edgesByFrom;
@@ -127,11 +151,12 @@ public final class Executor<S> {
         this.interruptBefore = interruptBefore;
         this.interruptAfter = interruptAfter;
         this.sensitiveDataLogging = sensitiveDataLogging;
+        this.correlationIdFactory = correlationIdFactory == null ? () -> null : correlationIdFactory;
         this.sleeper = sleeper;
     }
 
     public ExecutionResult<S> run(S initial, String executionId) {
-        traceRecorder.recordStart(executionId, initial);
+        traceRecorder.recordStart(executionId, initial, correlationIdFactory.get());
         ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec, false));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
@@ -141,7 +166,7 @@ public final class Executor<S> {
         if (!nodes.containsKey(startNode)) {
             throw new GraphValidationException("Start node '" + startNode + "' is not declared");
         }
-        traceRecorder.recordStart(executionId, seed);
+        traceRecorder.recordStart(executionId, seed, correlationIdFactory.get());
         ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec, false));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
@@ -157,7 +182,7 @@ public final class Executor<S> {
         String last = cp.lastCompletedNode();
         boolean skipFirstInterruptBefore = cp.interruptPending();
 
-        traceRecorder.recordStart(executionId, state);
+        traceRecorder.recordStart(executionId, state, correlationIdFactory.get());
 
         ExecutionResult<S> result;
         if (!skipFirstInterruptBefore && terminals.contains(last)) {
@@ -191,7 +216,7 @@ public final class Executor<S> {
         String last = cp.lastCompletedNode();
         boolean skipFirstInterruptBefore = cp.interruptPending();
 
-        traceRecorder.recordStart(executionId, state);
+        traceRecorder.recordStart(executionId, state, correlationIdFactory.get());
 
         ExecutionResult<S> result;
         if (!skipFirstInterruptBefore && terminals.contains(last)) {

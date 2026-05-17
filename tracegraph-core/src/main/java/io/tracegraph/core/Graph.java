@@ -64,6 +64,7 @@ public final class Graph<S> {
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
     private final Supplier<String> executionIdFactory;
+    private final Supplier<String> correlationIdFactory;
     private final Class<S> stateType;
     private final boolean sensitiveDataLogging;
 
@@ -91,6 +92,7 @@ public final class Graph<S> {
         this.interruptBefore = Set.copyOf(b.interruptBefore);
         this.interruptAfter = Set.copyOf(b.interruptAfter);
         this.executionIdFactory = b.executionIdFactory;
+        this.correlationIdFactory = b.correlationIdFactory;
         this.stateType = b.stateType;
         this.sensitiveDataLogging = b.sensitiveDataLogging;
     }
@@ -278,6 +280,7 @@ public final class Graph<S> {
         b.interruptBefore.addAll(this.interruptBefore);
         b.interruptAfter.addAll(this.interruptAfter);
         b.executionIdFactory = this.executionIdFactory;
+        b.correlationIdFactory = this.correlationIdFactory;
         b.sensitiveDataLogging = this.sensitiveDataLogging;
         return new Graph<>(b);
     }
@@ -307,7 +310,7 @@ public final class Graph<S> {
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
                 nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, vectorStore,
-                userExecutor, interruptBefore, interruptAfter, sensitiveDataLogging);
+                userExecutor, interruptBefore, interruptAfter, sensitiveDataLogging, correlationIdFactory);
     }
 
     public Set<String> nodeNames() {
@@ -422,6 +425,7 @@ public final class Graph<S> {
         private VectorStore vectorStore;
         private ExecutorService userExecutor;
         private Supplier<String> executionIdFactory = () -> UUID.randomUUID().toString();
+        private Supplier<String> correlationIdFactory = () -> null;
         private Class<S> stateType;
         private boolean sensitiveDataLogging = false;
 
@@ -712,6 +716,24 @@ public final class Graph<S> {
 
         public Builder<S> executionIdFactory(Supplier<String> factory) {
             this.executionIdFactory = Objects.requireNonNull(factory, "factory");
+            return this;
+        }
+
+        /**
+         * Configure a supplier of correlation ids — opaque strings (often a W3C traceparent or an
+         * upstream request id) that link a TraceGraph execution back to a request in external APM
+         * systems such as Langfuse, Arize Phoenix, or Jaeger.
+         *
+         * <p>The supplier is invoked once per {@code run}/{@code runFrom} at execution start and may
+         * return {@code null} to skip correlation. The captured value is stored on the resulting
+         * {@code ExecutionTrace} and emitted as a span attribute by {@code OtlpTraceExporter}.
+         *
+         * @param factory supplier of correlation ids; must not be {@code null} (return {@code null}
+         *                from the supplier to disable correlation for a given run)
+         * @return this builder
+         */
+        public Builder<S> correlationId(Supplier<String> factory) {
+            this.correlationIdFactory = Objects.requireNonNull(factory, "factory");
             return this;
         }
 

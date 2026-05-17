@@ -17,6 +17,20 @@ public interface TraceRecorder {
 
     default void recordStart(String executionId, Object initialState) {}
 
+    /**
+     * Variant of {@link #recordStart(String, Object)} carrying an optional correlation id, used to
+     * link the execution back to an upstream request trace in external APM systems. Default
+     * delegates to the 2-arg overload so existing implementations keep working.
+     *
+     * @param executionId   execution id for this run
+     * @param initialState  initial state seeded into the graph
+     * @param correlationId opaque identifier, often the W3C traceparent or an upstream request id;
+     *                      may be {@code null}
+     */
+    default void recordStart(String executionId, Object initialState, String correlationId) {
+        recordStart(executionId, initialState);
+    }
+
     default void recordEnter(String executionId, String nodeName, int attempt, Object state) {}
 
     default void recordRetry(String executionId, String nodeName, int attempt, Throwable error) {}

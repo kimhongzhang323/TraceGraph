@@ -139,6 +139,21 @@ class TraceControllerTest {
     }
 
     @Test
+    void traceJsonIncludesCorrelationIdWhenSet() throws Exception {
+        Graph<String> g = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .entry("a").terminal("a")
+                .correlationId(() -> "upstream-req-abc")
+                .traceRecorder(new RecordingTraceRecorder(store))
+                .build();
+        ExecutionResult<String> r = g.run("seed");
+
+        mockMvc.perform(get("/tracegraph/traces/" + r.executionId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.correlationId").value("upstream-req-abc"));
+    }
+
+    @Test
     void listsExecutionIds() throws Exception {
         Graph<String> g = Graph.<String>builder()
                 .node("n", (s, ctx) -> s + ".n").entry("n").terminal("n")

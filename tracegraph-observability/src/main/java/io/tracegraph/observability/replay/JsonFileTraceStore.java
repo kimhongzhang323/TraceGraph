@@ -109,7 +109,8 @@ public final class JsonFileTraceStore<S> implements TraceStore {
                   List<StepDto<S>> steps,
                   Instant startedAt, Instant completedAt,
                   String forkedFromExecutionId, int forkedFromStepIndex,
-                  String parentExecutionId, Integer parentStepIndex) {
+                  String parentExecutionId, Integer parentStepIndex,
+                  String correlationId) {
 
         static <S> Dto<S> from(ExecutionTrace<S> t) {
             List<StepDto<S>> steps = new ArrayList<>(t.steps().size());
@@ -118,7 +119,8 @@ public final class JsonFileTraceStore<S> implements TraceStore {
                     t.status(), ErrorDto.from(t.error()),
                     steps, t.startedAt(), t.completedAt(),
                     t.forkedFromExecutionId(), t.forkedFromStepIndex(),
-                    t.parentExecutionId(), t.parentStepIndex());
+                    t.parentExecutionId(), t.parentStepIndex(),
+                    t.correlationId());
         }
 
         ExecutionTrace<S> toTrace() {
@@ -128,7 +130,7 @@ public final class JsonFileTraceStore<S> implements TraceStore {
             return new ExecutionTrace<>(executionId, initialState, finalState,
                     status, ErrorDto.toThrowable(error), out, startedAt, completedAt,
                     forkedFromExecutionId, forkedFromStepIndex,
-                    parentExecutionId, parentIdx);
+                    parentExecutionId, parentIdx, correlationId);
         }
     }
 

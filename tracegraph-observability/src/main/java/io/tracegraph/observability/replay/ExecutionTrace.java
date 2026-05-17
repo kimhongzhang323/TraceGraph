@@ -31,7 +31,8 @@ public record ExecutionTrace<S>(String executionId, S initialState, S finalState
                                 List<TraceStep<S>> steps,
                                 Instant startedAt, Instant completedAt,
                                 String forkedFromExecutionId, int forkedFromStepIndex,
-                                String parentExecutionId, int parentStepIndex) {
+                                String parentExecutionId, int parentStepIndex,
+                                String correlationId) {
 
     public ExecutionTrace {
         Objects.requireNonNull(executionId, "executionId");
@@ -46,7 +47,7 @@ public record ExecutionTrace<S>(String executionId, S initialState, S finalState
                           List<TraceStep<S>> steps,
                           Instant startedAt, Instant completedAt) {
         this(executionId, initialState, finalState, status, error, steps, startedAt, completedAt,
-                null, -1, null, -1);
+                null, -1, null, -1, null);
     }
 
     public ExecutionTrace(String executionId, S initialState, S finalState,
@@ -55,7 +56,17 @@ public record ExecutionTrace<S>(String executionId, S initialState, S finalState
                           Instant startedAt, Instant completedAt,
                           String forkedFromExecutionId, int forkedFromStepIndex) {
         this(executionId, initialState, finalState, status, error, steps, startedAt, completedAt,
-                forkedFromExecutionId, forkedFromStepIndex, null, -1);
+                forkedFromExecutionId, forkedFromStepIndex, null, -1, null);
+    }
+
+    public ExecutionTrace(String executionId, S initialState, S finalState,
+                          Status status, Throwable error,
+                          List<TraceStep<S>> steps,
+                          Instant startedAt, Instant completedAt,
+                          String forkedFromExecutionId, int forkedFromStepIndex,
+                          String parentExecutionId, int parentStepIndex) {
+        this(executionId, initialState, finalState, status, error, steps, startedAt, completedAt,
+                forkedFromExecutionId, forkedFromStepIndex, parentExecutionId, parentStepIndex, null);
     }
 
     public boolean isFork() {
