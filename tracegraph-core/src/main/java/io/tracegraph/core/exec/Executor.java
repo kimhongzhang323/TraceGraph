@@ -16,6 +16,7 @@ import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
 import io.tracegraph.core.spi.TraceRecorder;
+import io.tracegraph.core.spi.VectorStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,7 @@ public final class Executor<S> {
     private final CheckpointStore checkpointStore;
     private final TraceRecorder traceRecorder;
     private final MemoryStore memoryStore;
+    private final VectorStore vectorStore;
     private final ExecutorService userExecutor;
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
@@ -61,12 +63,13 @@ public final class Executor<S> {
                     CheckpointStore checkpointStore,
                     TraceRecorder traceRecorder,
                     MemoryStore memoryStore,
+                    VectorStore vectorStore,
                     ExecutorService userExecutor,
                     Set<String> interruptBefore,
                     Set<String> interruptAfter) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
-                checkpointStore, traceRecorder, memoryStore, userExecutor, interruptBefore, interruptAfter,
-                Sleeper.realtime());
+                checkpointStore, traceRecorder, memoryStore, vectorStore, userExecutor, interruptBefore,
+                interruptAfter, Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -80,6 +83,7 @@ public final class Executor<S> {
              CheckpointStore checkpointStore,
              TraceRecorder traceRecorder,
              MemoryStore memoryStore,
+             VectorStore vectorStore,
              ExecutorService userExecutor,
              Set<String> interruptBefore,
              Set<String> interruptAfter,
@@ -95,6 +99,7 @@ public final class Executor<S> {
         this.checkpointStore = checkpointStore;
         this.traceRecorder = traceRecorder;
         this.memoryStore = memoryStore;
+        this.vectorStore = vectorStore;
         this.userExecutor = userExecutor;
         this.interruptBefore = interruptBefore;
         this.interruptAfter = interruptAfter;
@@ -332,7 +337,7 @@ public final class Executor<S> {
                                            RetryPolicy policy, ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, this.listener);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, vectorStore, this.listener);
             try {
                 NodeResult<S> result = node.invokeRouting(state, ctx, exec).join();
                 if (result instanceof NodeResult.SendAll<S> sa) {
@@ -423,7 +428,7 @@ public final class Executor<S> {
                                                               ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, this.listener);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, vectorStore, this.listener);
             try {
                 NodeResult<S> result = routingNode.apply(state, ctx);
                 if (result instanceof NodeResult.SendAll<S> sa) {
@@ -483,7 +488,7 @@ public final class Executor<S> {
                 throw new NodeExecutionException(send.target(),
                         new IllegalArgumentException("Send target '" + send.target() + "' is not declared"));
             }
-            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore, this.listener);
+            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore, vectorStore, this.listener);
             futures.add(java.util.concurrent.CompletableFuture.supplyAsync(
                     () -> target.invoke(send.payload(), ctx, exec).join(), exec));
         }
@@ -517,7 +522,7 @@ public final class Executor<S> {
     }
 
     private record SimpleContext(String executionId, String nodeName, int attempt,
-                                 MemoryStore memory, NodeListener listener)
+                                 MemoryStore memory, VectorStore vectorStore, NodeListener listener)
             implements Context {
         @Override
         public Logger logger() {

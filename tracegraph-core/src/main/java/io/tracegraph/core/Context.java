@@ -1,12 +1,14 @@
 package io.tracegraph.core;
 
 import io.tracegraph.core.spi.MemoryStore;
+import io.tracegraph.core.spi.VectorStore;
 import org.slf4j.Logger;
 
 /**
  * Per-node, per-execution context passed to {@link Node#execute(Object, Context)}. Carries the
- * executionId, the current node name, the retry attempt (0-indexed), an SLF4J {@link Logger}, and
- * a {@link MemoryStore} handle for cross-execution data.
+ * executionId, the current node name, the retry attempt (0-indexed), an SLF4J {@link Logger}, a
+ * {@link MemoryStore} handle for cross-execution data, and a {@link VectorStore} handle for
+ * nearest-neighbour recall.
  *
  * <p>{@link #idempotencyKey()} composes the three identifiers into a stable string nodes can use
  * to dedup external side effects across retries. Never share a {@code Context} across executions.
@@ -26,6 +28,10 @@ public interface Context {
 
     default MemoryStore memory() {
         return MemoryStore.noop();
+    }
+
+    default VectorStore vectorStore() {
+        return VectorStore.noop();
     }
 
     /**
