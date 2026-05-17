@@ -10,11 +10,15 @@ import java.util.Objects;
  * an {@link #error} if the node ultimately failed (in which case {@code after} is null and this is
  * the trace's last step).
  *
+ * <p>{@link #rawInput} and {@link #rawOutput} are populated only when
+ * {@code Graph.Builder.sensitiveDataLogging(true)} is set; otherwise both are {@code null}.
+ *
  * @param <S> the graph's state type
  */
 public record TraceStep<S>(int index, String nodeName, int attempts,
                            S before, S after, Duration duration, Throwable error,
-                           List<TraceStep<S>> children, Usage usage) {
+                           List<TraceStep<S>> children, Usage usage,
+                           String rawInput, String rawOutput) {
 
     public TraceStep {
         Objects.requireNonNull(nodeName, "nodeName");
@@ -24,23 +28,37 @@ public record TraceStep<S>(int index, String nodeName, int attempts,
         children = children == null ? List.of() : List.copyOf(children);
     }
 
+    /** Backwards-compatible constructor without rawInput/rawOutput. */
+    public TraceStep(int index, String nodeName, int attempts,
+                     S before, S after, Duration duration, Throwable error,
+                     List<TraceStep<S>> children, Usage usage) {
+        this(index, nodeName, attempts, before, after, duration, error, children, usage, null, null);
+    }
+
     /** Backwards-compatible constructor without usage. */
     public TraceStep(int index, String nodeName, int attempts,
                      S before, S after, Duration duration, Throwable error,
                      List<TraceStep<S>> children) {
-        this(index, nodeName, attempts, before, after, duration, error, children, null);
+        this(index, nodeName, attempts, before, after, duration, error, children, null, null, null);
     }
 
     public static <S> TraceStep<S> leaf(int index, String nodeName, int attempts,
                                         S before, S after, Duration duration, Throwable error) {
-        return new TraceStep<>(index, nodeName, attempts, before, after, duration, error, List.of(), null);
+        return new TraceStep<>(index, nodeName, attempts, before, after, duration, error, List.of(), null, null, null);
     }
 
     /** Create a leaf step with token usage tracking. */
     public static <S> TraceStep<S> leaf(int index, String nodeName, int attempts,
                                         S before, S after, Duration duration, Throwable error,
                                         Usage usage) {
-        return new TraceStep<>(index, nodeName, attempts, before, after, duration, error, List.of(), usage);
+        return new TraceStep<>(index, nodeName, attempts, before, after, duration, error, List.of(), usage, null, null);
+    }
+
+    /** Create a leaf step with token usage tracking and raw I/O. */
+    public static <S> TraceStep<S> leaf(int index, String nodeName, int attempts,
+                                        S before, S after, Duration duration, Throwable error,
+                                        Usage usage, String rawInput, String rawOutput) {
+        return new TraceStep<>(index, nodeName, attempts, before, after, duration, error, List.of(), usage, rawInput, rawOutput);
     }
 
     public boolean failed() {

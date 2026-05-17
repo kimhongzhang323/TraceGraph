@@ -65,6 +65,7 @@ public final class Graph<S> {
     private final Set<String> interruptAfter;
     private final Supplier<String> executionIdFactory;
     private final Class<S> stateType;
+    private final boolean sensitiveDataLogging;
 
     private Graph(Builder<S> b) {
         this.nodes = Map.copyOf(b.nodes);
@@ -91,6 +92,7 @@ public final class Graph<S> {
         this.interruptAfter = Set.copyOf(b.interruptAfter);
         this.executionIdFactory = b.executionIdFactory;
         this.stateType = b.stateType;
+        this.sensitiveDataLogging = b.sensitiveDataLogging;
     }
 
     /**
@@ -276,6 +278,7 @@ public final class Graph<S> {
         b.interruptBefore.addAll(this.interruptBefore);
         b.interruptAfter.addAll(this.interruptAfter);
         b.executionIdFactory = this.executionIdFactory;
+        b.sensitiveDataLogging = this.sensitiveDataLogging;
         return new Graph<>(b);
     }
 
@@ -304,7 +307,7 @@ public final class Graph<S> {
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
                 nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, vectorStore,
-                userExecutor, interruptBefore, interruptAfter);
+                userExecutor, interruptBefore, interruptAfter, sensitiveDataLogging);
     }
 
     public Set<String> nodeNames() {
@@ -420,6 +423,7 @@ public final class Graph<S> {
         private ExecutorService userExecutor;
         private Supplier<String> executionIdFactory = () -> UUID.randomUUID().toString();
         private Class<S> stateType;
+        private boolean sensitiveDataLogging = false;
 
         private Builder() {}
 
@@ -708,6 +712,20 @@ public final class Graph<S> {
 
         public Builder<S> executionIdFactory(Supplier<String> factory) {
             this.executionIdFactory = Objects.requireNonNull(factory, "factory");
+            return this;
+        }
+
+        /**
+         * Enable or disable sensitive-data logging for this graph. When {@code true}, full LLM
+         * prompt and response text are stored in trace steps ({@code rawInput}/{@code rawOutput}).
+         * When {@code false} (default), only metadata such as token counts and finish reason are
+         * stored.
+         *
+         * @param enabled whether to record raw LLM I/O in traces
+         * @return this builder
+         */
+        public Builder<S> sensitiveDataLogging(boolean enabled) {
+            this.sensitiveDataLogging = enabled;
             return this;
         }
 
