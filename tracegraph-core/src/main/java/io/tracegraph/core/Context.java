@@ -1,5 +1,6 @@
 package io.tracegraph.core;
 
+import io.tracegraph.core.spi.LlmCallInfo;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.VectorStore;
 import org.slf4j.Logger;
@@ -39,6 +40,15 @@ public interface Context {
      * {@link io.tracegraph.core.spi.NodeListener#onUsage}.
      */
     default void reportUsage(int promptTokens, int completionTokens) {}
+
+    /**
+     * Report an LLM call for this node invocation. The executor forwards this to
+     * {@link io.tracegraph.core.spi.NodeListener#onLlmCall} and records token totals in the
+     * active {@link io.tracegraph.core.spi.TraceRecorder}. Prefer this over
+     * {@link #reportUsage(int, int)} when provider, model, and finish reason are known —
+     * listeners can then emit OTel GenAI semantic-convention attributes.
+     */
+    default void reportLlmCall(LlmCallInfo info) {}
 
     /**
      * Returns {@code true} when the graph was configured with

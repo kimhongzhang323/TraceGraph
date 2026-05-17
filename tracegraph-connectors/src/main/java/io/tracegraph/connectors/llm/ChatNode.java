@@ -2,7 +2,9 @@ package io.tracegraph.connectors.llm;
 
 import io.tracegraph.core.Context;
 import io.tracegraph.core.Node;
+import io.tracegraph.core.spi.LlmCallInfo;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -42,9 +44,12 @@ public final class ChatNode<S> implements Node<S> {
         LlmRequest request = requestBuilder.apply(state);
         LlmResponse response = client.complete(request);
         LlmResponse.Usage u = response.usage();
-        if (u.promptTokens() > 0 || u.completionTokens() > 0) {
-            ctx.reportUsage(u.promptTokens(), u.completionTokens());
-        }
+        ctx.reportLlmCall(new LlmCallInfo(
+                client.systemName(),
+                request.model(),
+                u.promptTokens(),
+                u.completionTokens(),
+                response.finish().name().toLowerCase(Locale.ROOT)));
         if (ctx.sensitiveDataLoggingEnabled()) {
             ctx.reportRawIO(renderRequest(request), response.content());
         }

@@ -48,6 +48,11 @@ public final class AnthropicLlmClient implements LlmClient {
     }
 
     @Override
+    public String systemName() {
+        return "anthropic";
+    }
+
+    @Override
     public LlmResponse complete(LlmRequest request) {
         byte[] body;
         try {

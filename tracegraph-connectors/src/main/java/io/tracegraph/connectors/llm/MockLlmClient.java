@@ -137,6 +137,11 @@ public final class MockLlmClient implements LlmClient {
     }
 
     @Override
+    public String systemName() {
+        return "mock";
+    }
+
+    @Override
     public LlmResponse complete(LlmRequest request) {
         calls.add(request);
         return responder.apply(request);

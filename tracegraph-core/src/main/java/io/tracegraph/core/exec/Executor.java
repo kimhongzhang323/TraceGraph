@@ -13,6 +13,7 @@ import io.tracegraph.core.Send;
 
 import io.tracegraph.core.Status;
 import io.tracegraph.core.spi.CheckpointStore;
+import io.tracegraph.core.spi.LlmCallInfo;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
 import io.tracegraph.core.spi.TraceRecorder;
@@ -585,6 +586,12 @@ public final class Executor<S> {
         public void reportUsage(int promptTokens, int completionTokens) {
             listener.onUsage(nodeName, promptTokens, completionTokens);
             traceRecorder.recordUsage(executionId, nodeName, promptTokens, completionTokens);
+        }
+
+        @Override
+        public void reportLlmCall(LlmCallInfo info) {
+            listener.onLlmCall(nodeName, info);
+            traceRecorder.recordUsage(executionId, nodeName, info.promptTokens(), info.completionTokens());
         }
 
         @Override

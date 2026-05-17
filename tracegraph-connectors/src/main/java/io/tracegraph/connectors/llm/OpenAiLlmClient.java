@@ -54,6 +54,11 @@ public final class OpenAiLlmClient implements LlmClient {
     }
 
     @Override
+    public String systemName() {
+        return "openai";
+    }
+
+    @Override
     public LlmResponse complete(LlmRequest request) {
         byte[] body;
         try {
