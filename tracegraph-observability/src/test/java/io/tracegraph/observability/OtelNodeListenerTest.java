@@ -12,6 +12,7 @@ import io.tracegraph.core.ExecutionResult;
 import io.tracegraph.core.Graph;
 import io.tracegraph.core.RetryPolicy;
 import io.tracegraph.core.Status;
+import io.tracegraph.core.spi.LlmCallInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -240,5 +241,74 @@ class OtelNodeListenerTest {
                 .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_INPUT_TOKENS), 10L)
                 .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_OUTPUT_TOKENS), 5L)
                 .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_TOTAL_TOKENS), 15L);
+    }
+
+    @Test
+    void reportLlmCallEmitsGenAiSemanticConventionAttributes() {
+        Graph<String> graph = Graph.<String>builder()
+                .node("llm", (s, ctx) -> {
+                    ctx.reportLlmCall(new LlmCallInfo(
+                            "openai", "gpt-4o", 42, 17, "stop"));
+                    return "done";
+                })
+                .entry("llm").terminal("llm")
+                .listener(OtelNodeListener.using(sdk))
+                .build();
+
+        graph.run("");
+
+        List<SpanData> spans = exporter.getFinishedSpanItems();
+        assertThat(spans).hasSize(1);
+        SpanData span = spans.get(0);
+        assertThat(span.getAttributes().asMap())
+                .containsEntry(AttributeKey.stringKey("gen_ai.system"), "openai")
+                .containsEntry(AttributeKey.stringKey("gen_ai.request.model"), "gpt-4o")
+                .containsEntry(AttributeKey.longKey("gen_ai.usage.input_tokens"), 42L)
+                .containsEntry(AttributeKey.longKey("gen_ai.usage.output_tokens"), 17L)
+                .containsEntry(AttributeKey.stringArrayKey("gen_ai.response.finish_reasons"),
+                        List.of("stop"));
+    }
+
+    @Test
+    void reportLlmCallAlsoEmitsLegacyUsageAttributesForBackCompat() {
+        Graph<String> graph = Graph.<String>builder()
+                .node("llm", (s, ctx) -> {
+                    ctx.reportLlmCall(new LlmCallInfo(
+                            "anthropic", "claude-3-7", 11, 7, "stop"));
+                    return "done";
+                })
+                .entry("llm").terminal("llm")
+                .listener(OtelNodeListener.using(sdk))
+                .build();
+
+        graph.run("");
+
+        SpanData span = exporter.getFinishedSpanItems().get(0);
+        assertThat(span.getAttributes().asMap())
+                .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_INPUT_TOKENS), 11L)
+                .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_OUTPUT_TOKENS), 7L)
+                .containsEntry(AttributeKey.longKey(OtelNodeListener.ATTR_LLM_TOTAL_TOKENS), 18L);
+    }
+
+    @Test
+    void reportLlmCallToleratesNullSystemModelAndFinishReason() {
+        Graph<String> graph = Graph.<String>builder()
+                .node("llm", (s, ctx) -> {
+                    ctx.reportLlmCall(new LlmCallInfo(null, null, 3, 1, null));
+                    return "done";
+                })
+                .entry("llm").terminal("llm")
+                .listener(OtelNodeListener.using(sdk))
+                .build();
+
+        graph.run("");
+
+        SpanData span = exporter.getFinishedSpanItems().get(0);
+        assertThat(span.getAttributes().asMap())
+                .containsEntry(AttributeKey.longKey("gen_ai.usage.input_tokens"), 3L)
+                .containsEntry(AttributeKey.longKey("gen_ai.usage.output_tokens"), 1L)
+                .doesNotContainKey(AttributeKey.stringKey("gen_ai.system"))
+                .doesNotContainKey(AttributeKey.stringKey("gen_ai.request.model"))
+                .doesNotContainKey(AttributeKey.stringArrayKey("gen_ai.response.finish_reasons"));
     }
 }

@@ -114,6 +114,30 @@ class NodeListenerTest {
     }
 
     @Test
+    void onLlmCallDefaultDelegatesToOnUsageForBackCompat() {
+        List<String> events = new ArrayList<>();
+        NodeListener listener = new NodeListener() {
+            @Override public void onUsage(String name, int p, int c) {
+                events.add("usage:" + name + ":" + p + "," + c);
+            }
+        };
+
+        Graph<String> graph = Graph.<String>builder()
+                .node("llm", (s, ctx) -> {
+                    ctx.reportLlmCall(new LlmCallInfo("openai", "gpt-4o", 13, 9, "stop"));
+                    return s;
+                })
+                .entry("llm")
+                .terminal("llm")
+                .listener(listener)
+                .build();
+
+        graph.run("");
+
+        assertThat(events).containsExactly("usage:llm:13,9");
+    }
+
+    @Test
     void firesOnStateOnceForParallelNotForBranches() {
         List<String> events = new ArrayList<>();
         NodeListener listener = new NodeListener() {

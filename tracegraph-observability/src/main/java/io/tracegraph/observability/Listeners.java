@@ -1,5 +1,6 @@
 package io.tracegraph.observability;
 
+import io.tracegraph.core.spi.LlmCallInfo;
 import io.tracegraph.core.spi.NodeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,19 @@ public final class Listeners {
             for (NodeListener l : delegates) {
                 try {
                     l.onUsage(nodeName, promptTokens, completionTokens);
+                } catch (RuntimeException e) {
+                    if (first == null) first = e;
+                }
+            }
+            if (first != null) throw first;
+        }
+
+        @Override
+        public void onLlmCall(String nodeName, LlmCallInfo info) {
+            RuntimeException first = null;
+            for (NodeListener l : delegates) {
+                try {
+                    l.onLlmCall(nodeName, info);
                 } catch (RuntimeException e) {
                     if (first == null) first = e;
                 }
