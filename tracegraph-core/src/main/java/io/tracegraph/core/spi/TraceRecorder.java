@@ -30,6 +30,8 @@ public interface TraceRecorder {
         recordExit(executionId, nodeName, attempts, before, after, durationNanos);
     }
 
+    default void recordUsage(String executionId, String nodeName, int promptTokens, int completionTokens) {}
+
     default void recordError(String executionId, String nodeName, Throwable error) {}
 
     default void recordComplete(String executionId, Status status, Object finalState) {}

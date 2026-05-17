@@ -40,4 +40,11 @@ public record ExecutionTrace<S>(String executionId, S initialState, S finalState
     public boolean isFork() {
         return forkedFromExecutionId != null;
     }
+
+    public TraceStep.Usage totalUsage() {
+        return steps.stream()
+                .filter(s -> s.usage() != null)
+                .map(TraceStep::usage)
+                .reduce(TraceStep.Usage.ZERO, TraceStep.Usage::plus);
+    }
 }

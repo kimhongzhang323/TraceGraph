@@ -17,6 +17,14 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     private final ConcurrentMap<String, Builder> active = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ForkLineage> pendingLineage = new ConcurrentHashMap<>();
 
+    @Override
+    public void recordUsage(String executionId, String nodeName, int promptTokens, int completionTokens) {
+        Builder b = active.get(executionId);
+        if (b == null) return;
+        b.pendingUsage.merge(nodeName,
+                new TraceStep.Usage(promptTokens, completionTokens), TraceStep.Usage::plus);
+    }
+
     public RecordingTraceRecorder(TraceStore store) {
         this.store = Objects.requireNonNull(store, "store");
     }
@@ -42,8 +50,9 @@ public final class RecordingTraceRecorder implements TraceRecorder {
                            Object before, Object after, long durationNanos) {
         Builder b = active.get(executionId);
         if (b == null) return;
+        TraceStep.Usage usage = b.pendingUsage.remove(nodeName);
         b.steps.add(TraceStep.leaf(b.steps.size(), nodeName, attempts, before, after,
-                Duration.ofNanos(durationNanos), null));
+                Duration.ofNanos(durationNanos), null, usage));
     }
 
     @Override
@@ -51,10 +60,11 @@ public final class RecordingTraceRecorder implements TraceRecorder {
                                        Object before, Object after, long durationNanos, List<?> childrenSteps) {
         Builder b = active.get(executionId);
         if (b == null) return;
+        TraceStep.Usage usage = b.pendingUsage.remove(nodeName);
         @SuppressWarnings("unchecked")
         List<TraceStep<Object>> children = (List<TraceStep<Object>>) childrenSteps;
         b.steps.add(new TraceStep<>(b.steps.size(), nodeName, attempts, before, after,
-                Duration.ofNanos(durationNanos), null, children));
+                Duration.ofNanos(durationNanos), null, children, usage));
     }
 
     @Override
@@ -93,6 +103,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         final Object initialState;
         final Instant startedAt;
         final List<TraceStep<?>> steps = new ArrayList<>();
+        final ConcurrentMap<String, TraceStep.Usage> pendingUsage = new ConcurrentHashMap<>();
         Throwable error;
 
         Builder(String executionId, Object initialState, Instant startedAt) {
