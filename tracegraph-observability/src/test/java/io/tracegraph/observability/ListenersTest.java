@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ListenersTest {
 
@@ -98,6 +99,36 @@ class ListenersTest {
         );
     }
 
+    @Test
+    void onUsagePropagatesInDeclarationOrder() {
+        List<String> events = new ArrayList<>();
+        NodeListener a = usageRecordingListener("a", events);
+        NodeListener b = usageRecordingListener("b", events);
+
+        NodeListener composed = Listeners.compose(a, b);
+        composed.onUsage("n", 100, 50);
+
+        assertThat(events).containsExactly("a:usage:n:100:50", "b:usage:n:100:50");
+    }
+
+    @Test
+    void onUsageRunsAllDelegatesBeforeRethrowingException() {
+        List<String> events = new ArrayList<>();
+        NodeListener throwing = new NodeListener() {
+            @Override public void onUsage(String n, int p, int c) {
+                throw new RuntimeException("enforcement");
+            }
+        };
+        NodeListener good = usageRecordingListener("good", events);
+
+        NodeListener composed = Listeners.compose(throwing, good);
+        assertThatThrownBy(() -> composed.onUsage("n", 1, 1))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("enforcement");
+
+        assertThat(events).containsExactly("good:usage:n:1:1");
+    }
+
     private static NodeListener recordingListener(String tag, List<String> events) {
         return new NodeListener() {
             @Override public void onEnter(String n, Object s)  { events.add(tag + ":enter:" + n); }
@@ -106,6 +137,14 @@ class ListenersTest {
             @Override public void onRetry(String n, int a, Throwable t) { events.add(tag + ":retry:" + n + ":" + a); }
             @Override public void onState(String n, Object before, Object after) {
                 events.add(tag + ":state:" + n + ":" + before + "->" + after);
+            }
+        };
+    }
+
+    private static NodeListener usageRecordingListener(String tag, List<String> events) {
+        return new NodeListener() {
+            @Override public void onUsage(String n, int p, int c) {
+                events.add(tag + ":usage:" + n + ":" + p + ":" + c);
             }
         };
     }
