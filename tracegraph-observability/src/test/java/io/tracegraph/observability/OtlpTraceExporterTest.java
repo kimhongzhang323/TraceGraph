@@ -238,6 +238,40 @@ class OtlpTraceExporterTest {
                 .isEqualTo(2L);
     }
 
+    @Test
+    void correlationIdEmittedAsRootSpanAttributeWhenPresent() {
+        Instant start = Instant.parse("2026-01-01T00:00:00Z");
+        ExecutionTrace<String> trace = new ExecutionTrace<>(
+                "exec-corr", "s", "e", Status.COMPLETED, null,
+                List.of(TraceStep.leaf(0, "n", 1, "s", "e", Duration.ofMillis(10), null)),
+                start, start.plus(Duration.ofMillis(10)),
+                null, -1, null, -1,
+                "trace-parent-XYZ");
+
+        otlpExporter.export(trace);
+
+        SpanData root = findRoot(spanExporter.getFinishedSpanItems());
+        assertThat(root.getAttributes()
+                .get(AttributeKey.stringKey(OtlpTraceExporter.ATTR_CORRELATION_ID)))
+                .isEqualTo("trace-parent-XYZ");
+    }
+
+    @Test
+    void correlationIdAttributeAbsentWhenTraceHasNoCorrelationId() {
+        Instant start = Instant.parse("2026-01-01T00:00:00Z");
+        ExecutionTrace<String> trace = new ExecutionTrace<>(
+                "exec-none", "s", "e", Status.COMPLETED, null,
+                List.of(TraceStep.leaf(0, "n", 1, "s", "e", Duration.ofMillis(10), null)),
+                start, start.plus(Duration.ofMillis(10)));
+
+        otlpExporter.export(trace);
+
+        SpanData root = findRoot(spanExporter.getFinishedSpanItems());
+        assertThat(root.getAttributes()
+                .get(AttributeKey.stringKey(OtlpTraceExporter.ATTR_CORRELATION_ID)))
+                .isNull();
+    }
+
     // --- helpers ---
 
     private static SpanData findRoot(List<SpanData> spans) {

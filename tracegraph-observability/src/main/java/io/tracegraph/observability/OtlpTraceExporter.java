@@ -30,6 +30,13 @@ import java.util.concurrent.TimeUnit;
  */
 public final class OtlpTraceExporter {
 
+    /**
+     * Span attribute key carrying the correlation id attached to an {@link ExecutionTrace}.
+     * Set when the graph was configured with {@code Graph.Builder.correlationId(...)} and the
+     * supplier returned a non-null value at execution start.
+     */
+    public static final String ATTR_CORRELATION_ID = "tracegraph.correlation.id";
+
     private final Tracer tracer;
     private final StateRenderer renderer;
 
@@ -108,6 +115,9 @@ public final class OtlpTraceExporter {
         if (trace.isChild()) {
             root.setAttribute("tracegraph.parent.execution.id", trace.parentExecutionId());
             root.setAttribute("tracegraph.parent.step.index", (long) trace.parentStepIndex());
+        }
+        if (trace.correlationId() != null) {
+            root.setAttribute(ATTR_CORRELATION_ID, trace.correlationId());
         }
         return root;
     }

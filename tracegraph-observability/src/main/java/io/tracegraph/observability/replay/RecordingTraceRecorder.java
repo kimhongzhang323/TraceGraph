@@ -39,11 +39,20 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void recordStart(String executionId, Object initialState) {
+        recordStart(executionId, initialState, null);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void recordStart(String executionId, Object initialState, String correlationId) {
         Builder b = new Builder(executionId, initialState, Instant.now());
+        b.correlationId = correlationId;
         if (!pendingLineage.containsKey(executionId)) {
-            store.load(executionId).ifPresent(prior -> b.steps.addAll((List) prior.steps()));
+            store.load(executionId).ifPresent(prior -> {
+                b.steps.addAll((List) prior.steps());
+                if (b.correlationId == null) b.correlationId = prior.correlationId();
+            });
         }
         active.put(executionId, b);
     }
@@ -105,7 +114,8 @@ public final class RecordingTraceRecorder implements TraceRecorder {
                 List.copyOf(b.steps),
                 b.startedAt, Instant.now(),
                 forkedFromId, forkedFromIdx,
-                parentId, parentIdx);
+                parentId, parentIdx,
+                b.correlationId);
         store.save(trace);
     }
 
@@ -132,6 +142,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         final ConcurrentMap<String, String> pendingRawInput = new ConcurrentHashMap<>();
         final ConcurrentMap<String, String> pendingRawOutput = new ConcurrentHashMap<>();
         Throwable error;
+        String correlationId;
 
         Builder(String executionId, Object initialState, Instant startedAt) {
             this.executionId = executionId;
