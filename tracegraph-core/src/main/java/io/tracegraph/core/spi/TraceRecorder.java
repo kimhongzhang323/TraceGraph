@@ -32,6 +32,8 @@ public interface TraceRecorder {
 
     default void recordUsage(String executionId, String nodeName, int promptTokens, int completionTokens) {}
 
+    default void recordRawIO(String executionId, String nodeName, String rawInput, String rawOutput) {}
+
     default void recordError(String executionId, String nodeName, Throwable error) {}
 
     default void recordComplete(String executionId, Status status, Object finalState) {}

@@ -50,6 +50,7 @@ public final class Executor<S> {
     private final ExecutorService userExecutor;
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
+    private final boolean sensitiveDataLogging;
     private final Sleeper sleeper;
 
     public Executor(Map<String, NodeKind<S>> nodes,
@@ -69,7 +70,28 @@ public final class Executor<S> {
                     Set<String> interruptAfter) {
         this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
                 checkpointStore, traceRecorder, memoryStore, vectorStore, userExecutor, interruptBefore,
-                interruptAfter, Sleeper.realtime());
+                interruptAfter, false, Sleeper.realtime());
+    }
+
+    public Executor(Map<String, NodeKind<S>> nodes,
+                    Map<String, List<Edge<S>>> edgesByFrom,
+                    Set<String> terminals,
+                    String entry,
+                    NodeListener listener,
+                    int maxSteps,
+                    Map<String, RetryPolicy> nodePolicies,
+                    RetryPolicy defaultPolicy,
+                    CheckpointStore checkpointStore,
+                    TraceRecorder traceRecorder,
+                    MemoryStore memoryStore,
+                    VectorStore vectorStore,
+                    ExecutorService userExecutor,
+                    Set<String> interruptBefore,
+                    Set<String> interruptAfter,
+                    boolean sensitiveDataLogging) {
+        this(nodes, edgesByFrom, terminals, entry, listener, maxSteps, nodePolicies, defaultPolicy,
+                checkpointStore, traceRecorder, memoryStore, vectorStore, userExecutor, interruptBefore,
+                interruptAfter, sensitiveDataLogging, Sleeper.realtime());
     }
 
     Executor(Map<String, NodeKind<S>> nodes,
@@ -87,6 +109,7 @@ public final class Executor<S> {
              ExecutorService userExecutor,
              Set<String> interruptBefore,
              Set<String> interruptAfter,
+             boolean sensitiveDataLogging,
              Sleeper sleeper) {
         this.nodes = nodes;
         this.edgesByFrom = edgesByFrom;
@@ -103,6 +126,7 @@ public final class Executor<S> {
         this.userExecutor = userExecutor;
         this.interruptBefore = interruptBefore;
         this.interruptAfter = interruptAfter;
+        this.sensitiveDataLogging = sensitiveDataLogging;
         this.sleeper = sleeper;
     }
 
@@ -337,7 +361,7 @@ public final class Executor<S> {
                                            RetryPolicy policy, ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, vectorStore, this.listener, this.traceRecorder);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, vectorStore, this.listener, this.traceRecorder, this.sensitiveDataLogging);
             try {
                 NodeResult<S> result = node.invokeRouting(state, ctx, exec).join();
                 if (result instanceof NodeResult.SendAll<S> sa) {
@@ -428,7 +452,7 @@ public final class Executor<S> {
                                                               ExecutorService exec) {
         Throwable last = null;
         for (int attempt = 1; attempt <= policy.maxAttempts(); attempt++) {
-            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, vectorStore, this.listener, this.traceRecorder);
+            Context ctx = new SimpleContext(executionId, name, attempt, memoryStore, vectorStore, this.listener, this.traceRecorder, this.sensitiveDataLogging);
             try {
                 NodeResult<S> result = routingNode.apply(state, ctx);
                 if (result instanceof NodeResult.SendAll<S> sa) {
@@ -488,7 +512,7 @@ public final class Executor<S> {
                 throw new NodeExecutionException(send.target(),
                         new IllegalArgumentException("Send target '" + send.target() + "' is not declared"));
             }
-            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore, vectorStore, this.listener, this.traceRecorder);
+            Context ctx = new SimpleContext(executionId, send.target(), 1, memoryStore, vectorStore, this.listener, this.traceRecorder, this.sensitiveDataLogging);
             futures.add(java.util.concurrent.CompletableFuture.supplyAsync(
                     () -> target.invoke(send.payload(), ctx, exec).join(), exec));
         }
@@ -523,7 +547,7 @@ public final class Executor<S> {
 
     private record SimpleContext(String executionId, String nodeName, int attempt,
                                  MemoryStore memory, VectorStore vectorStore, NodeListener listener,
-                                 TraceRecorder traceRecorder)
+                                 TraceRecorder traceRecorder, boolean sensitiveDataLogging)
             implements Context {
         @Override
         public Logger logger() {
@@ -534,6 +558,18 @@ public final class Executor<S> {
         public void reportUsage(int promptTokens, int completionTokens) {
             listener.onUsage(nodeName, promptTokens, completionTokens);
             traceRecorder.recordUsage(executionId, nodeName, promptTokens, completionTokens);
+        }
+
+        @Override
+        public boolean sensitiveDataLoggingEnabled() {
+            return sensitiveDataLogging;
+        }
+
+        @Override
+        public void reportRawIO(String rawInput, String rawOutput) {
+            if (sensitiveDataLogging) {
+                traceRecorder.recordRawIO(executionId, nodeName, rawInput, rawOutput);
+            }
         }
     }
 }

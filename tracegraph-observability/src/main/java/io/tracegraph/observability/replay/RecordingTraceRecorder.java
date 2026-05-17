@@ -25,6 +25,14 @@ public final class RecordingTraceRecorder implements TraceRecorder {
                 new TraceStep.Usage(promptTokens, completionTokens), TraceStep.Usage::plus);
     }
 
+    @Override
+    public void recordRawIO(String executionId, String nodeName, String rawInput, String rawOutput) {
+        Builder b = active.get(executionId);
+        if (b == null) return;
+        b.pendingRawInput.put(nodeName, rawInput);
+        b.pendingRawOutput.put(nodeName, rawOutput);
+    }
+
     public RecordingTraceRecorder(TraceStore store) {
         this.store = Objects.requireNonNull(store, "store");
     }
@@ -51,8 +59,10 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         Builder b = active.get(executionId);
         if (b == null) return;
         TraceStep.Usage usage = b.pendingUsage.remove(nodeName);
+        String rawInput = b.pendingRawInput.remove(nodeName);
+        String rawOutput = b.pendingRawOutput.remove(nodeName);
         b.steps.add(TraceStep.leaf(b.steps.size(), nodeName, attempts, before, after,
-                Duration.ofNanos(durationNanos), null, usage));
+                Duration.ofNanos(durationNanos), null, usage, rawInput, rawOutput));
     }
 
     @Override
@@ -61,10 +71,12 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         Builder b = active.get(executionId);
         if (b == null) return;
         TraceStep.Usage usage = b.pendingUsage.remove(nodeName);
+        String rawInput = b.pendingRawInput.remove(nodeName);
+        String rawOutput = b.pendingRawOutput.remove(nodeName);
         @SuppressWarnings("unchecked")
         List<TraceStep<Object>> children = (List<TraceStep<Object>>) childrenSteps;
         b.steps.add(new TraceStep<>(b.steps.size(), nodeName, attempts, before, after,
-                Duration.ofNanos(durationNanos), null, children, usage));
+                Duration.ofNanos(durationNanos), null, children, usage, rawInput, rawOutput));
     }
 
     @Override
@@ -104,6 +116,8 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         final Instant startedAt;
         final List<TraceStep<?>> steps = new ArrayList<>();
         final ConcurrentMap<String, TraceStep.Usage> pendingUsage = new ConcurrentHashMap<>();
+        final ConcurrentMap<String, String> pendingRawInput = new ConcurrentHashMap<>();
+        final ConcurrentMap<String, String> pendingRawOutput = new ConcurrentHashMap<>();
         Throwable error;
 
         Builder(String executionId, Object initialState, Instant startedAt) {

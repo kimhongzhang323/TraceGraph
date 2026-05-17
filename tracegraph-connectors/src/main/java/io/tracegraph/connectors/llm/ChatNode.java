@@ -45,6 +45,17 @@ public final class ChatNode<S> implements Node<S> {
         if (u.promptTokens() > 0 || u.completionTokens() > 0) {
             ctx.reportUsage(u.promptTokens(), u.completionTokens());
         }
+        if (ctx.sensitiveDataLoggingEnabled()) {
+            ctx.reportRawIO(renderRequest(request), response.content());
+        }
         return responseFolder.apply(state, response);
+    }
+
+    private static String renderRequest(LlmRequest request) {
+        StringBuilder sb = new StringBuilder();
+        for (ChatMessage msg : request.messages()) {
+            sb.append(msg.role().name().toLowerCase()).append(": ").append(msg.content()).append('\n');
+        }
+        return sb.toString().stripTrailing();
     }
 }

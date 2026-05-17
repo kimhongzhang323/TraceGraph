@@ -39,4 +39,23 @@ public interface Context {
      * {@link io.tracegraph.core.spi.NodeListener#onUsage}.
      */
     default void reportUsage(int promptTokens, int completionTokens) {}
+
+    /**
+     * Returns {@code true} when the graph was configured with
+     * {@code Graph.Builder.sensitiveDataLogging(true)}, indicating that full LLM prompt and
+     * response text should be recorded in the trace. Default is {@code false}.
+     */
+    default boolean sensitiveDataLoggingEnabled() {
+        return false;
+    }
+
+    /**
+     * Record the raw LLM prompt text and response text for this node invocation. Only forwarded
+     * to the {@link io.tracegraph.core.spi.TraceRecorder} when
+     * {@link #sensitiveDataLoggingEnabled()} returns {@code true}; otherwise this is a no-op.
+     *
+     * @param rawInput  full prompt text sent to the LLM
+     * @param rawOutput full response text received from the LLM
+     */
+    default void reportRawIO(String rawInput, String rawOutput) {}
 }
