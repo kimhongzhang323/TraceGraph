@@ -48,6 +48,19 @@ public final class Listeners {
             for (NodeListener l : delegates) safe(l, "onRetry", () -> l.onRetry(nodeName, attempt, error));
         }
 
+        @Override
+        public void onUsage(String nodeName, int promptTokens, int completionTokens) {
+            RuntimeException first = null;
+            for (NodeListener l : delegates) {
+                try {
+                    l.onUsage(nodeName, promptTokens, completionTokens);
+                } catch (RuntimeException e) {
+                    if (first == null) first = e;
+                }
+            }
+            if (first != null) throw first;
+        }
+
         private static void safe(NodeListener l, String hook, Runnable body) {
             try {
                 body.run();
