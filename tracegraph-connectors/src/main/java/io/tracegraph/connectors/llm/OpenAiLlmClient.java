@@ -13,14 +13,24 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * HTTP adapter for OpenAI-compatible chat-completions endpoints.
+ * <p>
+ * Supports both blocking ({@link #complete}) and streaming ({@link #stream}) modes.
+ * The streaming implementation sends {@code "stream":true}, reads SSE lines, and
+ * emits {@link LlmStreamChunk}s including tool-call deltas.
  */
 public final class OpenAiLlmClient implements LlmClient {
 
@@ -47,7 +57,7 @@ public final class OpenAiLlmClient implements LlmClient {
     public LlmResponse complete(LlmRequest request) {
         byte[] body;
         try {
-            body = mapper.writeValueAsBytes(toRequestBody(request));
+            body = mapper.writeValueAsBytes(toRequestBody(request, false));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize OpenAI request", e);
         }
@@ -77,6 +87,99 @@ public final class OpenAiLlmClient implements LlmClient {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to parse OpenAI response", e);
         }
+    }
+
+    @Override
+    public Flow.Publisher<LlmStreamChunk> stream(LlmRequest request) {
+        return subscriber -> {
+            SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
+                    ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+            pub.subscribe(subscriber);
+            Thread.startVirtualThread(() -> {
+                try {
+                    byte[] bodyBytes = mapper.writeValueAsBytes(toRequestBody(request, true));
+                    HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
+                    if (apiKey != null) rb.header("Authorization", "Bearer " + apiKey);
+                    if (requestTimeout != null) rb.timeout(requestTimeout);
+
+                    HttpResponse<Stream<String>> response = httpClient.send(
+                            rb.build(), HttpResponse.BodyHandlers.ofLines());
+                    int status = response.statusCode();
+
+                    try (Stream<String> lines = response.body()) {
+                        if (status / 100 != 2) {
+                            String errorBody = lines.collect(Collectors.joining("\n"));
+                            throw new LlmHttpException(status, errorBody);
+                        }
+                        LlmResponse.FinishReason finishReason = LlmResponse.FinishReason.STOP;
+                        Iterator<String> it = lines.iterator();
+                        while (it.hasNext()) {
+                            String line = it.next();
+                            if (!line.startsWith("data: ")) continue;
+                            String json = line.substring(6);
+                            if ("[DONE]".equals(json)) break;
+                            try {
+                                finishReason = parseSseChunk(pub, mapper.readTree(json), finishReason);
+                            } catch (IOException ignored) {
+                                // Skip malformed SSE chunks — stream remains open
+                            }
+                        }
+                        pub.submit(LlmStreamChunk.done(finishReason));
+                    }
+
+                    Thread.sleep(10);
+                    pub.close();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    pub.closeExceptionally(e);
+                } catch (Throwable t) {
+                    pub.closeExceptionally(t);
+                }
+            });
+        };
+    }
+
+    private static LlmResponse.FinishReason parseSseChunk(
+            SubmissionPublisher<LlmStreamChunk> pub, JsonNode chunk,
+            LlmResponse.FinishReason current) {
+        JsonNode choices = chunk.path("choices");
+        if (!choices.isArray() || choices.isEmpty()) return current;
+        JsonNode choice = choices.get(0);
+
+        String finishStr = choice.path("finish_reason").asText("");
+        LlmResponse.FinishReason updated = finishStr.isEmpty() || "null".equals(finishStr) ? current
+                : switch (finishStr) {
+                    case "stop" -> LlmResponse.FinishReason.STOP;
+                    case "length" -> LlmResponse.FinishReason.LENGTH;
+                    case "tool_calls" -> LlmResponse.FinishReason.TOOL_CALLS;
+                    default -> LlmResponse.FinishReason.OTHER;
+                };
+
+        JsonNode delta = choice.path("delta");
+
+        // Content delta
+        if (delta.has("content") && !delta.path("content").isNull()) {
+            String text = delta.path("content").asText("");
+            if (!text.isEmpty()) pub.submit(LlmStreamChunk.content(text));
+        }
+
+        // Tool-call deltas
+        JsonNode toolCallsNode = delta.path("tool_calls");
+        if (toolCallsNode.isArray()) {
+            for (JsonNode tc : toolCallsNode) {
+                int idx = tc.path("index").asInt(0);
+                JsonNode fn = tc.path("function");
+                String nameDelta = fn.has("name") ? fn.path("name").asText("") : "";
+                String argsDelta = fn.has("arguments") ? fn.path("arguments").asText("") : "";
+                if (!nameDelta.isEmpty() || !argsDelta.isEmpty()) {
+                    pub.submit(LlmStreamChunk.toolCallDelta(idx, nameDelta, argsDelta));
+                }
+            }
+        }
+
+        return updated;
     }
 
     private static List<Map<String, Object>> toMessages(LlmRequest request) {
@@ -125,12 +228,13 @@ public final class OpenAiLlmClient implements LlmClient {
         return out;
     }
 
-    private static Map<String, Object> toRequestBody(LlmRequest request) {
+    private static Map<String, Object> toRequestBody(LlmRequest request, boolean stream) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", request.model());
         body.put("messages", toMessages(request));
         body.put("temperature", request.temperature());
         body.put("max_tokens", request.maxTokens());
+        if (stream) body.put("stream", true);
 
         // Include tool definitions if present
         if (request.hasTools()) {
