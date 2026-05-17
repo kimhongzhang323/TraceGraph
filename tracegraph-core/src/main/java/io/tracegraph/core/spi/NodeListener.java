@@ -28,4 +28,16 @@ public interface NodeListener {
      * Called when a node consumes LLM tokens.
      */
     default void onUsage(String nodeName, int promptTokens, int completionTokens) {}
+
+    /**
+     * Called when a node makes an LLM call. Carries provider/system identifier, request model,
+     * usage tokens, and the normalized finish reason — sufficient to populate the
+     * OpenTelemetry GenAI semantic-convention attributes on a span.
+     *
+     * <p>The default implementation delegates to {@link #onUsage(String, int, int)} so listeners
+     * that only care about token totals keep working unchanged.
+     */
+    default void onLlmCall(String nodeName, LlmCallInfo info) {
+        onUsage(nodeName, info.promptTokens(), info.completionTokens());
+    }
 }

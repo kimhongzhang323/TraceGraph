@@ -26,6 +26,17 @@ public interface LlmClient {
     LlmResponse complete(LlmRequest request);
 
     /**
+     * Provider system identifier used to populate the {@code gen_ai.system} attribute on
+     * OpenTelemetry GenAI spans (e.g. {@code "openai"}, {@code "anthropic"}). Defaults to
+     * {@code "unknown"}; implementations should override.
+     *
+     * @return lowercased provider identifier
+     */
+    default String systemName() {
+        return "unknown";
+    }
+
+    /**
      * Non-blocking completion call backed by a virtual thread.
      *
      * <p>The default implementation submits {@link #complete(LlmRequest)} to a new virtual thread
