@@ -7,6 +7,7 @@ import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
 import io.tracegraph.core.spi.TraceRecorder;
+import io.tracegraph.core.spi.VectorStore;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -58,6 +59,7 @@ public final class Graph<S> {
     private final CheckpointStore checkpointStore;
     private final TraceRecorder traceRecorder;
     private final MemoryStore memoryStore;
+    private final VectorStore vectorStore;
     private final ExecutorService userExecutor;
     private final Set<String> interruptBefore;
     private final Set<String> interruptAfter;
@@ -83,6 +85,7 @@ public final class Graph<S> {
         this.checkpointStore = b.checkpointStore == null ? CheckpointStore.noop() : b.checkpointStore;
         this.traceRecorder = b.traceRecorder == null ? TraceRecorder.noop() : b.traceRecorder;
         this.memoryStore = b.memoryStore == null ? MemoryStore.noop() : b.memoryStore;
+        this.vectorStore = b.vectorStore == null ? VectorStore.noop() : b.vectorStore;
         this.userExecutor = b.userExecutor;
         this.interruptBefore = Set.copyOf(b.interruptBefore);
         this.interruptAfter = Set.copyOf(b.interruptAfter);
@@ -268,6 +271,7 @@ public final class Graph<S> {
         b.checkpointStore = this.checkpointStore;
         b.traceRecorder = this.traceRecorder;
         b.memoryStore = this.memoryStore;
+        b.vectorStore = this.vectorStore;
         b.userExecutor = this.userExecutor;
         b.interruptBefore.addAll(this.interruptBefore);
         b.interruptAfter.addAll(this.interruptAfter);
@@ -288,10 +292,19 @@ public final class Graph<S> {
         return memoryStore;
     }
 
+    /**
+     * Return the vector store configured on the graph.
+     *
+     * @return configured vector store, or the no-op implementation when none was supplied
+     */
+    public VectorStore vectorStore() {
+        return vectorStore;
+    }
+
     private Executor<S> executor() {
         return new Executor<>(nodes, edgesByFrom, terminals, entry, listener, maxSteps,
-                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, userExecutor,
-                interruptBefore, interruptAfter);
+                nodePolicies, defaultPolicy, checkpointStore, traceRecorder, memoryStore, vectorStore,
+                userExecutor, interruptBefore, interruptAfter);
     }
 
     public Set<String> nodeNames() {
@@ -403,6 +416,7 @@ public final class Graph<S> {
         private CheckpointStore checkpointStore;
         private TraceRecorder traceRecorder;
         private MemoryStore memoryStore;
+        private VectorStore vectorStore;
         private ExecutorService userExecutor;
         private Supplier<String> executionIdFactory = () -> UUID.randomUUID().toString();
         private Class<S> stateType;
@@ -643,6 +657,18 @@ public final class Graph<S> {
          */
         public Builder<S> memoryStore(MemoryStore store) {
             this.memoryStore = Objects.requireNonNull(store, "store");
+            return this;
+        }
+
+        /**
+         * Configure a vector store for nearest-neighbour recall. Exposed to nodes via
+         * {@link Context#vectorStore()}.
+         *
+         * @param store vector store
+         * @return this builder
+         */
+        public Builder<S> vectorStore(VectorStore store) {
+            this.vectorStore = Objects.requireNonNull(store, "store");
             return this;
         }
 
