@@ -10,6 +10,8 @@ See .tracegraph/README.md for the contract.
 
 research-angle: observability
 
+<!-- Refill batches must spread items across ALL modules; see Coverage discipline in README.md. -->
+
 ## Active backlog
 
 - [x] **Human-in-the-loop state-edit endpoint** (LangGraph Studio parity) — extend `TraceReplayController` with `POST /tracegraph/traces/{id}/resume` body to override state at an `interruptPending` checkpoint before resuming. Address weakness: HITL today is resume-only, no state mutation.
