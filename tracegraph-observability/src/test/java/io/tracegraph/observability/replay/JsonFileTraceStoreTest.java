@@ -108,6 +108,32 @@ class JsonFileTraceStoreTest {
     }
 
     @Test
+    void roundTripsParentLineageForSubgraphChild(@TempDir Path tmp) {
+        JsonFileTraceStore<String> store = JsonFileTraceStore.of(tmp, String.class);
+        RecordingTraceRecorder recorder = new RecordingTraceRecorder(store);
+
+        Graph<String> inner = Graph.<String>builder()
+                .node("i", (s, ctx) -> s + ".i").entry("i").terminal("i")
+                .traceRecorder(recorder)
+                .build();
+        Graph<String> outer = Graph.<String>builder()
+                .node("a", (s, ctx) -> s + ".a")
+                .subgraph("sub", inner)
+                .entry("a").edge("a", "sub").terminal("sub")
+                .traceRecorder(recorder)
+                .build();
+
+        ExecutionResult<String> r = outer.run("seed");
+
+        @SuppressWarnings("unchecked")
+        ExecutionTrace<String> childTrace =
+                (ExecutionTrace<String>) store.load(r.executionId() + ":sub").orElseThrow();
+        assertThat(childTrace.isChild()).isTrue();
+        assertThat(childTrace.parentExecutionId()).isEqualTo(r.executionId());
+        assertThat(childTrace.parentStepIndex()).isEqualTo(1);
+    }
+
+    @Test
     void listIdsReturnsAllPersistedIds(@TempDir Path tmp) {
         JsonFileTraceStore<String> store = JsonFileTraceStore.of(tmp, String.class);
         Graph<String> g = Graph.<String>builder()

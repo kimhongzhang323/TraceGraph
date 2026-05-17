@@ -105,6 +105,10 @@ public final class OtlpTraceExporter {
             root.setAttribute("tracegraph.forked.from.execution.id", trace.forkedFromExecutionId());
             root.setAttribute("tracegraph.forked.from.step.index", (long) trace.forkedFromStepIndex());
         }
+        if (trace.isChild()) {
+            root.setAttribute("tracegraph.parent.execution.id", trace.parentExecutionId());
+            root.setAttribute("tracegraph.parent.step.index", (long) trace.parentStepIndex());
+        }
         return root;
     }
 
