@@ -67,10 +67,14 @@
   <!--
     PREDICTABLE_RANDOM on RetryingLlmClient: jitter for exponential backoff is
     not a security concern. ThreadLocalRandom is the right tool here.
+    Same applies to SamplingTraceStore: statistical trace sampling, not crypto.
   -->
   <Match>
     <Bug pattern="PREDICTABLE_RANDOM"/>
-    <Class name="io.tracegraph.connectors.llm.RetryingLlmClient"/>
+    <Or>
+      <Class name="io.tracegraph.connectors.llm.RetryingLlmClient"/>
+      <Class name="io.tracegraph.observability.replay.SamplingTraceStore"/>
+    </Or>
   </Match>
 
 </FindBugsFilter>
