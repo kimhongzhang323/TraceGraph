@@ -33,7 +33,7 @@ jobs:
         run: mvn -B -ntp -Pcoverage verify
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: >-
             tracegraph-core/target/site/jacoco/jacoco.xml,
