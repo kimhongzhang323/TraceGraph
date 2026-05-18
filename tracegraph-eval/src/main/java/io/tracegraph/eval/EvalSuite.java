@@ -7,6 +7,9 @@ import io.tracegraph.eval.metric.Metric;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class EvalSuite<S> {
 
@@ -37,6 +40,52 @@ public final class EvalSuite<S> {
             if (failFast && !result.passed()) {
                 break;
             }
+        }
+        return List.copyOf(results);
+    }
+
+    /**
+     * Execute every {@link EvalCase} concurrently on a lazily-created virtual-thread-per-task
+     * executor. The executor is shut down before this method returns. Results are returned in the
+     * declaration order of the cases regardless of completion order. {@code failFast} is ignored
+     * because all cases are submitted before any result is observed.
+     *
+     * @return per-case results in declaration order
+     */
+    public List<EvalResult<S>> runParallel() {
+        if (cases.isEmpty()) {
+            return List.of();
+        }
+        try (ExecutorService owned = Executors.newVirtualThreadPerTaskExecutor()) {
+            return runOn(owned);
+        }
+    }
+
+    /**
+     * Execute every {@link EvalCase} concurrently on the supplied executor. The executor is NOT
+     * shut down by this method — its lifecycle is the caller's responsibility. Results are returned
+     * in the declaration order of the cases. {@code failFast} is ignored because all cases are
+     * submitted before any result is observed.
+     *
+     * @param executor executor onto which each case is submitted
+     * @return per-case results in declaration order
+     */
+    public List<EvalResult<S>> runParallel(ExecutorService executor) {
+        Objects.requireNonNull(executor, "executor");
+        if (cases.isEmpty()) {
+            return List.of();
+        }
+        return runOn(executor);
+    }
+
+    private List<EvalResult<S>> runOn(ExecutorService executor) {
+        List<CompletableFuture<EvalResult<S>>> futures = new ArrayList<>(cases.size());
+        for (EvalCase<S> evalCase : cases) {
+            futures.add(CompletableFuture.supplyAsync(() -> runCase(evalCase), executor));
+        }
+        List<EvalResult<S>> results = new ArrayList<>(futures.size());
+        for (CompletableFuture<EvalResult<S>> future : futures) {
+            results.add(future.join());
         }
         return List.copyOf(results);
     }
