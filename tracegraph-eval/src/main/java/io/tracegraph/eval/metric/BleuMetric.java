@@ -30,6 +30,11 @@ public final class BleuMetric<S> implements Metric<S> {
         this.maxNgram = maxNgram;
     }
 
+    @Override
+    public String name() {
+        return NAME;
+    }
+
     public int maxNgram() {
         return maxNgram;
     }

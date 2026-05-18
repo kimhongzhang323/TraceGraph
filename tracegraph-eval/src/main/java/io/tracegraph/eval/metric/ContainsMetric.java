@@ -8,6 +8,11 @@ public final class ContainsMetric<S> implements Metric<S> {
     private static final String NAME = "contains";
 
     @Override
+    public String name() {
+        return NAME;
+    }
+
+    @Override
     public MetricScore score(EvalCase<S> evalCase, S actual, long latencyMs) {
         String expectedStr = evalCase.expected() == null ? "" : evalCase.expected().toString();
         String actualStr = actual == null ? "" : actual.toString();
