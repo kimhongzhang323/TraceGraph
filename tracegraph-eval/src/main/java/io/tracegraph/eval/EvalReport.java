@@ -30,13 +30,13 @@ public final class EvalReport {
                   .append(" | ");
                 if (baselineScoresOpt.isEmpty() || baselineScore == null) {
                     sb.append("— | ")
-                      .append(String.format("%.2f", currentScore.score()))
+                      .append(formatScore(currentScore.score()))
                       .append(" | NEW |\n");
                 } else {
                     double delta = currentScore.score() - baselineScore.score();
-                    sb.append(String.format("%.2f", baselineScore.score()))
+                    sb.append(formatScore(baselineScore.score()))
                       .append(" | ")
-                      .append(String.format("%.2f", currentScore.score()))
+                      .append(formatScore(currentScore.score()))
                       .append(" | ").append(renderDelta(delta)).append(" |\n");
                 }
             }
@@ -53,13 +53,23 @@ public final class EvalReport {
     }
 
     private static String renderDelta(double delta) {
+        if (Double.isNaN(delta)) {
+            return "—";
+        }
         if (delta > 0.0) {
-            return String.format("↑ +%.2f", delta);
+            return String.format(Locale.ROOT, "↑ +%.2f", delta);
         }
         if (delta < 0.0) {
-            return String.format("↓ %.2f", delta);
+            return String.format(Locale.ROOT, "↓ %.2f", delta);
         }
         return "=";
+    }
+
+    private static String formatScore(double score) {
+        if (Double.isNaN(score)) {
+            return "—";
+        }
+        return String.format(Locale.ROOT, "%.2f", score);
     }
 
     /**
@@ -119,7 +129,7 @@ public final class EvalReport {
               .append(" | ").append(result.passed() ? "PASS" : "FAIL")
               .append(" | ").append(result.latencyMs());
             for (MetricScore score : result.scores()) {
-                sb.append(" | ").append(String.format("%.2f", score.score()));
+                sb.append(" | ").append(formatScore(score.score()));
             }
             sb.append(" |\n");
         }

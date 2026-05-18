@@ -147,6 +147,22 @@ class EvalReportComparisonTest {
         assertThat(markdown).contains("NEW");
     }
 
+    @Test
+    void skippedScoreRendersAsEmDashAndNoNaNText() {
+        List<EvalResult<String>> baselineResults = List.of(
+                result("case-1", List.of(MetricScore.skipped("llm-judge")))
+        );
+        List<EvalResult<String>> currentResults = List.of(
+                result("case-1", List.of(MetricScore.skipped("llm-judge")))
+        );
+        EvalBaseline baseline = EvalBaseline.from(baselineResults);
+
+        String markdown = EvalReport.toComparisonMarkdown(currentResults, baseline);
+
+        assertThat(markdown).doesNotContain("NaN");
+        assertThat(markdown).contains("—");
+    }
+
     private static EvalResult<String> result(String id, List<MetricScore> scores) {
         EvalCase<String> evalCase = EvalCase.of(id, "input-" + id, "expected");
         boolean passed = scores.stream().allMatch(MetricScore::passed);

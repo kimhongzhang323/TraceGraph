@@ -10,6 +10,11 @@ public final class ExactMatchMetric<S> implements Metric<S> {
     private static final String NAME = "exact_match";
 
     @Override
+    public String name() {
+        return NAME;
+    }
+
+    @Override
     public MetricScore score(EvalCase<S> evalCase, S actual, long latencyMs) {
         if (Objects.equals(evalCase.expected(), actual)) {
             return MetricScore.pass(NAME, 1.0);

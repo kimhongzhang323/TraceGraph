@@ -23,6 +23,11 @@ public final class RougeMetric<S> implements Metric<S> {
     }
 
     @Override
+    public String name() {
+        return NAME;
+    }
+
+    @Override
     public MetricScore score(EvalCase<S> evalCase, S actual, long latencyMs) {
         List<String> reference = TextTokens.tokenize(String.valueOf(evalCase.expected()));
         List<String> candidate = TextTokens.tokenize(actual == null ? "" : actual.toString());
