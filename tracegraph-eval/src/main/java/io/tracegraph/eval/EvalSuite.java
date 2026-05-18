@@ -131,6 +131,10 @@ public final class EvalSuite<S> {
     private List<MetricScore> scoreAll(EvalCase<S> evalCase, S actual, long latencyMs) {
         List<MetricScore> scores = new ArrayList<>();
         for (Metric<S> metric : metrics) {
+            if (!metric.canScore(evalCase)) {
+                scores.add(MetricScore.skipped(metric.name()));
+                continue;
+            }
             scores.add(metric.score(evalCase, actual, latencyMs));
         }
         return scores;

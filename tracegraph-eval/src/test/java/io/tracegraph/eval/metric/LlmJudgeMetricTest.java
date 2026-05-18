@@ -72,4 +72,15 @@ class LlmJudgeMetricTest {
         assertThatThrownBy(() -> LlmJudgeMetric.<String>builder().model("m").build())
                 .isInstanceOf(NullPointerException.class);
     }
+
+    @Test
+    void canScoreReturnsFalseWhenExpectedIsNull() {
+        var metric = LlmJudgeMetric.<String>builder()
+                .judge(respondingWith("0.9"))
+                .model("gpt-4o")
+                .build();
+
+        assertThat(metric.canScore(EvalCase.of("c1", "q", null))).isFalse();
+        assertThat(metric.canScore(EvalCase.of("c2", "q", "expected"))).isTrue();
+    }
 }

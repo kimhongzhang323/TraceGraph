@@ -40,6 +40,16 @@ public final class LlmJudgeMetric<S> implements Metric<S> {
     }
 
     @Override
+    public String name() {
+        return "llm-judge";
+    }
+
+    @Override
+    public boolean canScore(EvalCase<S> evalCase) {
+        return evalCase != null && evalCase.expected() != null;
+    }
+
+    @Override
     public MetricScore score(EvalCase<S> evalCase, S actual, long latencyMs) {
         String prompt = promptTemplate
                 .replace("{input}", String.valueOf(evalCase.input()))

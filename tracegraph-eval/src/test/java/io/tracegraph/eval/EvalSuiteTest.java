@@ -4,6 +4,7 @@ import io.tracegraph.core.Graph;
 import io.tracegraph.eval.metric.ContainsMetric;
 import io.tracegraph.eval.metric.ExactMatchMetric;
 import io.tracegraph.eval.metric.LatencyMetric;
+import io.tracegraph.eval.metric.Metric;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -89,6 +90,22 @@ class EvalSuiteTest {
     }
 
     @Test
+    void toMarkdownRendersSkippedScoreAsEmDash() {
+        EvalResult<String> result = new EvalResult<>(
+                EvalCase.of("case-1", "input", null),
+                "actual",
+                List.of(MetricScore.skipped("conditional")),
+                10L,
+                true);
+
+        String markdown = EvalReport.toMarkdown(List.of(result));
+
+        assertThat(markdown).contains("conditional");
+        assertThat(markdown).contains("—");
+        assertThat(markdown).doesNotContain("NaN");
+    }
+
+    @Test
     void toMarkdownContainsExpectedContent() {
         Graph<String> graph = uppercaseGraph();
 
@@ -108,6 +125,42 @@ class EvalSuiteTest {
         assertThat(markdown).contains("case-2");
         assertThat(markdown).contains("FAIL");
         assertThat(markdown).contains("exact_match");
+    }
+
+    @Test
+    void skippedMetricYieldsNanScoreAndDoesNotFailCase() {
+        Graph<String> graph = uppercaseGraph();
+
+        Metric<String> conditional = new Metric<>() {
+            @Override
+            public boolean canScore(EvalCase<String> evalCase) {
+                return evalCase.expected() != null;
+            }
+
+            @Override
+            public MetricScore score(EvalCase<String> evalCase, String actual, long latencyMs) {
+                return MetricScore.pass("conditional", 1.0);
+            }
+        };
+
+        EvalSuite<String> suite = EvalSuite.<String>builder(graph)
+                .addCase(EvalCase.of("with-expected", "hello", "HELLO"))
+                .addCase(EvalCase.of("no-expected", "hello", null))
+                .metric(conditional)
+                .build();
+
+        List<EvalResult<String>> results = suite.run();
+
+        assertThat(results).hasSize(2);
+        MetricScore first = results.get(0).scores().get(0);
+        assertThat(first.passed()).isTrue();
+        assertThat(first.score()).isEqualTo(1.0);
+
+        MetricScore skipped = results.get(1).scores().get(0);
+        assertThat(skipped.passed()).isTrue();
+        assertThat(Double.isNaN(skipped.score())).isTrue();
+        assertThat(skipped.detail()).isEqualTo("skipped");
+        assertThat(results.get(1).passed()).isTrue();
     }
 
     @Test

@@ -26,6 +26,11 @@ public final class EmbeddingSimilarityMetric<S> implements Metric<S> {
     }
 
     @Override
+    public String name() {
+        return "embedding-similarity";
+    }
+
+    @Override
     public MetricScore score(EvalCase<S> evalCase, S actual, long latencyMs) {
         String expectedText = String.valueOf(evalCase.expected());
         String actualText = String.valueOf(actual);

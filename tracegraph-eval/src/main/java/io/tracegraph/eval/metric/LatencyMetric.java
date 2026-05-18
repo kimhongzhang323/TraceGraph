@@ -17,6 +17,11 @@ public final class LatencyMetric<S> implements Metric<S> {
     }
 
     @Override
+    public String name() {
+        return NAME;
+    }
+
+    @Override
     public MetricScore score(EvalCase<S> evalCase, S actual, long latencyMs) {
         double rawScore = 1.0 - (latencyMs / (double) maxMillis);
         double score = Math.max(0.0, Math.min(1.0, rawScore));
