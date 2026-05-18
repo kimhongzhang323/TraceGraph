@@ -3,6 +3,7 @@ package io.tracegraph.eval;
 import io.tracegraph.eval.baseline.EvalBaseline;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -59,6 +60,37 @@ public final class EvalReport {
             return String.format("↓ %.2f", delta);
         }
         return "=";
+    }
+
+    /**
+     * Render a summary block (pass rate, latency p50/p95/p99, per-metric mean score) followed by
+     * the standard per-case Markdown table. Callers wanting just the aggregate values without
+     * Markdown rendering can use {@link EvalSummary#from(List)} directly.
+     */
+    public static String toSummaryMarkdown(List<? extends EvalResult<?>> results) {
+        EvalSummary summary = EvalSummary.from(results);
+        StringBuilder sb = new StringBuilder();
+        sb.append("## Summary\n\n");
+        sb.append("- Pass rate: ").append(String.format(Locale.ROOT, "%.2f%%", summary.passRate() * 100.0))
+          .append(" (").append(summary.passedCases()).append("/").append(summary.totalCases()).append(")\n");
+        sb.append("- Latency p50: ").append(summary.latencyP50Ms()).append(" ms");
+        sb.append(" | p95: ").append(summary.latencyP95Ms()).append(" ms");
+        sb.append(" | p99: ").append(summary.latencyP99Ms()).append(" ms\n");
+        if (!summary.meanScoreByMetric().isEmpty()) {
+            sb.append("- Mean score by metric:");
+            boolean first = true;
+            for (Map.Entry<String, Double> e : summary.meanScoreByMetric().entrySet()) {
+                sb.append(first ? " " : ", ");
+                sb.append(e.getKey()).append("=").append(String.format(Locale.ROOT, "%.2f", e.getValue()));
+                first = false;
+            }
+            sb.append("\n");
+        } else {
+            sb.append("- Mean score by metric: —\n");
+        }
+        sb.append("\n");
+        sb.append(toMarkdown(results));
+        return sb.toString();
     }
 
     public static String toMarkdown(List<? extends EvalResult<?>> results) {
