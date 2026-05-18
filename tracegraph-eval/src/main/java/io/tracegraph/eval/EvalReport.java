@@ -1,10 +1,65 @@
 package io.tracegraph.eval;
 
+import io.tracegraph.eval.baseline.EvalBaseline;
+
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public final class EvalReport {
 
     private EvalReport() {}
+
+    public static String toComparisonMarkdown(List<? extends EvalResult<?>> current, EvalBaseline baseline) {
+        Objects.requireNonNull(baseline, "baseline");
+        StringBuilder sb = new StringBuilder();
+        sb.append("| Case ID | Metric | Baseline | Current | Δ |\n");
+        sb.append("|---|---|---|---|---|\n");
+        for (EvalResult<?> result : current) {
+            String caseId = result.evalCase().id();
+            Optional<List<MetricScore>> baselineScoresOpt = baseline.scoresFor(caseId);
+            Map<String, MetricScore> baselineByMetric = baselineScoresOpt
+                    .map(EvalReport::toMap)
+                    .orElse(Map.of());
+            for (MetricScore currentScore : result.scores()) {
+                MetricScore baselineScore = baselineByMetric.get(currentScore.metricName());
+                sb.append("| ").append(caseId)
+                  .append(" | ").append(currentScore.metricName())
+                  .append(" | ");
+                if (baselineScoresOpt.isEmpty() || baselineScore == null) {
+                    sb.append("— | ")
+                      .append(String.format("%.2f", currentScore.score()))
+                      .append(" | NEW |\n");
+                } else {
+                    double delta = currentScore.score() - baselineScore.score();
+                    sb.append(String.format("%.2f", baselineScore.score()))
+                      .append(" | ")
+                      .append(String.format("%.2f", currentScore.score()))
+                      .append(" | ").append(renderDelta(delta)).append(" |\n");
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    private static Map<String, MetricScore> toMap(List<MetricScore> scores) {
+        return scores.stream().collect(java.util.stream.Collectors.toMap(
+                MetricScore::metricName,
+                s -> s,
+                (a, b) -> b,
+                java.util.LinkedHashMap::new));
+    }
+
+    private static String renderDelta(double delta) {
+        if (delta > 0.0) {
+            return String.format("↑ +%.2f", delta);
+        }
+        if (delta < 0.0) {
+            return String.format("↓ %.2f", delta);
+        }
+        return "=";
+    }
 
     public static String toMarkdown(List<? extends EvalResult<?>> results) {
         if (results.isEmpty()) {
