@@ -38,6 +38,7 @@ public final class ReActAgent<S> {
     private final BiFunction<S, LlmResponse, S> responseFolder;
     private final BiFunction<S, List<ToolResult>, S> toolResultFolder;
     private final int maxIterations;
+    private final AgentProfile<S> profile;
 
     private ReActAgent(Builder<S> b) {
         this.client = b.client;
@@ -47,6 +48,7 @@ public final class ReActAgent<S> {
         this.responseFolder = b.responseFolder;
         this.toolResultFolder = b.toolResultFolder;
         this.maxIterations = b.maxIterations;
+        this.profile = b.profile;
     }
 
     public static <S> Builder<S> builder() {
@@ -73,9 +75,7 @@ public final class ReActAgent<S> {
 
     private RoutingNode<S> llmNode() {
         return (state, ctx) -> {
-            LlmRequest request = requestFactory.apply(state)
-                    .tools(toolDefinitions)
-                    .build();
+            LlmRequest request = buildRequest(state);
             LlmResponse response = client.complete(request);
             S newState = responseFolder.apply(state, response);
 
@@ -84,6 +84,18 @@ public final class ReActAgent<S> {
             }
             return NodeResult.goTo("done", newState);
         };
+    }
+
+    private LlmRequest buildRequest(S state) {
+        LlmRequest base = requestFactory.apply(state).tools(toolDefinitions).build();
+        if (profile == null || profile.systemPrompt().isEmpty()) {
+            return base;
+        }
+        List<ChatMessage> withSystem = new ArrayList<>(base.messages().size() + 1);
+        withSystem.add(ChatMessage.system(profile.systemPrompt()));
+        withSystem.addAll(base.messages());
+        return new LlmRequest(withSystem, base.model(), base.temperature(),
+                base.maxTokens(), base.tools());
     }
 
     private Node<S> toolsNode() {
@@ -99,7 +111,7 @@ public final class ReActAgent<S> {
 
     private List<ToolResult> executeToolCalls(S state) {
         // Build request to inspect messages — the last assistant message should have tool calls
-        LlmRequest req = requestFactory.apply(state).tools(toolDefinitions).build();
+        LlmRequest req = buildRequest(state);
         List<ChatMessage> messages = req.messages();
 
         // Find the last assistant message with tool calls
@@ -139,6 +151,7 @@ public final class ReActAgent<S> {
         private BiFunction<S, LlmResponse, S> responseFolder;
         private BiFunction<S, List<ToolResult>, S> toolResultFolder;
         private int maxIterations = 10;
+        private AgentProfile<S> profile;
 
         private Builder() {}
 
@@ -198,6 +211,31 @@ public final class ReActAgent<S> {
         public Builder<S> maxIterations(int max) {
             if (max <= 0) throw new IllegalArgumentException("maxIterations must be > 0");
             this.maxIterations = max;
+            return this;
+        }
+
+        /**
+         * Apply an {@link AgentProfile} to this agent.
+         *
+         * <p>The profile's system prompt is prepended as a {@link ChatMessage.Role#SYSTEM}
+         * message on every outgoing {@link LlmRequest}, and the profile's tool list
+         * <em>replaces</em> any prior {@link #tool(ToolDefinition, Tool)} registrations
+         * so each agent in a swarm sees only its own tool set.
+         *
+         * @param profile the agent profile to apply (non-null)
+         * @return this builder
+         */
+        public Builder<S> profile(AgentProfile<S> profile) {
+            Objects.requireNonNull(profile, "profile");
+            this.profile = profile;
+            this.tools.clear();
+            this.toolDefinitions.clear();
+            List<Tool> profileTools = profile.tools();
+            List<ToolDefinition> profileDefs = profile.toolDefinitions();
+            for (int i = 0; i < profileTools.size(); i++) {
+                this.toolDefinitions.add(profileDefs.get(i));
+                this.tools.put(profileDefs.get(i).name(), profileTools.get(i));
+            }
             return this;
         }
 
