@@ -4,6 +4,8 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.4.0] - Unreleased
+
 ## [0.3.0] - 2026-05-24
 
 ### Added

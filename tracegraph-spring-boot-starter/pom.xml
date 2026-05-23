@@ -6,7 +6,7 @@
     <parent>
         <groupId>site.tracegraph</groupId>
         <artifactId>tracegraph-parent</artifactId>
-        <version>0.3.0</version>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>tracegraph-spring-boot-starter</artifactId>
     <name>TraceGraph :: Spring Boot Starter</name>
