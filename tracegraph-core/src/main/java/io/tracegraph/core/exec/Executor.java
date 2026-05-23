@@ -16,6 +16,7 @@ import io.tracegraph.core.spi.CheckpointStore;
 import io.tracegraph.core.spi.LlmCallInfo;
 import io.tracegraph.core.spi.MemoryStore;
 import io.tracegraph.core.spi.NodeListener;
+import io.tracegraph.core.spi.TerminationSignalException;
 import io.tracegraph.core.spi.TraceRecorder;
 import io.tracegraph.core.spi.VectorStore;
 import org.slf4j.Logger;
@@ -321,7 +322,13 @@ public final class Executor<S> {
                 traceRecorder.recordExit(executionId, current, outcome.attempts(), before, state, durationNanos);
             }
             checkpointStore.save(new Checkpoint<>(executionId, current, state, Instant.now(), false));
-            listener.onExit(current, state);
+            try {
+                listener.onExit(current, state);
+            } catch (TerminationSignalException tse) {
+                LOG.info("[{}] terminated by listener at node '{}': {}",
+                        executionId, current, tse.getMessage());
+                return new ExecutionResult<>(executionId, state, path, Status.TERMINATED, null);
+            }
 
             if (interruptAfter.contains(current)) {
                 return new ExecutionResult<>(executionId, state, path, Status.INTERRUPTED, null);
