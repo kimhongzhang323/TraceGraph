@@ -2,6 +2,7 @@ package io.tracegraph.observability;
 
 import io.tracegraph.core.spi.LlmCallInfo;
 import io.tracegraph.core.spi.NodeListener;
+import io.tracegraph.core.spi.TerminationSignalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,17 @@ public final class Listeners {
 
         @Override
         public void onExit(String nodeName, Object state) {
-            for (NodeListener l : delegates) safe(l, "onExit", () -> l.onExit(nodeName, state));
+            TerminationSignalException terminationSignal = null;
+            for (NodeListener l : delegates) {
+                try {
+                    l.onExit(nodeName, state);
+                } catch (TerminationSignalException tse) {
+                    if (terminationSignal == null) terminationSignal = tse;
+                } catch (Throwable t) {
+                    LOG.warn("Listener {} threw from onExit: {}", l.getClass().getName(), t.toString());
+                }
+            }
+            if (terminationSignal != null) throw terminationSignal;
         }
 
         @Override
