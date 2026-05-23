@@ -94,7 +94,7 @@
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
 
         <!-- Test tooling -->
-        <equalsverifier.version>3.19.4</equalsverifier.version>
+        <equalsverifier.version>4.5</equalsverifier.version>
         <jqwik.version>1.9.3</jqwik.version>
         <wiremock.version>3.13.2</wiremock.version>
         <testcontainers.version>1.21.0</testcontainers.version>
