@@ -77,3 +77,91 @@ public class MyAgentEvaluation {
 
 ## 🧠 进阶用法: LLM-as-a-Judge
 对于对话式代理，完全匹配通常过于严格。与 `ExactMatchScorer` 不同，您可以配置一个 `LlmScorer`。该打分器将用户的问题、预期输出和实际输出传递给 LLM，要求它按 1 到 5 分的等级评估实际输出的正确性。
+
+## 🎯 0.3.0 新特性
+
+### 文本指标 —— BLEU / ROUGE / F1
+
+基于空白分词、用于部分重叠质量评估（NLG 输出，exact match 过严的场景）。每个指标接受 `passThreshold` 并实现标准 `Metric<S>` SAM。
+
+```java
+EvalSuite<MyState> suite = EvalSuite.<MyState>builder()
+        .metric(new BleuMetric<>(MyState::output, MyState::expected, 0.4))
+        .metric(new RougeMetric<>(MyState::output, MyState::expected, 0.5))
+        .metric(new TokenF1Metric<>(MyState::output, MyState::expected, 0.6))
+        .addCases(cases)
+        .build();
+```
+
+### CI 门禁 —— `assertPassed` + `failFast` / `minPassRate`
+
+无需自写断言即可在回归时让 CI 失败。
+
+```java
+EvalSuite<S> suite = EvalSuite.<S>builder()
+        .failFast(true)
+        .minPassRate(0.95)
+        .metric(metric)
+        .addCases(cases)
+        .build();
+List<EvalResult<S>> results = suite.run(graph);
+EvalSuite.assertPassed(results); // 回归时抛 EvalAssertionException
+```
+
+### 基线快照 —— 跨运行回归检测
+
+```java
+EvalBaselineStore store = new EvalBaselineStore(Path.of("baselines/main.json"));
+EvalBaseline baseline = store.load();
+EvalReport.toComparisonMarkdown(currentResults, baseline); // → 回归/改进箭头
+store.save(EvalBaseline.from(currentResults)); // 通过后再覆盖
+```
+
+### 数据集加载器 —— JSONL / CSV
+
+把数据集放到可版本化的文件中，而不是写在 Java 里。
+
+```java
+List<EvalCase<MyState>> cases = EvalCaseLoader.fromJsonl(
+        Path.of("dataset.jsonl"),
+        json -> new MyState(json.get("input").asText(), json.get("expected").asText()));
+
+List<EvalCase<MyState>> csvCases = EvalCaseLoader.fromCsv(
+        Path.of("dataset.csv"),
+        row -> new MyState(row.get("input"), row.get("expected")));
+```
+
+### 并行执行 —— 虚拟线程
+
+```java
+List<EvalResult<S>> results = suite.runParallel(graph,
+        Executors.newVirtualThreadPerTaskExecutor());
+```
+
+### 汇总统计 —— 通过率、均值、延迟分位数
+
+```java
+EvalSummary summary = EvalSummary.from(results);
+// summary.passRate, summary.metricMeans, summary.latencyP50/P95/P99
+String md = EvalReport.toSummaryMarkdown(results);
+```
+
+### 条件指标跳过
+
+重写 `Metric.canScore(EvalCase<S>)`（默认 `true`），使指标对自己无法打分的用例优雅跳过（例如 `LlmJudgeMetric` 遇到 `expected == null` 的用例）。被跳过的分数在报告中显示为 `—`。
+
+### Golden Trace 的逐步断言
+
+除了最终状态相等之外，还能对捕获的 `ExecutionTrace<S>` 的中间行为（工具入参、检索文档、重试次数）打分。
+
+```java
+EvalRunner<S> runner = EvalRunner.<S>builder()
+        .graph(graph)
+        .traceStore(traceStore)
+        .assertion("retrieve", step ->
+                step.after().docs().size() < 3
+                        ? Optional.of("expected ≥3 docs, got " + step.after().docs().size())
+                        : Optional.empty())
+        .build();
+```
+

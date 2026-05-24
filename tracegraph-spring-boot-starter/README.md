@@ -287,7 +287,7 @@ public class AgentGraphConfig {
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-spring-boot-starter</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -298,21 +298,21 @@ Optionally add other TraceGraph modules as needed:
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-observability</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 
 <!-- LLM adapters and ReAct agent -->
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-connectors</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 
 <!-- JDBC memory store -->
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-memory</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

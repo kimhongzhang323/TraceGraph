@@ -285,7 +285,7 @@ last writer wins. There is no optimistic concurrency control or version column.
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-memory</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

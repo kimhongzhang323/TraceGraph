@@ -357,6 +357,83 @@ RuntimeException("[com.example.OrderException] 支付网关超时")
 
 ---
 
+## 0.3.0 新特性
+
+### TerminationListener —— 干净的收敛
+
+`TerminationListener<S>` 实现 `NodeListener`，在 `onExit` 中根据用户提供的 `Predicate<TerminationContext<S>>` 抛出 `TerminationSignalException`。执行器将其呈现为 `Status.TERMINATED`（而非 `FAILED`）。内置断言：`maxTurns(int)`、`afterNode(String)`、`stateMatches(Predicate<S>)`。
+
+```java
+Graph<S> graph = Graph.<S>builder()
+        .listener(TerminationListener.maxTurns(10))
+        .listener(TerminationListener.stateMatches(s -> s.answer() != null))
+        // ...
+        .build();
+```
+
+### MicrometerNodeListener —— Prometheus / Grafana
+
+将 `NodeListener` 事件桥接到 `MeterRegistry`。输出 `tracegraph.node.duration`（timer）、`tracegraph.node.errors`（counter）、`tracegraph.llm.tokens`（counter，按 `kind=input|output` 标签）。
+
+```java
+MeterRegistry registry = new SimpleMeterRegistry();
+Graph<S> graph = Graph.<S>builder()
+        .listener(new MicrometerNodeListener(registry))
+        // ...
+        .build();
+```
+
+### SamplingTraceStore —— 数据量控制
+
+将任意 `TraceStore` 包装成只保留子集。内置策略：`random(rate)`、`slowExecutions(thresholdMs)`、`failedOnly()`。
+
+```java
+TraceStore sampled = new SamplingTraceStore(
+        new JsonFileTraceStore<>(Path.of("traces"), MyState.class),
+        SampleStrategy.slowExecutions(2_000));
+```
+
+### SlowNodeListener —— 节点级 SLA 告警
+
+当节点超过其命名预算时触发 `Consumer<SlowNodeEvent>`。不会抛异常，仅通知。
+
+```java
+SlowNodeListener listener = new SlowNodeListener(
+        Map.of("retrieve", Duration.ofMillis(500),
+               "generate", Duration.ofSeconds(2)),
+        event -> log.warn("slow node {}: {}ms", event.nodeName(), event.durationMs()));
+```
+
+### JsonlTraceExporter —— 批量导出
+
+把每个 `TraceStep` 写为一个 JSON 对象到 JSONL 文件，便于批量导入 LangSmith、Langfuse 或 Arize。
+
+```java
+new JsonlTraceExporter().export(traceStore, Path.of("traces.jsonl"));
+```
+
+### OTel GenAI 语义约定
+
+`OtelNodeListener` 现在会在 `ChatNode` 的 span 上发出 OpenTelemetry GenAI 规范属性：`gen_ai.system`、`gen_ai.request.model`、`gen_ai.usage.input_tokens`、`gen_ai.usage.output_tokens`、`gen_ai.response.finish_reasons`。
+
+### Correlation ID
+
+`Graph.Builder.correlationId(Supplier<String>)` 会填充 `ExecutionTrace.correlationId` 并在 OTLP span 上以链接属性形式输出 —— 将其绑定到入站 HTTP 请求 id，可把 TraceGraph 执行缝合进上游 APM 追踪。
+
+### 敏感数据日志开关
+
+`Graph.Builder.sensitiveDataLogging(boolean)`（默认 `false`）控制完整的提示词/响应文本是否进入 `TraceStep.rawInput` / `TraceStep.rawOutput`。设为 `false` 时仅捕获元数据（模型、token 数、finish reason）。
+
+### 每步用量与按执行成本报告
+
+`TraceStep.Usage(promptTokens, completionTokens)` 由 `NodeListener.onUsage` 自动填充并通过 `JsonFileTraceStore` / `JdbcTraceStore` 持久化。`LlmCostListener.snapshot(executionId)` 返回不可变 `CostReport(executionId, usageByNode, totalUsage)`，用于计费看板。
+
+### 父执行 ID 血缘
+
+`ExecutionTrace` 记录 `parentExecutionId` / `parentStepIndex`，用于子图执行（与现有的 `forkedFromExecutionId` 血缘对称）。执行器通过 `TraceRecorder.recordChildOf(...)` 钩子自动连接。
+
+---
+
 ## 完整使用演练
 
 ### 第 1 步 — 添加依赖
@@ -365,7 +442,7 @@ RuntimeException("[com.example.OrderException] 支付网关超时")
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-observability</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

@@ -22,6 +22,7 @@ The project is aimed at teams that want graph-style orchestration on the JVM wit
 
 - [Why TraceGraph](#why-tracegraph)
 - [Project Status](#project-status)
+- [What's New in 0.3.0](#whats-new-in-030)
 - [Modules](#modules)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -66,13 +67,21 @@ TraceGraph is probably not the right fit when you want:
 
 ## Project Status
 
-TraceGraph is under active development.
+TraceGraph is under active development. Current release: **0.3.0** (2026-05-24).
 
 - `tracegraph-core` is the most mature module and already covers core graph construction and execution behavior.
 - `tracegraph-runtime`, `tracegraph-memory`, `tracegraph-observability`, and `tracegraph-spring-boot-starter` are implemented and tested, but are still evolving.
-- `tracegraph-connectors` is intentionally early-stage and should be treated as experimental integration code.
+- `tracegraph-connectors` is maturing — the 0.3.0 release adds first-class multi-agent patterns (handoff, group-chat, voting, role/tool isolation) on top of the existing ReAct + Supervisor primitives.
+- `tracegraph-eval` covers golden-trace replay, baseline comparison, BLEU/ROUGE/F1, dataset loaders, and parallel execution.
 
-Until the API settles, expect breaking changes between pre-1.0 releases.
+Until the API settles, expect breaking changes between pre-1.0 releases. See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+
+## What's New in 0.3.0
+
+- **Multi-agent patterns** (`tracegraph-connectors/llm`): `HandoffNode<S>` for peer-to-peer delegation; `AgentProfile<S>` + `ReActAgent.Builder.profile(...)` for role/tool isolation; `GroupChatAgent<S>` with round-robin or LLM-selected speaker order; `VotingNode<S>` with `Tally.majority` / `Tally.firstNonNull` consensus.
+- **Termination-predicate listener** (`tracegraph-observability`): `TerminationListener<S>` with `maxTurns`, `afterNode`, `stateMatches` predicates surfaces clean `Status.TERMINATED` outcomes.
+- **Observability batch**: `MicrometerNodeListener` (Prometheus-ready timers/counters); `SamplingTraceStore` (`random`/`slowExecutions`/`failedOnly`); OTel GenAI semantic-convention attributes on LLM spans; `Graph.Builder.correlationId(Supplier<String>)` for upstream APM linkage; `SlowNodeListener` per-node SLA alerts; `JsonlTraceExporter` for batch ingestion into LangSmith/Langfuse/Arize; per-step `TraceStep.Usage`; `Graph.Builder.sensitiveDataLogging(boolean)` gating prompt/response capture; `LlmCostListener.snapshot(executionId)` per-execution cost reports; parent-execution-id lineage on `ExecutionTrace` for subgraph correlation.
+- **Eval-harness batch** (`tracegraph-eval`): `BleuMetric` / `RougeMetric` / `TokenF1Metric`; `EvalSuite.assertPassed(...)` with `failFast` / `minPassRate` for CI gating; `EvalBaseline` + `EvalBaselineStore` + `EvalReport.toComparisonMarkdown(...)`; `EvalCaseLoader.fromJsonl/fromCsv`; `EvalSuite.runParallel(Executor)` on virtual threads; `EvalReport.toSummaryMarkdown(...)` + `EvalSummary` (pass rate, per-metric means, latency p50/p95/p99); `Metric.canScore(...)` for conditional skipping; `TraceAssertion<S>` for per-step golden-trace assertions.
 
 ## Modules
 
@@ -83,7 +92,11 @@ Until the API settles, expect breaking changes between pre-1.0 releases.
 | `tracegraph-memory` | In-memory and file-backed memory store implementations |
 | `tracegraph-observability` | OpenTelemetry listeners, trace recording, replay, diffing, and trace store implementations |
 | `tracegraph-spring-boot-starter` | Spring Boot auto-configuration and web integration pieces |
-| `tracegraph-connectors` | Connector adapters such as OpenAI and Anthropic HTTP clients |
+| `tracegraph-connectors` | LLM HTTP clients (OpenAI, Anthropic, Gemini, DeepSeek, Ollama), prompt templates, structured output, MCP, and multi-agent patterns (ReAct, Supervisor, Handoff, GroupChat, Voting) |
+| `tracegraph-eval` | Golden-trace replay, metrics (Exact/Contains/BLEU/ROUGE/F1/Embedding/LLM-judge), baseline comparison, dataset loaders |
+| `tracegraph-rag` | Embedding clients, vector stores (in-memory, Qdrant, Weaviate, Pinecone, PgVector), retrievers, RAG pipelines |
+| `tracegraph-a2a` | Agent-to-agent message bus and HTTP transport |
+| `tracegraph-bench` | JMH micro-benchmarks for graph dispatch and ReAct loops |
 
 ## Requirements
 
@@ -100,7 +113,7 @@ Pick the smallest module set that matches your use case:
 <dependency>
     <groupId>site.tracegraph</groupId>
     <artifactId>tracegraph-core</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

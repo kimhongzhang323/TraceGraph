@@ -287,7 +287,7 @@ public class AgentGraphConfig {
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-spring-boot-starter</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -298,21 +298,21 @@ public class AgentGraphConfig {
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-observability</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 
 <!-- LLM 适配器与 ReAct 代理 -->
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-connectors</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 
 <!-- JDBC 内存存储 -->
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-memory</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

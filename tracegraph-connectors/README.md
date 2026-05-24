@@ -468,6 +468,80 @@ publisher.subscribe(new Flow.Subscriber<>() {
 
 ---
 
+## Multi-Agent Patterns (0.3.0)
+
+`ReActAgent` is the single-agent primitive. The 0.3.0 release adds four ways to compose multiple ReAct agents into a `Graph<S>`.
+
+### HandoffNode — Peer-to-Peer Delegation
+
+`HandoffNode<S>` lets one agent hand control directly to another by reading a target name from state — no central supervisor in the loop. The reserved selector value `"continue"` falls through to the next declared target; `null` or an unknown name terminates at `"done"`.
+
+```java
+Graph<ChatState> graph = HandoffNode.<ChatState>builder()
+        .client(llmClient)
+        .requestFactory(state -> LlmRequest.of(state.messages()))
+        .responseFolder((state, resp) -> state.withMessage(resp.content()))
+        .handoffSelector(state -> state.routeTo())
+        .target("alice", aliceAgentGraph)
+        .target("bob", bobAgentGraph)
+        .build()
+        .buildGraph();
+```
+
+### AgentProfile — Per-Agent Role and Tool Isolation
+
+`AgentProfile<S>` is a `(name, systemPrompt, List<Tool>, List<ToolDefinition>, memoryScope)` record that overrides the tools and role prompt on a `ReActAgent.Builder`. Calling `.profile(...)` replaces any prior `tool(...)` registrations so two agents on the same `LlmClient` cannot see each other's tools.
+
+```java
+AgentProfile<S> researcher = new AgentProfile<>(
+        "researcher",
+        "You are a research analyst.",
+        List.of(searchTool, fetchTool),
+        List.of(searchDef, fetchDef),
+        Function.identity());
+
+Graph<S> graph = ReActAgent.<S>builder()
+        .client(llmClient)
+        .profile(researcher)
+        .requestFactory(...)
+        .responseFolder(...)
+        .toolResultFolder(...)
+        .build()
+        .buildGraph();
+```
+
+### GroupChatAgent — Round-Robin or LLM-Selected Speakers
+
+`GroupChatAgent<S>` rotates N named `ReActAgent`s using a `SpeakerSelector<S>` strategy and halts on a user-supplied `terminationPredicate`.
+
+```java
+Graph<S> chat = GroupChatAgent.<S>builder()
+        .agent("alice", aliceGraph)
+        .agent("bob", bobGraph)
+        .agent("carol", carolGraph)
+        .speakerSelector(SpeakerSelector.roundRobin())   // or .llm(...)
+        .terminationPredicate(state -> state.rounds() >= 4)
+        .build()
+        .buildGraph();
+```
+
+### VotingNode — Parallel Consensus
+
+`VotingNode<S>` fans out across candidate ReAct subgraphs using `parallel(...)`, then aggregates their states through a `Tally`. Built-in tallies: `Tally.majority(Function<S, String>)` and `Tally.firstNonNull(Function<S, String>)`.
+
+```java
+Node<S> vote = VotingNode.<S>builder()
+        .candidate("alice", aliceGraph)
+        .candidate("bob", bobGraph)
+        .candidate("carol", carolGraph)
+        .tally(Tally.majority(State::answer))
+        .build();
+```
+
+Layer in `TerminationListener<S>` from `tracegraph-observability` for `maxTurns` / `afterNode` / `stateMatches` convergence guarantees that work across all four patterns.
+
+---
+
 ## Complete Usage Walkthrough
 
 ### Step 1: Add the Maven Dependency
@@ -476,7 +550,7 @@ publisher.subscribe(new Flow.Subscriber<>() {
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-connectors</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

@@ -381,7 +381,7 @@ Node<AgentState> recallNode = (state, ctx) -> {
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-core</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

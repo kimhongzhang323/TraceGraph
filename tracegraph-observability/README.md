@@ -391,6 +391,83 @@ application logs at the time of the original run.
 
 ---
 
+## 0.3.0 Features
+
+### TerminationListener — Clean Convergence
+
+`TerminationListener<S>` implements `NodeListener` and throws `TerminationSignalException` from `onExit` when a user-supplied `Predicate<TerminationContext<S>>` returns true. The executor surfaces this as `Status.TERMINATED` (not `FAILED`). Built-in predicates: `maxTurns(int)`, `afterNode(String)`, `stateMatches(Predicate<S>)`.
+
+```java
+Graph<S> graph = Graph.<S>builder()
+        .listener(TerminationListener.maxTurns(10))
+        .listener(TerminationListener.stateMatches(s -> s.answer() != null))
+        // ...
+        .build();
+```
+
+### MicrometerNodeListener — Prometheus / Grafana
+
+Bridges `NodeListener` events to a `MeterRegistry`. Emits `tracegraph.node.duration` (timer), `tracegraph.node.errors` (counter), and `tracegraph.llm.tokens` (counter, tagged by `kind=input|output`).
+
+```java
+MeterRegistry registry = new SimpleMeterRegistry();
+Graph<S> graph = Graph.<S>builder()
+        .listener(new MicrometerNodeListener(registry))
+        // ...
+        .build();
+```
+
+### SamplingTraceStore — Volume Control
+
+Wrap any `TraceStore` to keep only a subset of traces. Built-in strategies: `random(rate)`, `slowExecutions(thresholdMs)`, `failedOnly()`.
+
+```java
+TraceStore sampled = new SamplingTraceStore(
+        new JsonFileTraceStore<>(Path.of("traces"), MyState.class),
+        SampleStrategy.slowExecutions(2_000));
+```
+
+### SlowNodeListener — Per-Node SLA Alerts
+
+Fires a `Consumer<SlowNodeEvent>` when a node exceeds its named budget. Does not throw — it only notifies.
+
+```java
+SlowNodeListener listener = new SlowNodeListener(
+        Map.of("retrieve", Duration.ofMillis(500),
+               "generate", Duration.ofSeconds(2)),
+        event -> log.warn("slow node {}: {}ms", event.nodeName(), event.durationMs()));
+```
+
+### JsonlTraceExporter — Bulk Export
+
+Writes one JSON object per `TraceStep` to a JSONL file suitable for batch import into LangSmith, Langfuse, or Arize.
+
+```java
+new JsonlTraceExporter().export(traceStore, Path.of("traces.jsonl"));
+```
+
+### OTel GenAI Semantic Conventions
+
+`OtelNodeListener` now emits the OpenTelemetry GenAI spec attributes on `ChatNode` spans: `gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.response.finish_reasons`.
+
+### Correlation ID
+
+`Graph.Builder.correlationId(Supplier<String>)` populates `ExecutionTrace.correlationId` and emits OTLP span link attributes — wire it to the inbound HTTP request id to stitch a TraceGraph run into upstream APM traces.
+
+### Sensitive-Data Logging Flag
+
+`Graph.Builder.sensitiveDataLogging(boolean)` (default `false`) controls whether full prompt/response text lands in `TraceStep.rawInput` / `TraceStep.rawOutput`. When `false`, only metadata (model, token counts, finish reason) is captured.
+
+### Per-Step Usage and Per-Execution Cost Report
+
+`TraceStep.Usage(promptTokens, completionTokens)` is populated automatically from `NodeListener.onUsage` and persists through `JsonFileTraceStore` / `JdbcTraceStore`. `LlmCostListener.snapshot(executionId)` returns an immutable `CostReport(executionId, usageByNode, totalUsage)` for billing dashboards.
+
+### Parent-Execution Lineage
+
+`ExecutionTrace` records `parentExecutionId` / `parentStepIndex` for subgraph children (mirroring the existing `forkedFromExecutionId` lineage). The executor wires this automatically through the `TraceRecorder.recordChildOf(...)` hook.
+
+---
+
 ## Complete Usage Walkthrough
 
 ### Step 1 — Add the Dependency
@@ -399,7 +476,7 @@ application logs at the time of the original run.
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-observability</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

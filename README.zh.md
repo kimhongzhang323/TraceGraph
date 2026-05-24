@@ -22,6 +22,7 @@ TraceGraph 是一个原生于 JVM 的代理（Agent）运行时，用于构建�
 
 - [为什么使用 TraceGraph](#为什么使用-tracegraph)
 - [项目状态](#项目状态)
+- [0.3.0 新特性](#030-新特性)
 - [模块概览](#模块概览)
 - [环境要求](#环境要求)
 - [安装指南](#安装指南)
@@ -66,13 +67,21 @@ TraceGraph 是一个原生于 JVM 的代理（Agent）运行时，用于构建�
 
 ## 项目状态
 
-TraceGraph 正在积极开发中。
+TraceGraph 正在积极开发中。当前版本：**0.3.0**（2026-05-24）。
 
 - `tracegraph-core` 是最成熟的模块，已经涵盖了核心的图构建和执行行为。
 - `tracegraph-runtime`、`tracegraph-memory`、`tracegraph-observability` 和 `tracegraph-spring-boot-starter` 已实现并经过测试，但仍在不断演进。
-- `tracegraph-connectors` 处于非常早期的阶段，应被视为实验性的集成代码。
+- `tracegraph-connectors` 正在快速成熟 —— 0.3.0 在原有的 ReAct + Supervisor 之上新增了一等公民的多智能体模式（handoff、group-chat、voting、角色/工具隔离）。
+- `tracegraph-eval` 涵盖 golden-trace 回放、基线比较、BLEU/ROUGE/F1、数据集加载器和并行执行。
 
-在 API 稳定之前，预计在 1.0 版本之前的版本中会有破坏性变更。
+在 API 稳定之前，预计在 1.0 版本之前的版本中会有破坏性变更。完整发布历史见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 0.3.0 新特性
+
+- **多智能体模式**（`tracegraph-connectors/llm`）：`HandoffNode<S>` 实现点对点交接；`AgentProfile<S>` + `ReActAgent.Builder.profile(...)` 实现角色/工具隔离；`GroupChatAgent<S>` 支持轮询或 LLM 选择发言顺序；`VotingNode<S>` 配合 `Tally.majority` / `Tally.firstNonNull` 完成共识聚合。
+- **终止断言监听器**（`tracegraph-observability`）：`TerminationListener<S>` 提供 `maxTurns`、`afterNode`、`stateMatches` 等内置断言，命中时干净地以 `Status.TERMINATED` 收尾。
+- **可观测性批次**：`MicrometerNodeListener`（Prometheus 友好的 timer/counter）；`SamplingTraceStore`（`random` / `slowExecutions` / `failedOnly`）；LLM span 上的 OTel GenAI 语义约定；`Graph.Builder.correlationId(Supplier<String>)` 用于上游 APM 关联；`SlowNodeListener` 实现节点级 SLA；`JsonlTraceExporter` 批量导出到 LangSmith/Langfuse/Arize；每步 `TraceStep.Usage`；`Graph.Builder.sensitiveDataLogging(boolean)` 控制提示词/响应是否落盘；`LlmCostListener.snapshot(executionId)` 输出按执行 ID 的成本报告；`ExecutionTrace` 增加父级执行 ID 血缘用于子图关联。
+- **评测套件批次**（`tracegraph-eval`）：`BleuMetric` / `RougeMetric` / `TokenF1Metric`；`EvalSuite.assertPassed(...)` 配合 `failFast` / `minPassRate` 用于 CI 门禁；`EvalBaseline` + `EvalBaselineStore` + `EvalReport.toComparisonMarkdown(...)`；`EvalCaseLoader.fromJsonl/fromCsv` 数据集加载器；`EvalSuite.runParallel(Executor)` 基于虚拟线程；`EvalReport.toSummaryMarkdown(...)` + `EvalSummary`（通过率、各指标均值、延迟 p50/p95/p99）；`Metric.canScore(...)` 条件跳过；`TraceAssertion<S>` 对 golden trace 做逐步断言。
 
 ## 模块概览
 
@@ -83,7 +92,11 @@ TraceGraph 正在积极开发中。
 | `tracegraph-memory` | 基于内存和文件的存储实现 |
 | `tracegraph-observability` | OpenTelemetry 监听器、追踪记录、回放、差异对比以及追踪存储实现 |
 | `tracegraph-spring-boot-starter` | Spring Boot 自动配置和 Web 集成组件 |
-| `tracegraph-connectors` | OpenAI 和 Anthropic 等 HTTP 客户端的连接器适配器 |
+| `tracegraph-connectors` | LLM HTTP 客户端（OpenAI、Anthropic、Gemini、DeepSeek、Ollama）、提示词模板、结构化输出、MCP，以及多智能体模式（ReAct、Supervisor、Handoff、GroupChat、Voting） |
+| `tracegraph-eval` | Golden-trace 回放、指标（Exact/Contains/BLEU/ROUGE/F1/Embedding/LLM-judge）、基线对比、数据集加载器 |
+| `tracegraph-rag` | 嵌入客户端、向量存储（内存、Qdrant、Weaviate、Pinecone、PgVector）、检索器、RAG 流水线 |
+| `tracegraph-a2a` | 智能体到智能体的消息总线和 HTTP 传输 |
+| `tracegraph-bench` | 图分发和 ReAct 循环的 JMH 微基准 |
 
 ## 环境要求
 
@@ -100,7 +113,7 @@ GitHub Actions 也配置为基于 JDK 21 运行，因此本地和 CI 环境应�
 <dependency>
     <groupId>site.tracegraph</groupId>
     <artifactId>tracegraph-core</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

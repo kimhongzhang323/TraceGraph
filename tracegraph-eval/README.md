@@ -76,4 +76,92 @@ public class MyAgentEvaluation {
 ```
 
 ## 🧠 Advanced: LLM-as-a-Judge
-For conversational agents, exact matching is usually too strict. Instead of `ExactMatchScorer`, you can configure an `LlmScorer`. This scorer passes the user's question, the expected output, and the actual output to an LLM, asking it to rate the actual output's correctness on a scale of 1 to 5. 
+For conversational agents, exact matching is usually too strict. Instead of `ExactMatchScorer`, you can configure an `LlmScorer`. This scorer passes the user's question, the expected output, and the actual output to an LLM, asking it to rate the actual output's correctness on a scale of 1 to 5.
+
+## 🎯 0.3.0 Features
+
+### Text Metrics — BLEU / ROUGE / F1
+
+Whitespace-tokenized scorers for partial-overlap quality (NLG output, where exact match is too strict). Each takes a `passThreshold` and implements the standard `Metric<S>` SAM.
+
+```java
+EvalSuite<MyState> suite = EvalSuite.<MyState>builder()
+        .metric(new BleuMetric<>(MyState::output, MyState::expected, 0.4))
+        .metric(new RougeMetric<>(MyState::output, MyState::expected, 0.5))
+        .metric(new TokenF1Metric<>(MyState::output, MyState::expected, 0.6))
+        .addCases(cases)
+        .build();
+```
+
+### CI Gating — `assertPassed` + `failFast` / `minPassRate`
+
+Fail the build on regressions without writing custom assertion code.
+
+```java
+EvalSuite<S> suite = EvalSuite.<S>builder()
+        .failFast(true)
+        .minPassRate(0.95)
+        .metric(metric)
+        .addCases(cases)
+        .build();
+List<EvalResult<S>> results = suite.run(graph);
+EvalSuite.assertPassed(results); // throws EvalAssertionException on regression
+```
+
+### Baseline Snapshots — Run-Over-Run Regression Detection
+
+```java
+EvalBaselineStore store = new EvalBaselineStore(Path.of("baselines/main.json"));
+EvalBaseline baseline = store.load();
+EvalReport.toComparisonMarkdown(currentResults, baseline); // → regression/improvement arrows
+store.save(EvalBaseline.from(currentResults)); // promote on green
+```
+
+### Dataset Loaders — JSONL / CSV
+
+Version-controllable datasets instead of hand-written Java cases.
+
+```java
+List<EvalCase<MyState>> cases = EvalCaseLoader.fromJsonl(
+        Path.of("dataset.jsonl"),
+        json -> new MyState(json.get("input").asText(), json.get("expected").asText()));
+
+List<EvalCase<MyState>> csvCases = EvalCaseLoader.fromCsv(
+        Path.of("dataset.csv"),
+        row -> new MyState(row.get("input"), row.get("expected")));
+```
+
+### Parallel Execution — Virtual Threads
+
+```java
+List<EvalResult<S>> results = suite.runParallel(graph,
+        Executors.newVirtualThreadPerTaskExecutor());
+```
+
+### Summary Stats — Pass Rate, Means, Latency Percentiles
+
+```java
+EvalSummary summary = EvalSummary.from(results);
+// summary.passRate, summary.metricMeans, summary.latencyP50/P95/P99
+String md = EvalReport.toSummaryMarkdown(results);
+```
+
+### Conditional Metric Skipping
+
+Override `Metric.canScore(EvalCase<S>)` (defaults to `true`) so metrics gracefully no-op on cases they can't grade (e.g., `LlmJudgeMetric` on cases without `expected`). Skipped scores render as `—` in reports.
+
+### Per-Step Golden Trace Assertions
+
+Beyond final-state equality, grade intermediate behaviour (tool args, retrieved docs, retry counts) on captured `ExecutionTrace<S>`.
+
+```java
+EvalRunner<S> runner = EvalRunner.<S>builder()
+        .graph(graph)
+        .traceStore(traceStore)
+        .assertion("retrieve", step ->
+                step.after().docs().size() < 3
+                        ? Optional.of("expected ≥3 docs, got " + step.after().docs().size())
+                        : Optional.empty())
+        .build();
+```
+

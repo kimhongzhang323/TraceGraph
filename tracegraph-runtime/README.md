@@ -291,7 +291,7 @@ Checkpoints are written **after** a node exits and **before** edge resolution. I
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-runtime</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

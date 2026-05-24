@@ -481,6 +481,80 @@ publisher.subscribe(new Flow.Subscriber<>() {
 
 ---
 
+## 多智能体模式（0.3.0）
+
+`ReActAgent` 是单智能体原语。0.3.0 在此基础上提供了四种将多个 ReAct 智能体组合到 `Graph<S>` 的方式。
+
+### HandoffNode —— 点对点交接
+
+`HandoffNode<S>` 让一个智能体根据状态中的目标名称直接把控制权交给另一个智能体，无需中心调度。保留名 `"continue"` 表示落到下一个声明的目标；`null` 或未知目标终止于 `"done"`。
+
+```java
+Graph<ChatState> graph = HandoffNode.<ChatState>builder()
+        .client(llmClient)
+        .requestFactory(state -> LlmRequest.of(state.messages()))
+        .responseFolder((state, resp) -> state.withMessage(resp.content()))
+        .handoffSelector(state -> state.routeTo())
+        .target("alice", aliceAgentGraph)
+        .target("bob", bobAgentGraph)
+        .build()
+        .buildGraph();
+```
+
+### AgentProfile —— 每个智能体的角色与工具隔离
+
+`AgentProfile<S>` 是一个 `(name, systemPrompt, List<Tool>, List<ToolDefinition>, memoryScope)` 记录，会覆盖 `ReActAgent.Builder` 的工具和角色提示。调用 `.profile(...)` 会替换之前的 `tool(...)` 注册，使共享同一 `LlmClient` 的两个智能体彼此看不到对方的工具。
+
+```java
+AgentProfile<S> researcher = new AgentProfile<>(
+        "researcher",
+        "You are a research analyst.",
+        List.of(searchTool, fetchTool),
+        List.of(searchDef, fetchDef),
+        Function.identity());
+
+Graph<S> graph = ReActAgent.<S>builder()
+        .client(llmClient)
+        .profile(researcher)
+        .requestFactory(...)
+        .responseFolder(...)
+        .toolResultFolder(...)
+        .build()
+        .buildGraph();
+```
+
+### GroupChatAgent —— 轮询或 LLM 选择发言
+
+`GroupChatAgent<S>` 使用 `SpeakerSelector<S>` 策略轮换 N 个 `ReActAgent`，并在 `terminationPredicate` 命中时终止。
+
+```java
+Graph<S> chat = GroupChatAgent.<S>builder()
+        .agent("alice", aliceGraph)
+        .agent("bob", bobGraph)
+        .agent("carol", carolGraph)
+        .speakerSelector(SpeakerSelector.roundRobin())   // 或 .llm(...)
+        .terminationPredicate(state -> state.rounds() >= 4)
+        .build()
+        .buildGraph();
+```
+
+### VotingNode —— 并行共识
+
+`VotingNode<S>` 通过 `parallel(...)` 在候选 ReAct 子图上扇出，并使用 `Tally` 聚合状态。内置策略：`Tally.majority(Function<S, String>)` 与 `Tally.firstNonNull(Function<S, String>)`。
+
+```java
+Node<S> vote = VotingNode.<S>builder()
+        .candidate("alice", aliceGraph)
+        .candidate("bob", bobGraph)
+        .candidate("carol", carolGraph)
+        .tally(Tally.majority(State::answer))
+        .build();
+```
+
+可叠加 `tracegraph-observability` 的 `TerminationListener<S>`，通过 `maxTurns` / `afterNode` / `stateMatches` 对这四种模式给出统一的收敛保证。
+
+---
+
 ## 完整使用步骤
 
 ### 第一步：添加 Maven 依赖
@@ -489,7 +563,7 @@ publisher.subscribe(new Flow.Subscriber<>() {
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-connectors</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

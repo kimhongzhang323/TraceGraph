@@ -291,7 +291,7 @@ Graph<OrderState> graph2 = Graph.<OrderState>builder()
 <dependency>
     <groupId>io.tracegraph</groupId>
     <artifactId>tracegraph-runtime</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
