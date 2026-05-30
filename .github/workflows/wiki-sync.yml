@@ -8,8 +8,6 @@ on:
   push:
     tags:
       - "v*"
-    paths:
-      - "docs/wiki/**"
   workflow_dispatch:
     inputs:
       ref:
