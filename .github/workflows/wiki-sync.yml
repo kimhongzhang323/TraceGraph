@@ -1,0 +1,71 @@
+name: Wiki Sync
+
+# Publishes docs/wiki/ to the GitHub wiki so the wiki never drifts from the repo.
+# Runs on every release tag (v*), and can be triggered manually. docs/wiki/ is the
+# single source of truth; this job mirrors it into TraceGraph.wiki.git.
+
+on:
+  push:
+    tags:
+      - "v*"
+    paths:
+      - "docs/wiki/**"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or SHA to sync wiki from (default: default branch)"
+        required: false
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Mirror docs/wiki to the GitHub wiki
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Guard — ensure docs/wiki exists and is non-empty
+        run: |
+          if [ ! -d docs/wiki ] || [ -z "$(ls -A docs/wiki/*.md 2>/dev/null)" ]; then
+            echo "::error::docs/wiki/ is missing or has no Markdown pages — refusing to wipe the wiki."
+            exit 1
+          fi
+          echo "Found $(ls -1 docs/wiki/*.md | wc -l) wiki pages to sync."
+
+      - name: Clone the wiki repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The wiki must have at least one page created via the web UI before its
+          # git repo exists. If this clone fails, create the first page once, manually.
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
+
+      - name: Mirror pages (add, update, and delete) into the wiki
+        run: |
+          # --delete keeps the wiki an exact mirror of docs/wiki; never touch .git.
+          rsync -av --delete --exclude='.git' docs/wiki/ wiki/
+
+      - name: Commit and push if changed
+        working-directory: wiki
+        run: |
+          git config user.name  "tracegraph-wiki-bot"
+          git config user.email "actions@github.com"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Wiki already up to date — nothing to push."
+            exit 0
+          fi
+          REF_NAME="${GITHUB_REF_NAME:-manual}"
+          git add -A
+          git commit -m "docs(wiki): sync from ${GITHUB_SHA::7} (${REF_NAME})"
+          git push origin HEAD:master
+          echo "Wiki synced."
