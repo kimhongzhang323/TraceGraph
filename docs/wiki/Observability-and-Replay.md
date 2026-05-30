@@ -2,6 +2,8 @@
 
 The differentiator: **replay any agent execution with a full state diff and reasoning trace.** Everything here lives in `tracegraph-observability`; `tracegraph-core` stays OTel-free and exposes only the SPIs.
 
+> 💡 Want to see what a recorded trace actually looks like — JSON, console output, state diff, cost report? Jump to **[[Sample Trace Output]]**.
+
 ## Two SPIs, two shapes
 
 | SPI | Shape | executionId? | Wired via |

@@ -29,6 +29,7 @@ TraceGraph is a JVM-native agent runtime for building typed execution graphs wit
 | Retries, async, parallel, checkpoints, resume, interrupts, subgraphs, routing, streaming | **[[Runtime Features]]** |
 | Scoped cross-run key-value memory (in-memory, file, JDBC) | **[[Memory]]** |
 | OpenTelemetry, trace recording, replay, diff, cost tracking | **[[Observability and Replay]]** |
+| What a recorded trace looks like (JSON, diff, cost) | **[[Sample Trace Output]]** |
 | LLM clients (OpenAI, Anthropic, …), ChatNode, ReAct | **[[LLM Connectors]]** |
 | Handoff, group chat, voting, role/tool isolation | **[[Multi-Agent Patterns]]** |
 | Retrieval-augmented generation, vector stores | **[[RAG]]** |

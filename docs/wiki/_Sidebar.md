@@ -28,6 +28,7 @@
 - [[Trace UI]]
 
 **Reference**
+- [[Sample Trace Output]]
 - [[Graph Complexity]]
 - [[FAQ]]
 
@@ -43,6 +44,7 @@
 - [[运行时特性|zh-Runtime-Features]]
 - [[记忆|zh-Memory]]
 - [[可观测性与重放|zh-Observability-and-Replay]]
+- [[追踪输出示例|zh-Sample-Trace-Output]]
 - [[LLM 连接器|zh-LLM-Connectors]]
 - [[多智能体模式|zh-Multi-Agent-Patterns]]
 - [[RAG 检索增强|zh-RAG]]

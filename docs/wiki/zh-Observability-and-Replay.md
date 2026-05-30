@@ -4,6 +4,8 @@
 
 > 🌐 English: **[[Observability and Replay]]**
 
+> 💡 想看一条记录下来的追踪到底长什么样——JSON、控制台输出、状态差异、成本报告？前往 **[[追踪输出示例|zh-Sample-Trace-Output]]**。
+
 ## 两个 SPI，两种形态
 
 | SPI | 形态 | 感知 executionId? | 接入方式 |

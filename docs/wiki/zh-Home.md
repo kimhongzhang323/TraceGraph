@@ -29,6 +29,7 @@ TraceGraph 是一个 JVM 原生的智能体运行时，用于构建带有持久�
 | 重试、异步、并行、检查点、恢复、中断、子图、路由、流式 | **[[运行时特性|zh-Runtime-Features]]** |
 | 作用域化的跨运行键值记忆（内存 / 文件 / JDBC） | **[[记忆|zh-Memory]]** |
 | OpenTelemetry、追踪记录、重放、差异比较、成本追踪 | **[[可观测性与重放|zh-Observability-and-Replay]]** |
+| 记录下来的追踪长什么样（JSON、差异、成本） | **[[追踪输出示例|zh-Sample-Trace-Output]]** |
 | LLM 客户端（OpenAI、Anthropic …）、ChatNode、ReAct | **[[LLM 连接器|zh-LLM-Connectors]]** |
 | 交接、群聊、投票、角色/工具隔离 | **[[多智能体模式|zh-Multi-Agent-Patterns]]** |
 | 检索增强生成、向量库 | **[[RAG 检索增强|zh-RAG]]** |
