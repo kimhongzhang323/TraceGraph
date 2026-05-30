@@ -2,7 +2,7 @@
 
 TraceGraph 让执行语义保持显式。`Graph.run(...)` 背后没有隐藏的调度器或不透明的智能体循环——**图的定义就是控制流。**
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Execution Model]]**
+> 🌐 English: **[[Execution Model]]**
 
 ## 运行循环
 
@@ -38,7 +38,7 @@ TraceGraph 恰好有三种进入执行器的方式：
 | `graph.resume(executionId)` | 继续一个检查点/中断的运行 | 读 + 写 |
 | `graph.runFrom(startNode, seed, executionId)` | 从某点重放重执行 | **不**交互 |
 
-`runFrom(...)` 是重放分叉背后的机制——见 **[[zh-Observability-and-Replay|可观测性与重放]]**。
+`runFrom(...)` 是重放分叉背后的机制——见 **[[可观测性与重放|zh-Observability-and-Replay]]**。
 
 ## 顺序保证
 
@@ -79,4 +79,4 @@ TraceGraph 恰好有三种进入执行器的方式：
 
 ---
 
-**下一步：** **[[zh-Runtime-Features|运行时特性]]**——重试、异步、并行、检查点、中断、子图、路由、流式。
+**下一步：** **[[运行时特性|zh-Runtime-Features]]**——重试、异步、并行、检查点、中断、子图、路由、流式。

@@ -2,7 +2,7 @@
 
 本页带你从零运行一个图，并指引后续步骤。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Getting Started]]**
+> 🌐 English: **[[Getting Started]]**
 
 ## 要求
 
@@ -34,7 +34,7 @@
 | `tracegraph-rag` | 需要检索与重排工具 |
 | `tracegraph-spring-boot-starter` | 以最少接线接入 Spring Boot 应用 |
 
-完整列表见 **[[zh-Modules|模块]]**。
+完整列表见 **[[模块|zh-Modules]]**。
 
 ### 从源码构建
 
@@ -69,7 +69,7 @@ Graph<OrderState> graph = Graph.<OrderState>builder()
 ExecutionResult<OrderState> result = graph.run(new OrderState("o-1", false, false, false));
 ```
 
-`ExecutionResult<S>` 暴露 `executionId`、`finalState`、`path`、`status`、`error`。见 **[[zh-Core-Concepts|核心概念]]** 与 **[[zh-Execution-Model|执行模型]]**。
+`ExecutionResult<S>` 暴露 `executionId`、`finalState`、`path`、`status`、`error`。见 **[[核心概念|zh-Core-Concepts]]** 与 **[[执行模型|zh-Execution-Model]]**。
 
 ### 加入持久化与可观测性
 
@@ -119,4 +119,4 @@ mvn clean                      # 清理 target/
 
 ---
 
-**下一步：** **[[zh-Tutorial|教程]]** → **[[zh-Core-Concepts|核心概念]]** → **[[zh-Runtime-Features|运行时特性]]**
+**下一步：** **[[教程|zh-Tutorial]]** → **[[核心概念|zh-Core-Concepts]]** → **[[运行时特性|zh-Runtime-Features]]**

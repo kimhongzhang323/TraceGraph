@@ -2,7 +2,7 @@
 
 TraceGraph 是一个 Maven 多模块项目——根部一个父 POM，加上下列模块。指导原则：**`tracegraph-core` 保持精简**（运行时仅 SLF4J API，无 Spring / Jackson / OTel）。更重的东西都通过 SPI 放在其他模块。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Modules]]**
+> 🌐 English: **[[Modules]]**
 
 | 模块 | 职责 |
 |---|---|
@@ -66,8 +66,8 @@ Maven `groupId` 为 **`site.tracegraph`**（已验证 `tracegraph.site` 命名�
 </dependency>
 ```
 
-推荐采用顺序见 **[[zh-Getting-Started|快速开始]]**。
+推荐采用顺序见 **[[快速开始|zh-Getting-Started]]**。
 
 ---
 
-**相关：** **[[zh-Getting-Started|快速开始]]** · **[[zh-Core-Concepts|核心概念]]**
+**相关：** **[[快速开始|zh-Getting-Started]]** · **[[核心概念|zh-Core-Concepts]]**

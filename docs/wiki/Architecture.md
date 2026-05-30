@@ -2,7 +2,7 @@
 
 The design rationale behind TraceGraph: why it's shaped the way it is, where the seams are, and which constraints are deliberate. If **[[Core Concepts]]** is the *what*, this page is the *why*.
 
-> 🌐 中文版： **[[zh-Architecture|架构设计]]**
+> 🌐 中文版： **[[架构设计|zh-Architecture]]**
 
 ## Product thesis
 

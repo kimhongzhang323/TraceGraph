@@ -1,8 +1,8 @@
 # 架构设计
 
-TraceGraph 背后的设计理由：它为何如此成形、接缝在哪里、哪些约束是刻意为之。如果 **[[zh-Core-Concepts|核心概念]]** 讲的是 *what*，本页讲的是 *why*。
+TraceGraph 背后的设计理由：它为何如此成形、接缝在哪里、哪些约束是刻意为之。如果 **[[核心概念|zh-Core-Concepts]]** 讲的是 *what*，本页讲的是 *why*。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Architecture]]**
+> 🌐 English: **[[Architecture]]**
 
 ## 产品主旨
 
@@ -24,7 +24,7 @@ TraceGraph **不是**"Java 版 LangGraph"。每个设计选择都强化三个属
 - 任何 Spring 内容 → 仅 `tracegraph-spring-boot-starter`（它只依赖 `spring-boot-autoconfigure`）。
 - OpenTelemetry → 通过 `tracegraph-observability` 的 `NodeListener` 接入，core 绝不导入。
 
-各模块内容见 **[[zh-Modules|模块]]**。
+各模块内容见 **[[模块|zh-Modules]]**。
 
 ## SPI 接缝
 
@@ -91,4 +91,4 @@ core 定义五个服务提供接口，并提供 no-op 或最小默认实现；�
 
 ---
 
-**相关：** **[[zh-Core-Concepts|核心概念]]** · **[[zh-Execution-Model|执行模型]]** · **[[zh-Modules|模块]]** · **[[zh-Observability-and-Replay|可观测性与重放]]**
+**相关：** **[[核心概念|zh-Core-Concepts]]** · **[[执行模型|zh-Execution-Model]]** · **[[模块|zh-Modules]]** · **[[可观测性与重放|zh-Observability-and-Replay]]**

@@ -1,8 +1,8 @@
 # 实用手册
 
-任务导向食谱——"我想构建 X"→ 这是它的形态。每个食谱都链接到仓库中的可运行示例。循序渐进的教程见 **[[zh-Tutorial|教程]]**。
+任务导向食谱——"我想构建 X"→ 这是它的形态。每个食谱都链接到仓库中的可运行示例。循序渐进的教程见 **[[教程|zh-Tutorial]]**。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Cookbook]]**
+> 🌐 English: **[[Cookbook]]**
 
 **食谱**
 
@@ -30,7 +30,7 @@ Graph<AgentState> agent = ReActAgent.<AgentState>builder()
     .buildGraph();
 ```
 
-完整讲解见 **[[zh-Tutorial|教程]] → 第 8 部分**，API 见 **[[zh-LLM-Connectors|LLM 连接器]]**，可运行示例：
+完整讲解见 **[[教程|zh-Tutorial]] → 第 8 部分**，API 见 **[[LLM 连接器|zh-LLM-Connectors]]**，可运行示例：
 
 👉 [`examples/react-agent/`](https://github.com/kimhongzhang323/TraceGraph/tree/main/examples/react-agent)
 
@@ -61,7 +61,7 @@ graph TD
 //   不相关，>= 3     -> "generate"（尽力作答）
 ```
 
-用 `RoutingNode` 接线（见 **[[zh-Runtime-Features|运行时特性]] → 动态路由**），并给 `retrieve`/`generate` 节点各自的重试策略。因每步都是节点，整个循环在追踪中端到端可观测。模块见 **[[zh-RAG|RAG 检索增强]]**，可运行示例：
+用 `RoutingNode` 接线（见 **[[运行时特性|zh-Runtime-Features]] → 动态路由**），并给 `retrieve`/`generate` 节点各自的重试策略。因每步都是节点，整个循环在追踪中端到端可观测。模块见 **[[RAG 检索增强|zh-RAG]]**，可运行示例：
 
 👉 [`examples/rag-agent/`](https://github.com/kimhongzhang323/TraceGraph/tree/main/examples/rag-agent)
 
@@ -87,10 +87,10 @@ ExecutionResult<ApprovalState> r = graph.run(ApprovalState.of("Draft content..."
 graph.resume(r.executionId());                                                        // COMPLETED
 ```
 
-完整讲解见 **[[zh-Tutorial|教程]] → 第 11 部分**；REST 流程见 **[[zh-REST-API-Reference|REST API 参考]]**（`POST /tracegraph/traces/{id}/resume`）。可运行示例：
+完整讲解见 **[[教程|zh-Tutorial]] → 第 11 部分**；REST 流程见 **[[REST API 参考|zh-REST-API-Reference]]**（`POST /tracegraph/traces/{id}/resume`）。可运行示例：
 
 👉 [`examples/hitl-approval/`](https://github.com/kimhongzhang323/TraceGraph/tree/main/examples/hitl-approval)
 
 ---
 
-**另见：** **[[zh-Tutorial|教程]]** · **[[zh-Multi-Agent-Patterns|多智能体模式]]** · **[[zh-Spring-Boot-Integration|Spring Boot 集成]]**
+**另见：** **[[教程|zh-Tutorial]]** · **[[多智能体模式|zh-Multi-Agent-Patterns]]** · **[[Spring Boot 集成|zh-Spring-Boot-Integration]]**

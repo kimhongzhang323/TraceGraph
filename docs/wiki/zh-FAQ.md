@@ -1,6 +1,6 @@
 # 常见问题
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[FAQ]]**
+> 🌐 English: **[[FAQ]]**
 
 ## TraceGraph 是 LangGraph 的克隆吗？
 
@@ -12,11 +12,11 @@
 
 ## 可以只配合 Spring Boot 使用吗？
 
-可以，但 starter 是**附加性**的。底层你仍在使用同一个 `Graph<S>` 运行时与 SPI 抽象。见 **[[zh-Spring-Boot-Integration|Spring Boot 集成]]**。
+可以，但 starter 是**附加性**的。底层你仍在使用同一个 `Graph<S>` 运行时与 SPI 抽象。见 **[[Spring Boot 集成|zh-Spring-Boot-Integration]]**。
 
 ## 今天就支持持久化恢复吗？
 
-是的——通过 `CheckpointStore` SPI 与 `tracegraph-runtime`（`InMemoryCheckpointStore`、`JdbcCheckpointStore`）。持久化能力仍在演进，应视为 1.0 之前的基础设施。见 **[[zh-Runtime-Features|运行时特性]]**。
+是的——通过 `CheckpointStore` SPI 与 `tracegraph-runtime`（`InMemoryCheckpointStore`、`JdbcCheckpointStore`）。持久化能力仍在演进，应视为 1.0 之前的基础设施。见 **[[运行时特性|zh-Runtime-Features]]**。
 
 ## 如何在不改图逻辑的情况下切换 LLM 提供方？
 
@@ -34,7 +34,7 @@ LlmClient client = AnthropicLlmClient.builder()
 
 ## LLM 提供方返回非 2xx 状态会怎样？
 
-两个 HTTP 适配器都抛出 **`LlmHttpException`**（含 `statusCode()` 与 `body()`）。它穿过 `ChatNode.apply()` 被视为节点失败。若节点配置了 `RetryPolicy`，执行器会重试整个调用——429 是指数退避重试的典型场景。见 **[[zh-LLM-Connectors|LLM 连接器]]**。
+两个 HTTP 适配器都抛出 **`LlmHttpException`**（含 `statusCode()` 与 `body()`）。它穿过 `ChatNode.apply()` 被视为节点失败。若节点配置了 `RetryPolicy`，执行器会重试整个调用——429 是指数退避重试的典型场景。见 **[[LLM 连接器|zh-LLM-Connectors]]**。
 
 ## 可以用本地模型（Ollama、LM Studio）吗？
 
@@ -55,7 +55,7 @@ OpenAiLlmClient.builder()
 - **LLM token 流式**——`LlmClient.stream(request)` 返回增量 token，供 UI 使用。
 - **图级事件流式**——`Graph.stream(initial)`（及 SSE 端点）发出 node enter/exit/retry/complete 事件。
 
-见 **[[zh-LLM-Connectors|LLM 连接器]]** 与 **[[zh-Runtime-Features|运行时特性]]**。
+见 **[[LLM 连接器|zh-LLM-Connectors]]** 与 **[[运行时特性|zh-Runtime-Features]]**。
 
 ## 为什么 `Node<S>` 是单参数而非 `Node<S, R>`？
 
@@ -63,23 +63,23 @@ OpenAiLlmClient.builder()
 
 ## 节点保证恰好运行一次吗？
 
-不。节点在恢复时是**至少一次**。若节点执行中途崩溃，恢复时该节点从第 1 次尝试重跑。在有副作用的节点内用 `ctx.idempotencyKey()` 做去重，并保持**边谓词为纯函数**。见 **[[zh-Execution-Model|执行模型]]**。
+不。节点在恢复时是**至少一次**。若节点执行中途崩溃，恢复时该节点从第 1 次尝试重跑。在有副作用的节点内用 `ctx.idempotencyKey()` 做去重，并保持**边谓词为纯函数**。见 **[[执行模型|zh-Execution-Model]]**。
 
 ## 检查点相对于边在何时写入？
 
-**在节点退出之后、解析边之前。** 恢复时重新求值已保存 `lastCompletedNode` 的出边并继续。见 **[[zh-Runtime-Features|运行时特性]]**。
+**在节点退出之后、解析边之前。** 恢复时重新求值已保存 `lastCompletedNode` 的出边并继续。见 **[[运行时特性|zh-Runtime-Features]]**。
 
 ## 重试会产生额外的追踪步骤或 span 吗？
 
-不会。重试是**同一 span 上的事件**（不是每次尝试一个 span），且**不产生额外追踪步骤**——`TraceStep.attempts` 记录次数。见 **[[zh-Observability-and-Replay|可观测性与重放]]**。
+不会。重试是**同一 span 上的事件**（不是每次尝试一个 span），且**不产生额外追踪步骤**——`TraceStep.attempts` 记录次数。见 **[[可观测性与重放|zh-Observability-and-Replay]]**。
 
 ## 并行分支会出现在追踪/监听器中吗？
 
-不会。`parallel(...)` 内的分支是匿名的——**无名称、无路径条目、无监听器事件、无 span**——且只产生**一个**追踪步骤。这是 Phase 2c 契约。见 **[[zh-Runtime-Features|运行时特性]]**。
+不会。`parallel(...)` 内的分支是匿名的——**无名称、无路径条目、无监听器事件、无 span**——且只产生**一个**追踪步骤。这是 Phase 2c 契约。见 **[[运行时特性|zh-Runtime-Features]]**。
 
 ## 工作记忆与 MemoryStore 有何区别？
 
-**状态对象**是工作记忆（单次执行内）。**`MemoryStore`** 用于跨执行数据（会话、长期事实）。向量/语义检索在 `tracegraph-rag`，不在记忆 SPI。见 **[[zh-Memory|记忆]]** 与 **[[zh-RAG|RAG 检索增强]]**。
+**状态对象**是工作记忆（单次执行内）。**`MemoryStore`** 用于跨执行数据（会话、长期事实）。向量/语义检索在 `tracegraph-rag`，不在记忆 SPI。见 **[[记忆|zh-Memory]]** 与 **[[RAG 检索增强|zh-RAG]]**。
 
 ## 需要哪个 JDK？
 

@@ -4,7 +4,7 @@
 
 LLM 输出非确定且常为自然语言，因此"是否变好"需要**数据集上的指标**，而非单个断言。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Evaluation]]**
+> 🌐 English: **[[Evaluation]]**
 
 ## 核心概念
 
@@ -107,7 +107,7 @@ String md = EvalReport.toSummaryMarkdown(results);
 
 ## 逐步黄金追踪断言
 
-除终态相等外，对捕获的 `ExecutionTrace<S>`（见 **[[zh-Observability-and-Replay|可观测性与重放]]**）评估**中间行为**（工具参数、检索文档、重试次数）：
+除终态相等外，对捕获的 `ExecutionTrace<S>`（见 **[[可观测性与重放|zh-Observability-and-Replay]]**）评估**中间行为**（工具参数、检索文档、重试次数）：
 
 ```java
 EvalRunner<S> runner = EvalRunner.<S>builder()
@@ -125,4 +125,4 @@ EvalRunner<S> runner = EvalRunner.<S>builder()
 
 ---
 
-**相关：** **[[zh-Observability-and-Replay|可观测性与重放]]** · **[[zh-LLM-Connectors|LLM 连接器]]** · **[[zh-Multi-Agent-Patterns|多智能体模式]]**
+**相关：** **[[可观测性与重放|zh-Observability-and-Replay]]** · **[[LLM 连接器|zh-LLM-Connectors]]** · **[[多智能体模式|zh-Multi-Agent-Patterns]]**

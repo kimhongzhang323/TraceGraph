@@ -2,7 +2,7 @@
 
 Task-oriented recipes — "I want to build X" → here's the shape. Each recipe links to a runnable example in the repo. For the build-up walkthrough, see **[[Tutorial]]**.
 
-> 🌐 中文版： **[[zh-Cookbook|实用手册]]**
+> 🌐 中文版： **[[实用手册|zh-Cookbook]]**
 
 **Recipes**
 

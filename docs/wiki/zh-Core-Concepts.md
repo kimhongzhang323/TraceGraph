@@ -2,7 +2,7 @@
 
 阅读和编写任何 TraceGraph 程序所需的词汇。以下内容都位于 `tracegraph-core`——它没有重型依赖（运行时仅 SLF4J API）。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Core Concepts]]**
+> 🌐 English: **[[Core Concepts]]**
 
 ## 图 (Graph)
 
@@ -40,7 +40,7 @@ Graph<S> graph = Graph.<S>builder()
 | 并行异步分支 | `parallelAsync(...)` | 合并后的 `S` |
 | 路由 | `routingNode(name, fn)` | `NodeResult<S>` |
 
-如果节点在多次执行间复用，其实现必须**线程安全**——无状态节点是常态。异步、并行与路由详见 **[[zh-Runtime-Features|运行时特性]]**。
+如果节点在多次执行间复用，其实现必须**线程安全**——无状态节点是常态。异步、并行与路由详见 **[[运行时特性|zh-Runtime-Features]]**。
 
 ## 边 (Edge)
 
@@ -55,14 +55,14 @@ Graph<S> graph = Graph.<S>builder()
 
 **状态对象就是一次运行的工作记忆**，在节点之间流动；每个节点返回下一个状态。record 是惯用选择——小巧、不可变、带 `withX(...)` 拷贝方法。
 
-> `MemoryStore`（见 **[[zh-Memory|记忆]]**）用于*跨执行*数据；状态对象处理*执行内*数据。
+> `MemoryStore`（见 **[[记忆|zh-Memory]]**）用于*跨执行*数据；状态对象处理*执行内*数据。
 
 ## 上下文 (Context)
 
 `Context` 随状态一起传入每个节点。它是**每次执行、每个节点**独有的，绝不跨执行共享。它暴露：
 
 - `ctx.idempotencyKey()`——用于你自己节点级去重的稳定键（如 LLM/HTTP 调用去重）。
-- `ctx.memory()`——已接入的 `MemoryStore`（默认 no-op）。见 **[[zh-Memory|记忆]]**。
+- `ctx.memory()`——已接入的 `MemoryStore`（默认 no-op）。见 **[[记忆|zh-Memory]]**。
 - `ctx.reportUsage(promptTokens, completionTokens)`——向监听器上报 LLM token 用量，由 `ChatNode` 自动触发。
 
 ## 执行结果 (ExecutionResult)
@@ -89,7 +89,7 @@ TraceGraph 通过暴露**服务提供接口**让 `tracegraph-core` 保持精简�
 | `MemoryStore` | `.memoryStore(...)` | 作用域化的跨运行键值存储 | `tracegraph-memory` |
 | `Guardrail<T>` | （节点逻辑） | ALLOW/BLOCK/TRANSFORM 内容门控 | `tracegraph-connectors` |
 
-按设计，`NodeListener` **span 形态且对 executionId 无感知**；`TraceRecorder` **感知 executionId**。二者刻意分离。见 **[[zh-Observability-and-Replay|可观测性与重放]]**。
+按设计，`NodeListener` **span 形态且对 executionId 无感知**；`TraceRecorder` **感知 executionId**。二者刻意分离。见 **[[可观测性与重放|zh-Observability-and-Replay]]**。
 
 ## 值得记住的约定
 
@@ -101,4 +101,4 @@ TraceGraph 通过暴露**服务提供接口**让 `tracegraph-core` 保持精简�
 
 ---
 
-**下一步：** **[[zh-Execution-Model|执行模型]]**——执行器究竟如何运行一个图。
+**下一步：** **[[执行模型|zh-Execution-Model]]**——执行器究竟如何运行一个图。

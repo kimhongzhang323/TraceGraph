@@ -2,7 +2,7 @@
 
 差异化所在：**可以重放任意一次智能体执行，并附带完整的状态差异与推理追踪。** 以下内容都在 `tracegraph-observability`；`tracegraph-core` 保持无 OTel，仅暴露 SPI。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Observability and Replay]]**
+> 🌐 English: **[[Observability and Replay]]**
 
 ## 两个 SPI，两种形态
 
@@ -152,4 +152,4 @@ CostReport report = cost.snapshot(executionId);   // executionId, usageByNode, t
 
 ---
 
-**相关：** **[[zh-LLM-Connectors|LLM 连接器]]** · **[[zh-Evaluation|评估]]** · **[[zh-REST-API-Reference|REST API 参考]]**
+**相关：** **[[LLM 连接器|zh-LLM-Connectors]]** · **[[评估|zh-Evaluation]]** · **[[REST API 参考|zh-REST-API-Reference]]**

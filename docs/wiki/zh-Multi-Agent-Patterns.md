@@ -1,8 +1,8 @@
 # 多智能体模式
 
-`ReActAgent<S>` 是单智能体原语（见 **[[zh-LLM-Connectors|LLM 连接器]]**）。`0.3.0` 增加了四种把多个 ReAct 智能体组合成 `Graph<S>` 的方式，以及一个为它们提供收敛保证的终止监听器。它们都在 `tracegraph-connectors`。
+`ReActAgent<S>` 是单智能体原语（见 **[[LLM 连接器|zh-LLM-Connectors]]**）。`0.3.0` 增加了四种把多个 ReAct 智能体组合成 `Graph<S>` 的方式，以及一个为它们提供收敛保证的终止监听器。它们都在 `tracegraph-connectors`。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Multi-Agent Patterns]]**
+> 🌐 English: **[[Multi-Agent Patterns]]**
 
 | 模式 | 类型 | 形态 |
 |---|---|---|
@@ -48,7 +48,7 @@ Graph<S> graph = ReActAgent.<S>builder()
         .build().buildGraph();
 ```
 
-`memoryScope` 接入 `MemoryStore`（见 **[[zh-Memory|记忆]]**），使每个智能体读写自己的作用域。
+`memoryScope` 接入 `MemoryStore`（见 **[[记忆|zh-Memory]]**），使每个智能体读写自己的作用域。
 
 ## GroupChatAgent —— 轮询或 LLM 选定发言者
 
@@ -67,7 +67,7 @@ Graph<S> chat = GroupChatAgent.<S>builder()
 
 ## VotingNode —— 并行共识
 
-用 `parallel(...)`（见 **[[zh-Runtime-Features|运行时特性]]**）在候选 ReAct 子图上扇出，再用 `Tally` 聚合它们的状态。
+用 `parallel(...)`（见 **[[运行时特性|zh-Runtime-Features]]**）在候选 ReAct 子图上扇出，再用 `Tally` 聚合它们的状态。
 
 ```java
 Node<S> vote = VotingNode.<S>builder()
@@ -112,4 +112,4 @@ A2AMessage response = dispatcher.sendAndWait(request);
 
 ---
 
-**相关：** **[[zh-LLM-Connectors|LLM 连接器]]** · **[[zh-Memory|记忆]]** · **[[zh-Observability-and-Replay|可观测性与重放]]** · **[[zh-Evaluation|评估]]**
+**相关：** **[[LLM 连接器|zh-LLM-Connectors]]** · **[[记忆|zh-Memory]]** · **[[可观测性与重放|zh-Observability-and-Replay]]** · **[[评估|zh-Evaluation]]**

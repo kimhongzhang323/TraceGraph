@@ -2,7 +2,7 @@
 
 A guided, build-up walkthrough of TraceGraph. Each part adds one capability to a shared example. Read top-to-bottom the first time; use it as a reference afterwards.
 
-> 🌐 中文版： **[[zh-Tutorial|教程]]**
+> 🌐 中文版： **[[教程|zh-Tutorial]]**
 
 **Contents**
 

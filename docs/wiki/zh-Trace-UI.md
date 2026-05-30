@@ -2,7 +2,7 @@
 
 追踪界面是一个基于浏览器的仪表板，用于检视、重放与比较智能体执行。它直接读取 TraceGraph REST API——无需单独部署后端。由 `tracegraph-ui` 模块提供。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Trace UI]]**
+> 🌐 English: **[[Trace UI]]**
 
 ## 前置条件
 
@@ -27,7 +27,7 @@ tracegraph:
 http://localhost:8080/tracegraph/ui/
 ```
 
-它在同源连接 REST API（无需 CORS）。你也可直接使用 REST 端点而不用 UI——见 **[[zh-REST-API-Reference|REST API 参考]]**。
+它在同源连接 REST API（无需 CORS）。你也可直接使用 REST 端点而不用 UI——见 **[[REST API 参考|zh-REST-API-Reference]]**。
 
 ## 四个视图
 
@@ -59,4 +59,4 @@ http://localhost:8080/tracegraph/ui/
 
 ---
 
-**相关：** **[[zh-REST-API-Reference|REST API 参考]]** · **[[zh-Observability-and-Replay|可观测性与重放]]** · **[[zh-Graph-Complexity|图复杂度]]**
+**相关：** **[[REST API 参考|zh-REST-API-Reference]]** · **[[可观测性与重放|zh-Observability-and-Replay]]** · **[[图复杂度|zh-Graph-Complexity]]**

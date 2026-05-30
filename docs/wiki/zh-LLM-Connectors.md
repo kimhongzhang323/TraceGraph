@@ -4,7 +4,7 @@
 
 该模块**除 `tracegraph-core` 外无强制依赖**——仅当使用 HTTP 适配器时才引入 Jackson。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[LLM Connectors]]**
+> 🌐 English: **[[LLM Connectors]]**
 
 ## LlmClient —— SPI
 
@@ -157,7 +157,7 @@ Graph<AgentState> agentGraph = ReActAgent.<AgentState>builder()
     .buildGraph();
 ```
 
-要组合**多个** ReAct 智能体（交接、群聊、投票、角色/工具隔离），见 **[[zh-Multi-Agent-Patterns|多智能体模式]]**。
+要组合**多个** ReAct 智能体（交接、群聊、投票、角色/工具隔离），见 **[[多智能体模式|zh-Multi-Agent-Patterns]]**。
 
 ## token 流式
 
@@ -173,7 +173,7 @@ client.stream(request).subscribe(new Flow.Subscriber<>() {
 });
 ```
 
-> token 流式（`LlmClient.stream`）区别于图级事件流式（`Graph.stream`）——见 **[[zh-Runtime-Features|运行时特性]]**。
+> token 流式（`LlmClient.stream`）区别于图级事件流式（`Graph.stream`）——见 **[[运行时特性|zh-Runtime-Features]]**。
 
 ## 其他连接器组件（0.3.0）
 
@@ -186,12 +186,12 @@ client.stream(request).subscribe(new Flow.Subscriber<>() {
 
 ## Spring Boot
 
-`LlmAutoConfiguration` 从 `tracegraph.llm.*` 属性接线 `OpenAiLlmClient` 或 `AnthropicLlmClient`——见 **[[zh-Spring-Boot-Integration|Spring Boot 集成]]**。
+`LlmAutoConfiguration` 从 `tracegraph.llm.*` 属性接线 `OpenAiLlmClient` 或 `AnthropicLlmClient`——见 **[[Spring Boot 集成|zh-Spring-Boot-Integration]]**。
 
 ## 成本追踪
 
-`ChatNode` 触发 `ctx.reportUsage(...)`；`LlmCostListener`（在 `tracegraph-observability`）累计每执行/每节点总量——见 **[[zh-Observability-and-Replay|可观测性与重放]]**。
+`ChatNode` 触发 `ctx.reportUsage(...)`；`LlmCostListener`（在 `tracegraph-observability`）累计每执行/每节点总量——见 **[[可观测性与重放|zh-Observability-and-Replay]]**。
 
 ---
 
-**相关：** **[[zh-Multi-Agent-Patterns|多智能体模式]]** · **[[zh-RAG|RAG 检索增强]]** · **[[zh-Observability-and-Replay|可观测性与重放]]**
+**相关：** **[[多智能体模式|zh-Multi-Agent-Patterns]]** · **[[RAG 检索增强|zh-RAG]]** · **[[可观测性与重放|zh-Observability-and-Replay]]**

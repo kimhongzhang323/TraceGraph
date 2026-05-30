@@ -2,7 +2,7 @@
 
 面向智能体工作流的、作用域化的跨执行键值存储。SPI 在 `tracegraph-core`；实现在 `tracegraph-memory`。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Memory]]**
+> 🌐 English: **[[Memory]]**
 
 ## 工作记忆 vs 记忆存储
 
@@ -76,7 +76,7 @@ tracegraph:
       table: tracegraph_memory
 ```
 
-完整属性参考见 **[[zh-Spring-Boot-Integration|Spring Boot 集成]]**。
+完整属性参考见 **[[Spring Boot 集成|zh-Spring-Boot-Integration]]**。
 
 ## 作用域约定
 
@@ -90,8 +90,8 @@ tracegraph:
 
 ## 已推迟内容
 
-TTL / 过期与向量 / 语义检索是**推迟的切片**。今天的检索见 **[[zh-RAG|RAG 检索增强]]**。
+TTL / 过期与向量 / 语义检索是**推迟的切片**。今天的检索见 **[[RAG 检索增强|zh-RAG]]**。
 
 ---
 
-**相关：** **[[zh-Core-Concepts|核心概念]]** · **[[zh-Multi-Agent-Patterns|多智能体模式]]** · **[[zh-RAG|RAG 检索增强]]**
+**相关：** **[[核心概念|zh-Core-Concepts]]** · **[[多智能体模式|zh-Multi-Agent-Patterns]]** · **[[RAG 检索增强|zh-RAG]]**

@@ -2,7 +2,7 @@
 
 `GraphComplexity` 是由 `graph.complexity()` 与 `GET /tracegraph/ui/complexity` 端点返回的不可变记录。它揭示已编译图的结构指标，让你在部署**之前**就能推断可维护性、可测试性与运行时行为。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Graph Complexity]]**
+> 🌐 English: **[[Graph Complexity]]**
 
 ## 字段
 
@@ -62,4 +62,4 @@ if (c.cyclomaticComplexity() > 10) {
 GET /tracegraph/ui/complexity
 ```
 
-返回相同 JSON。见 **[[zh-REST-API-Reference|REST API 参考]]** 与 **[[zh-Trace-UI|追踪界面]]**。
+返回相同 JSON。见 **[[REST API 参考|zh-REST-API-Reference]]** 与 **[[追踪界面|zh-Trace-UI]]**。

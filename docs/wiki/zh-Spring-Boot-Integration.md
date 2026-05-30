@@ -2,7 +2,7 @@
 
 `tracegraph-spring-boot-starter` 提供自动配置、REST 端点与依赖注入。它仅依赖 `spring-boot-autoconfigure`；observability、connectors 与 web 部分是**可选**的，按条件激活。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Spring Boot Integration]]**
+> 🌐 English: **[[Spring Boot Integration]]**
 >
 > Spring Boot 在父 BOM 中固定为 **3.3.5**。Spring 导入仅限本模块——core 保持无框架。
 
@@ -112,7 +112,7 @@ TraceStore traceStore(DataSource ds) {
 
 ## REST 端点
 
-当存在 observability 模块与 `TraceStore` bean 时，starter 在 `/tracegraph/*` 暴露追踪、重放、恢复与流式端点。完整参考：**[[zh-REST-API-Reference|REST API 参考]]**。
+当存在 observability 模块与 `TraceStore` bean 时，starter 在 `/tracegraph/*` 暴露追踪、重放、恢复与流式端点。完整参考：**[[REST API 参考|zh-REST-API-Reference]]**。
 
 快速列表：
 
@@ -134,4 +134,4 @@ mvn -f examples/spring-boot-app/pom.xml spring-boot:run
 
 ---
 
-**相关：** **[[zh-REST-API-Reference|REST API 参考]]** · **[[zh-Memory|记忆]]** · **[[zh-LLM-Connectors|LLM 连接器]]** · **[[zh-Observability-and-Replay|可观测性与重放]]**
+**相关：** **[[REST API 参考|zh-REST-API-Reference]]** · **[[记忆|zh-Memory]]** · **[[LLM 连接器|zh-LLM-Connectors]]** · **[[可观测性与重放|zh-Observability-and-Replay]]**

@@ -2,7 +2,7 @@
 
 循序渐进的 TraceGraph 教程。每一部分在共享示例上增加一项能力。首次请从头读到尾；之后可作参考。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Tutorial]]**
+> 🌐 English: **[[Tutorial]]**
 
 **目录**
 
@@ -131,7 +131,7 @@ ctx.memory().put("user:42", "preferences", Map.of("lang", "en"));
 Object prefs = ctx.memory().get("user:42", "preferences");
 ```
 
-第一个参数是**作用域**，第二个是键。用 `.memoryStore(store)` 接入；未接入则 `ctx.memory()` 是丢弃写入的 no-op。生产实现：`FileMemoryStore.of(path)` 与 `new JdbcMemoryStore(dataSource)`（调 `initSchema()`）。两者经 Jackson 多态序列化往返异构值，并拒绝含 `/`、`\`、`..` 的 scope/key。见 **[[zh-Memory|记忆]]**。
+第一个参数是**作用域**，第二个是键。用 `.memoryStore(store)` 接入；未接入则 `ctx.memory()` 是丢弃写入的 no-op。生产实现：`FileMemoryStore.of(path)` 与 `new JdbcMemoryStore(dataSource)`（调 `initSchema()`）。两者经 Jackson 多态序列化往返异构值，并拒绝含 `/`、`\`、`..` 的 scope/key。见 **[[记忆|zh-Memory]]**。
 
 ---
 
@@ -150,7 +150,7 @@ Node<ChatState> chatNode = ChatNode.<ChatState>builder()
     .build();
 ```
 
-`ChatNode` 在每次响应后自动调用 `ctx.reportUsage(...)`，使 token 用量出现在追踪步骤与 OTel span 中。切到 Anthropic 只需改一行；系统消息被提升到顶层 `system` 字段，非 2xx 表现为 `LlmHttpException`。见 **[[zh-LLM-Connectors|LLM 连接器]]**。
+`ChatNode` 在每次响应后自动调用 `ctx.reportUsage(...)`，使 token 用量出现在追踪步骤与 OTel span 中。切到 Anthropic 只需改一行；系统消息被提升到顶层 `system` 字段，非 2xx 表现为 `LlmHttpException`。见 **[[LLM 连接器|zh-LLM-Connectors]]**。
 
 ---
 
@@ -171,13 +171,13 @@ Graph<AgentState> agentGraph = ReActAgent.<AgentState>builder()
 ExecutionResult<AgentState> result = agentGraph.run(AgentState.of("What is 42 * 17?"));
 ```
 
-智能体循环直到 LLM 不再请求工具。因结果是普通 `Graph<S>`，可用 `.subgraph("agent", agentGraph)` 嵌入更大图。组合**多个**智能体见 **[[zh-Multi-Agent-Patterns|多智能体模式]]**。
+智能体循环直到 LLM 不再请求工具。因结果是普通 `Graph<S>`，可用 `.subgraph("agent", agentGraph)` 嵌入更大图。组合**多个**智能体见 **[[多智能体模式|zh-Multi-Agent-Patterns]]**。
 
 ---
 
 ## 9 — RAG 流水线
 
-在 TraceGraph 中每个 RAG 步骤都是节点——因此检索与生成都获得重试、追踪步骤与检查点。三节点：`retrieve`（向量搜索）→ `augment`（把上下文贴入系统提示词）→ `generate`（`ChatNode` 调 LLM）。在 retrieve 与 augment 间插入 rerank 节点提升相关性。换向量库只需改 `retrieveNode`。见 **[[zh-RAG|RAG 检索增强]]**。
+在 TraceGraph 中每个 RAG 步骤都是节点——因此检索与生成都获得重试、追踪步骤与检查点。三节点：`retrieve`（向量搜索）→ `augment`（把上下文贴入系统提示词）→ `generate`（`ChatNode` 调 LLM）。在 retrieve 与 augment 间插入 rerank 节点提升相关性。换向量库只需改 `retrieveNode`。见 **[[RAG 检索增强|zh-RAG]]**。
 
 ---
 
@@ -196,7 +196,7 @@ ReplayRunner<RagState> runner = ReplayRunner.of(trace, improvedGraph);
 ExecutionResult<RagState> forked = runner.reRunFrom(1);   // 携带 forkedFrom* 血缘
 ```
 
-`stepIndex == -1` 用原种子从入口重放；第二个参数可覆盖种子。`TraceDiff.between(original, forked)` 比较两条追踪（`divergenceIndex()`、`sameFinalState()`、`identical()`）。持久追踪用 `JsonFileTraceStore.of(dir, RagState.class)`。见 **[[zh-Observability-and-Replay|可观测性与重放]]**。
+`stepIndex == -1` 用原种子从入口重放；第二个参数可覆盖种子。`TraceDiff.between(original, forked)` 比较两条追踪（`divergenceIndex()`、`sameFinalState()`、`identical()`）。持久追踪用 `JsonFileTraceStore.of(dir, RagState.class)`。见 **[[可观测性与重放|zh-Observability-and-Replay]]**。
 
 ---
 
@@ -214,8 +214,8 @@ Graph<ApprovalState> graph = Graph.<ApprovalState>builder()
     .build();
 ```
 
-`interruptBefore(name)` 在节点前暂停并写检查点；`interruptAfter(name)` 运行节点、写检查点、再暂停。运行返回 `Status.INTERRUPTED`（不抛异常）。检视后 `graph.resume(id)` 继续。恢复前修改状态：加载、修改、重存检查点，再 `resume`。不支持 `parallel(...)` 内逐分支中断。starter 暴露 `POST /tracegraph/traces/{id}/resume`——见 **[[zh-REST-API-Reference|REST API 参考]]**。
+`interruptBefore(name)` 在节点前暂停并写检查点；`interruptAfter(name)` 运行节点、写检查点、再暂停。运行返回 `Status.INTERRUPTED`（不抛异常）。检视后 `graph.resume(id)` 继续。恢复前修改状态：加载、修改、重存检查点，再 `resume`。不支持 `parallel(...)` 内逐分支中断。starter 暴露 `POST /tracegraph/traces/{id}/resume`——见 **[[REST API 参考|zh-REST-API-Reference]]**。
 
 ---
 
-**下一步：** **[[zh-Cookbook|实用手册]]** 看任务导向食谱，或 **[[zh-Architecture|架构设计]]** 看设计理由。
+**下一步：** **[[实用手册|zh-Cookbook]]** 看任务导向食谱，或 **[[架构设计|zh-Architecture]]** 看设计理由。

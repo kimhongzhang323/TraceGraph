@@ -2,7 +2,7 @@
 
 `GraphComplexity` is an immutable record returned by `graph.complexity()` and the `GET /tracegraph/ui/complexity` endpoint. It surfaces structural metrics about a compiled graph so you can reason about maintainability, testability, and runtime behaviour **before** deploying.
 
-> 🌐 中文版： **[[zh-Graph-Complexity|图复杂度]]**
+> 🌐 中文版： **[[图复杂度|zh-Graph-Complexity]]**
 
 ## Fields
 

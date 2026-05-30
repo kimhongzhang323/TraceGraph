@@ -2,7 +2,7 @@
 
 执行器在普通节点到节点行走之外所做的一切。大多数特性是纯 `tracegraph-core`；持久化检查点在 `tracegraph-runtime`。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[Runtime Features]]**
+> 🌐 English: **[[Runtime Features]]**
 
 ## 重试
 
@@ -108,7 +108,7 @@ graph.resume(r.executionId());            // 继续
 
 - `interruptBefore` 写入 `interruptPending=true` 的检查点；`interruptAfter` 写入正常 `lastCompletedNode`。两者都返回 `Status.INTERRUPTED`。
 - 不支持 `parallel(...)` 内的逐分支中断。
-- Spring Boot starter 暴露 `POST /tracegraph/traces/{id}/resume`——见 **[[zh-REST-API-Reference|REST API 参考]]**。
+- Spring Boot starter 暴露 `POST /tracegraph/traces/{id}/resume`——见 **[[REST API 参考|zh-REST-API-Reference]]**。
 
 ## 动态路由
 
@@ -150,7 +150,7 @@ graph.stream(initial).subscribe(subscriber);
 - core 保持纯 JDK。
 - Spring Boot starter 以 SSE 暴露 `POST /tracegraph/traces/stream`。
 
-> 这里的流式是**图级事件**，区别于 **LLM token 流式**（`LlmClient.stream(...)`）——见 **[[zh-LLM-Connectors|LLM 连接器]]**。
+> 这里的流式是**图级事件**，区别于 **LLM token 流式**（`LlmClient.stream(...)`）——见 **[[LLM 连接器|zh-LLM-Connectors]]**。
 
 ## 可视化
 
@@ -165,4 +165,4 @@ String plantUml = graph.toPlantUml();
 
 ---
 
-**相关：** **[[zh-Memory|记忆]]** · **[[zh-Observability-and-Replay|可观测性与重放]]** · **[[zh-Execution-Model|执行模型]]**
+**相关：** **[[记忆|zh-Memory]]** · **[[可观测性与重放|zh-Observability-and-Replay]]** · **[[执行模型|zh-Execution-Model]]**

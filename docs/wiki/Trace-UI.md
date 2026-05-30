@@ -2,7 +2,7 @@
 
 The Trace UI is a browser-based dashboard for inspecting, replaying, and comparing agent executions. It reads directly from the TraceGraph REST API — there is no separate backend to deploy. Served by the `tracegraph-ui` module.
 
-> 🌐 中文版： **[[zh-Trace-UI|追踪界面]]**
+> 🌐 中文版： **[[追踪界面|zh-Trace-UI]]**
 
 ## Prerequisites
 

@@ -2,9 +2,9 @@
 
 `tracegraph-spring-boot-starter` 暴露用于管理追踪、触发重放、恢复中断运行与流式执行事件的 HTTP 端点。所有端点位于 **`/tracegraph`** 路径前缀下。
 
-端点仅在条件满足时注册——切换属性见 **[[zh-Spring-Boot-Integration|Spring Boot 集成]]**。replay / resume / stream 控制器要求**单个** `Graph<?>` bean。
+端点仅在条件满足时注册——切换属性见 **[[Spring Boot 集成|zh-Spring-Boot-Integration]]**。replay / resume / stream 控制器要求**单个** `Graph<?>` bean。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[REST API Reference]]**
+> 🌐 English: **[[REST API Reference]]**
 
 ---
 
@@ -77,7 +77,7 @@ DELETE /tracegraph/traces/{id}
 GET /tracegraph/traces/{a}/diff/{b}
 ```
 
-计算追踪 `a`（左）与 `b`（右）之间的 `TraceDiff`。见 **[[zh-Observability-and-Replay|可观测性与重放]]**。
+计算追踪 `a`（左）与 `b`（右）之间的 `TraceDiff`。见 **[[可观测性与重放|zh-Observability-and-Replay]]**。
 
 **200**
 ```json
@@ -122,7 +122,7 @@ POST /tracegraph/traces/{id}/replay?step=N
 POST /tracegraph/traces/{id}/resume
 ```
 
-从检查点继续处于 `INTERRUPTED` 状态的运行。见 **[[zh-Runtime-Features|运行时特性]]** 中的中断。
+从检查点继续处于 `INTERRUPTED` 状态的运行。见 **[[运行时特性|zh-Runtime-Features]]** 中的中断。
 
 **200**
 ```json
@@ -173,8 +173,8 @@ GET /tracegraph/ui/complexity   → GraphComplexity 记录 JSON
 POST /a2a/messages              → 投递智能体到智能体消息
 ```
 
-见 **[[zh-Multi-Agent-Patterns|多智能体模式]]**。
+见 **[[多智能体模式|zh-Multi-Agent-Patterns]]**。
 
 ---
 
-**相关：** **[[zh-Spring-Boot-Integration|Spring Boot 集成]]** · **[[zh-Observability-and-Replay|可观测性与重放]]**
+**相关：** **[[Spring Boot 集成|zh-Spring-Boot-Integration]]** · **[[可观测性与重放|zh-Observability-and-Replay]]**

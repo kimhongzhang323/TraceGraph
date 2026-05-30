@@ -2,7 +2,7 @@
 
 `tracegraph-rag` 提供在 TraceGraph 图内构建检索增强工作流的工具：嵌入客户端、向量库、检索器与 RAG 流水线。
 
-> 🌐 本页为 AI 机翻草稿，需人工校对。English: **[[RAG]]**
+> 🌐 English: **[[RAG]]**
 
 ## 为什么需要 RAG
 
@@ -65,11 +65,11 @@ public class RetrieveDocsNode implements Node<RagState> {
 }
 ```
 
-随后把 `RetrieveDocsNode` 接到一个 `ChatNode`（见 **[[zh-LLM-Connectors|LLM 连接器]]**），其 `requestBuilder` 把检索到的文档贴入提示词。
+随后把 `RetrieveDocsNode` 接到一个 `ChatNode`（见 **[[LLM 连接器|zh-LLM-Connectors]]**），其 `requestBuilder` 把检索到的文档贴入提示词。
 
 ## Spring Boot
 
-starter 中的 `EmbeddingAutoConfiguration` 经 `tracegraph.rag.embedding.provider` 属性选择嵌入提供方。见 **[[zh-Spring-Boot-Integration|Spring Boot 集成]]**。
+starter 中的 `EmbeddingAutoConfiguration` 经 `tracegraph.rag.embedding.provider` 属性选择嵌入提供方。见 **[[Spring Boot 集成|zh-Spring-Boot-Integration]]**。
 
 ## 可运行示例
 
@@ -77,8 +77,8 @@ starter 中的 `EmbeddingAutoConfiguration` 经 `tracegraph.rag.embedding.provid
 mvn -f examples/rag-agent/pom.xml exec:java
 ```
 
-> **记忆 vs RAG：** `MemoryStore`（见 **[[zh-Memory|记忆]]**）是跨运行状态的作用域键值存储；向量/语义检索由 `tracegraph-rag` 提供，而非记忆 SPI。
+> **记忆 vs RAG：** `MemoryStore`（见 **[[记忆|zh-Memory]]**）是跨运行状态的作用域键值存储；向量/语义检索由 `tracegraph-rag` 提供，而非记忆 SPI。
 
 ---
 
-**相关：** **[[zh-LLM-Connectors|LLM 连接器]]** · **[[zh-Memory|记忆]]** · **[[zh-Multi-Agent-Patterns|多智能体模式]]**
+**相关：** **[[LLM 连接器|zh-LLM-Connectors]]** · **[[记忆|zh-Memory]]** · **[[多智能体模式|zh-Multi-Agent-Patterns]]**

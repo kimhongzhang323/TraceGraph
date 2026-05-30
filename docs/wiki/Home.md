@@ -6,7 +6,7 @@ TraceGraph is a JVM-native agent runtime for building typed execution graphs wit
 
 > **Current release:** `0.3.0` (2026-05-24) · **Requires:** JDK 21 · **License:** Apache 2.0
 
-> 🌐 **Languages:** English (default) · **[[zh-Home|中文（AI 机翻草稿）]]**
+> 🌐 **Languages:** English (default) · **[[中文|zh-Home]]**
 
 ---
 
