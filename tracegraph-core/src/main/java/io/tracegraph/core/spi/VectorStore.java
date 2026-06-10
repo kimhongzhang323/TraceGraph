@@ -6,8 +6,8 @@ import java.util.Map;
 /**
  * Scoped vector store SPI for nearest-neighbour recall. Implementations must be thread-safe.
  *
- * <p>Concrete implementations live in {@code langgraph-memory} or connector modules; this SPI
- * keeps {@code langgraph-core} dependency-free. The default {@link #noop()} discards all writes
+ * <p>Concrete implementations live in {@code tracegraph-rag} or connector modules; this SPI
+ * keeps {@code tracegraph-core} dependency-free. The default {@link #noop()} discards all writes
  * and returns empty query results.
  */
 public interface VectorStore {

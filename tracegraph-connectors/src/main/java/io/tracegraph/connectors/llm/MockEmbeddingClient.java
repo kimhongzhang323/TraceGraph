@@ -18,7 +18,11 @@ import java.util.function.Function;
  * Pass a lambda to the constructor when you need call-dependent behaviour.
  *
  * <p>Recorded calls are available via {@link #calls()} for post-hoc assertion.
+ *
+ * @deprecated duplicate of {@code io.tracegraph.rag.MockEmbeddingClient}, which is the canonical
+ * implementation (used by the Spring Boot starter and examples). Will be removed in 0.5.
  */
+@Deprecated(since = "0.4", forRemoval = true)
 public final class MockEmbeddingClient implements EmbeddingClient {
 
     private final Function<List<String>, List<float[]>> responder;
