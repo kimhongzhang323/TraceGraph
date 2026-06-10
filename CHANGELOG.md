@@ -4,6 +4,12 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Deprecated
+- `io.tracegraph.connectors.vector.InMemoryVectorStore`, `io.tracegraph.connectors.llm.MockEmbeddingClient`, and `io.tracegraph.connectors.llm.OpenAiEmbeddingClient` — duplicates of the canonical `io.tracegraph.rag.*` implementations used by the Spring Boot starter and examples. `@Deprecated(forRemoval = true)`; removal planned for 0.5.
+
+### Added
+- **SPI contract tests**: abstract `MemoryStoreContractTest`, `CheckpointStoreContractTest`, and `TraceStoreContractTest` base classes; every store implementation now extends the shared behavioral contract for its SPI.
+
 ## [0.4.0] - Unreleased
 
 ## [0.3.0] - 2026-05-24

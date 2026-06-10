@@ -24,7 +24,11 @@ import java.util.Objects;
  *
  * <p>Constructed via {@link #builder()}. Thread-safe after construction.
  * Non-2xx responses surface as {@link LlmHttpException}.
+ *
+ * @deprecated duplicate of {@code io.tracegraph.rag.OpenAiEmbeddingClient}, which is the canonical
+ * implementation (used by the Spring Boot starter and examples). Will be removed in 0.5.
  */
+@Deprecated(since = "0.4", forRemoval = true)
 public final class OpenAiEmbeddingClient implements EmbeddingClient {
 
     private static final URI DEFAULT_ENDPOINT =

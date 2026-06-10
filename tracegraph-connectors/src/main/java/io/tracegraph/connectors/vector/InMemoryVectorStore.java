@@ -16,7 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * vector database via a connector adapter.
  *
  * <p>Zero-norm query or stored vectors score {@code 0}.
+ *
+ * @deprecated duplicate of {@code io.tracegraph.rag.InMemoryVectorStore}, which is the canonical
+ * implementation (used by the Spring Boot starter and examples). Will be removed in 0.5.
  */
+@Deprecated(since = "0.4", forRemoval = true)
 public final class InMemoryVectorStore implements VectorStore {
 
     private record Entry(float[] embedding, Map<String, String> metadata) {}
