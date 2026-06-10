@@ -15,7 +15,11 @@ import java.util.UUID;
  *
  * <p>Each fork gets a fresh executionId; the new trace records {@code forkedFromExecutionId} and
  * {@code forkedFromStepIndex} for lineage. No determinism guarantee — nodes own their own
- * determinism (LLM, HTTP, side effects). Construct via {@link #of(ExecutionTrace, Graph)}.
+ * determinism (LLM, HTTP, side effects). For deterministic LLM forks, record the original run
+ * with {@code io.tracegraph.connectors.llm.RecordedLlmClient.recording(...)} and build the fork
+ * graph with {@code RecordedLlmClient.replaying(exchanges[, fallback])}: unchanged steps re-issue
+ * identical requests and get recorded answers; only edited prompts go live.
+ * Construct via {@link #of(ExecutionTrace, Graph)}.
  *
  * @param <S> the graph's state type
  */
