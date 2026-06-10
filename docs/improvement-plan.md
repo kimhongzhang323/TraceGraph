@@ -12,8 +12,13 @@ Severity: 🔴 fix before next release · 🟠 fix soon · 🟡 plan for · 🔵
 > B7 (HALTED error step), B8, P3 (`fromStep`/`maxSteps` + `X-Total-Steps`), P5 (streaming I/O),
 > P6 (mapper hoist), S1 (startup warning), S3 (constant-time compare), S6 (NUL/blank guard).
 > B5 downgraded: `Graph.resume` already returns `Optional` — null is internal to `Executor` only.
-> Still open: P1/P2 (append-oriented persistence), P4 (state caps), S2 (redaction/encryption),
-> S4 (error sanitization), S5 (taint metadata), §4 outcome enum, §5 context budgets.
+> **Batch 2 (same day):** S2 partially done — `Redactor` SPI + `RedactingTraceStore` decorator
+> (raw I/O + error messages; encryption-at-rest still open). S4 done (error messages redacted via
+> the same decorator). P4 done (`StateRenderer.capped`). P1 mitigated — `Status.RUNNING` +
+> `RecordingTraceRecorder(store, flushEverySteps)` incremental flush bounds crash loss to N steps.
+> Still open: P2 (append-oriented persistence to kill O(n²) rewrites), encryption-at-rest,
+> S5 (taint metadata), §4 outcome enum, §5 context budgets (note: `TokenBudgetListener` already
+> exists in-tree and covers part of this).
 
 ---
 
