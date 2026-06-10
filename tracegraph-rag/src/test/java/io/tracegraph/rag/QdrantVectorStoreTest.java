@@ -83,6 +83,22 @@ class QdrantVectorStoreTest {
     }
 
     @Test
+    void rejectsScopeWithPathCharacters() {
+        assertThatThrownBy(() -> store().query("col/../other", new float[]{0.1f}, 5))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("scope");
+        assertThat(lastMethod.get()).isNull();
+    }
+
+    @Test
+    void malformedQueryResponseThrowsWithClearMessage() {
+        responseBody.set("{\"status\":\"ok\"}");
+        assertThatThrownBy(() -> store().query("col", new float[]{0.1f}, 5))
+                .isInstanceOf(VectorStoreHttpException.class)
+                .hasMessageContaining("missing 'result'");
+    }
+
+    @Test
     void propagatesHttpError() {
         responseStatus.set(503);
         responseBody.set("{\"status\":\"error\"}");

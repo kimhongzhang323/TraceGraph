@@ -44,12 +44,17 @@ class GeminiLlmClientTest {
                 .build();
     }
 
+    private final AtomicReference<String> capturedApiKeyHeader = new AtomicReference<>();
+    private final AtomicReference<String> capturedRequestUri = new AtomicReference<>();
+
     private void respond(String responseBody, AtomicReference<String> capturedBody) {
         server.createContext(PATH, ex -> {
             byte[] reqBytes = ex.getRequestBody().readAllBytes();
             if (capturedBody != null) {
                 capturedBody.set(new String(reqBytes, StandardCharsets.UTF_8));
             }
+            capturedApiKeyHeader.set(ex.getRequestHeaders().getFirst("x-goog-api-key"));
+            capturedRequestUri.set(ex.getRequestURI().toString());
             byte[] bytes = responseBody.getBytes(StandardCharsets.UTF_8);
             ex.getResponseHeaders().set("Content-Type", "application/json");
             ex.sendResponseHeaders(200, bytes.length);
@@ -58,6 +63,15 @@ class GeminiLlmClientTest {
         });
         server.start();
     }
+
+    private static final String OK_RESPONSE = """
+            {
+              "candidates": [{
+                "content": {"parts": [{"text": "ok"}]},
+                "finishReason": "STOP"
+              }],
+              "usageMetadata": {"promptTokenCount": 3, "candidatesTokenCount": 1}
+            }""";
 
     @Test
     void sendsToolDefinitionsAndParsesToolCall() {
@@ -143,5 +157,65 @@ class GeminiLlmClientTest {
                 .contains("[System]: You are a helpful assistant")
                 .contains("\"role\":\"user\"")
                 .doesNotContain("\"role\":\"system\"");
+    }
+
+    @Test
+    void sendsApiKeyAsHeaderNotQueryParameter() {
+        respond(OK_RESPONSE, null);
+
+        client().complete(LlmRequest.builder()
+                .model(MODEL)
+                .messages(List.of(ChatMessage.user("hello")))
+                .build());
+
+        assertThat(capturedApiKeyHeader.get()).isEqualTo("test-key");
+        assertThat(capturedRequestUri.get()).doesNotContain("test-key").doesNotContain("key=");
+    }
+
+    @Test
+    void rendersAssistantToolCallsAndToolResults() {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        respond(OK_RESPONSE, capturedBody);
+
+        client().complete(LlmRequest.builder()
+                .model(MODEL)
+                .messages(List.of(
+                        ChatMessage.user("What is the weather in London and Paris?"),
+                        ChatMessage.assistantWithToolCalls("", List.of(
+                                new ToolCall("get_weather", "get_weather", "{\"city\":\"London\"}"),
+                                new ToolCall("get_weather", "get_weather", "{\"city\":\"Paris\"}"))),
+                        ChatMessage.toolResult("get_weather", "Rainy"),
+                        ChatMessage.toolResult("get_weather", "Sunny")))
+                .build());
+
+        String body = capturedBody.get();
+        assertThat(body)
+                .contains("\"functionCall\"")
+                .contains("\"name\":\"get_weather\"")
+                .contains("\"city\":\"London\"")
+                .contains("\"functionResponse\"")
+                .contains("Rainy")
+                .contains("Sunny")
+                .contains("\"role\":\"model\"");
+        // Both tool results coalesce into a single user turn
+        assertThat(body.split("\"functionResponse\"", -1)).hasSize(3);
+        assertThat(body.split("\"role\":\"user\"", -1)).hasSize(3);
+    }
+
+    @Test
+    void preservesMalformedToolCallArguments() {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        respond(OK_RESPONSE, capturedBody);
+
+        client().complete(LlmRequest.builder()
+                .model(MODEL)
+                .messages(List.of(
+                        ChatMessage.user("hi"),
+                        ChatMessage.assistantWithToolCalls("", List.of(
+                                new ToolCall("t1", "do_thing", "{not valid json"))),
+                        ChatMessage.toolResult("t1", "done")))
+                .build());
+
+        assertThat(capturedBody.get()).contains("_malformed_arguments").contains("{not valid json");
     }
 }

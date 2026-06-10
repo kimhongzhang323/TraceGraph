@@ -5,12 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -60,12 +58,7 @@ public final class OpenAiLlmClient implements LlmClient {
 
     @Override
     public LlmResponse complete(LlmRequest request) {
-        byte[] body;
-        try {
-            body = mapper.writeValueAsBytes(toRequestBody(request, false));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to serialize OpenAI request", e);
-        }
+        byte[] body = JsonHttp.writeBody(mapper, toRequestBody(request, false), "OpenAI");
 
         HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
                 .header("Content-Type", "application/json")
@@ -73,25 +66,7 @@ public final class OpenAiLlmClient implements LlmClient {
         if (apiKey != null) rb.header("Authorization", "Bearer " + apiKey);
         if (requestTimeout != null) rb.timeout(requestTimeout);
 
-        HttpResponse<byte[]> response;
-        try {
-            response = httpClient.send(rb.build(), HttpResponse.BodyHandlers.ofByteArray());
-        } catch (IOException e) {
-            throw new UncheckedIOException("OpenAI request failed", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("OpenAI request interrupted", e);
-        }
-
-        if (response.statusCode() / 100 != 2) {
-            throw new LlmHttpException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
-        }
-
-        try {
-            return parseResponse(mapper.readTree(response.body()));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to parse OpenAI response", e);
-        }
+        return parseResponse(JsonHttp.sendForJson(httpClient, rb.build(), mapper, "OpenAI"));
     }
 
     @Override

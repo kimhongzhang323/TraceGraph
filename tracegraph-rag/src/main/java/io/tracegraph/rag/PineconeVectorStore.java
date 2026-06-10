@@ -9,7 +9,6 @@ import io.tracegraph.core.spi.VectorStore;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,7 +72,11 @@ public final class PineconeVectorStore implements VectorStore {
             JsonNode matches = root.path("matches");
             List<VectorMatch> results = new ArrayList<>();
             for (JsonNode item : matches) {
-                String matchId = item.get("id").asText();
+                JsonNode idNode = item.path("id");
+                if (idNode.isMissingNode()) {
+                    throw new VectorStoreHttpException("Pinecone match missing 'id': " + item);
+                }
+                String matchId = idNode.asText();
                 float score = (float) item.path("score").asDouble();
                 Map<String, String> meta = new HashMap<>();
                 JsonNode metaNode = item.path("metadata");
@@ -106,27 +109,11 @@ public final class PineconeVectorStore implements VectorStore {
             req.timeout(requestTimeout);
         }
         req.method(method, HttpRequest.BodyPublishers.ofString(requestBody));
-        HttpResponse<String> response;
-        try {
-            response = httpClient.send(req.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new VectorStoreHttpException("Request interrupted", e);
-        } catch (Exception e) {
-            throw new VectorStoreHttpException("HTTP request failed", e);
-        }
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new VectorStoreHttpException(response.statusCode(), response.body());
-        }
-        return response.body();
+        return JsonHttp.send(httpClient, req.build(), JsonHttp.VECTOR_STORE);
     }
 
     private String serialize(Object value) {
-        try {
-            return mapper.writeValueAsString(value);
-        } catch (Exception e) {
-            throw new VectorStoreHttpException("Failed to serialize request body", e);
-        }
+        return JsonHttp.serialize(mapper, value, JsonHttp.VECTOR_STORE);
     }
 
     public static Builder builder() {

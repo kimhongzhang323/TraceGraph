@@ -8,7 +8,6 @@ import io.tracegraph.core.spi.EmbeddingClient;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,12 +53,7 @@ public final class OllamaEmbeddingClient implements EmbeddingClient {
         body.put("model", model);
         body.put("input", text);
 
-        String requestBody;
-        try {
-            requestBody = mapper.writeValueAsString(body);
-        } catch (Exception e) {
-            throw new EmbeddingHttpException("Failed to serialize request", e);
-        }
+        String requestBody = JsonHttp.serialize(mapper, body, JsonHttp.EMBEDDING);
 
         HttpRequest.Builder reqBuilder = HttpRequest.newBuilder()
                 .uri(endpoint)
@@ -70,22 +64,10 @@ public final class OllamaEmbeddingClient implements EmbeddingClient {
             reqBuilder.timeout(requestTimeout);
         }
 
-        HttpResponse<String> response;
-        try {
-            response = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new EmbeddingHttpException("Request interrupted", e);
-        } catch (Exception e) {
-            throw new EmbeddingHttpException("HTTP request failed", e);
-        }
-
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new EmbeddingHttpException(response.statusCode(), response.body());
-        }
+        String responseBody = JsonHttp.send(httpClient, reqBuilder.build(), JsonHttp.EMBEDDING);
 
         try {
-            JsonNode root = mapper.readTree(response.body());
+            JsonNode root = mapper.readTree(responseBody);
             JsonNode embeddingsNode = root.get("embeddings");
             JsonNode firstEmbedding = embeddingsNode.get(0);
             float[] emb = new float[firstEmbedding.size()];

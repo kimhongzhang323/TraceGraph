@@ -7,7 +7,6 @@ import io.tracegraph.core.spi.EmbeddingClient;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +15,8 @@ import java.util.Objects;
 /**
  * {@link EmbeddingClient} that calls the Gemini embedContent endpoint.
  *
- * <p>Endpoint: {@code POST https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={apiKey}}
+ * <p>Endpoint: {@code POST https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent}
+ * with the API key sent as the {@code x-goog-api-key} header.
  *
  * <p>Constructed via {@link #builder()}. Thread-safe after construction.
  */
@@ -52,42 +52,26 @@ public final class GeminiEmbeddingClient implements EmbeddingClient {
     }
 
     private float[] embedSingle(String text) {
-        URI uri = URI.create(BASE_URL + model + ":embedContent?key=" + apiKey);
+        // API key goes in a header, not the query string — URLs leak into logs and proxies.
+        URI uri = URI.create(BASE_URL + model + ":embedContent");
 
-        String requestBody;
-        try {
-            String json = "{\"content\":{\"parts\":[{\"text\":"
-                    + mapper.writeValueAsString(text) + "}]}}";
-            requestBody = json;
-        } catch (Exception e) {
-            throw new EmbeddingHttpException("Failed to serialize request", e);
-        }
+        String requestBody = "{\"content\":{\"parts\":[{\"text\":"
+                + JsonHttp.serialize(mapper, text, JsonHttp.EMBEDDING) + "}]}}";
 
         HttpRequest.Builder reqBuilder = HttpRequest.newBuilder()
                 .uri(uri)
                 .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody));
 
         if (requestTimeout != null) {
             reqBuilder.timeout(requestTimeout);
         }
 
-        HttpResponse<String> response;
-        try {
-            response = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new EmbeddingHttpException("Request interrupted", e);
-        } catch (Exception e) {
-            throw new EmbeddingHttpException("HTTP request failed", e);
-        }
-
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new EmbeddingHttpException(response.statusCode(), response.body());
-        }
+        String responseBody = JsonHttp.send(httpClient, reqBuilder.build(), JsonHttp.EMBEDDING);
 
         try {
-            JsonNode root = mapper.readTree(response.body());
+            JsonNode root = mapper.readTree(responseBody);
             JsonNode valuesNode = root.get("embedding").get("values");
             float[] emb = new float[valuesNode.size()];
             for (int i = 0; i < valuesNode.size(); i++) {
