@@ -5,6 +5,9 @@ on:
     branches: [ 'i18n/zh-autotranslate' ]
   pull_request:
     branches: [ 'main' ]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-zh-preview.yml'
 
 permissions:
   contents: write
@@ -32,16 +35,13 @@ jobs:
 
       - name: Build site
         run: |
-          # build the docs site; mkdocs config is at docs/site/mkdocs.yml
-          mkdocs build -f docs/site/mkdocs.yml -d site
+          # -d is resolved relative to the mkdocs.yml directory, so use an absolute path
+          mkdocs build -f docs/site/mkdocs.yml -d "$GITHUB_WORKSPACE/site"
 
-      - name: Prepare deploy token
-        run: |
-          echo "Using GH_PAGES_PAT if set, otherwise GITHUB_TOKEN"
-        env:
-          GH_PAGES_PAT: ${{ secrets.GH_PAGES_PAT }}
-
+      # PR runs stop here — building is the check. Deploying from PRs would let any PR
+      # overwrite the published gh-pages-zh branch.
       - name: Deploy to gh-pages-zh
+        if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v4
         with:
           # Use `GH_PAGES_PAT` if provided (recommended when org policies restrict GITHUB_TOKEN),
@@ -51,4 +51,3 @@ jobs:
           publish_branch: gh-pages-zh
           user_name: 'github-actions[bot]'
           user_email: '41898282+github-actions[bot]@users.noreply.github.com'
-

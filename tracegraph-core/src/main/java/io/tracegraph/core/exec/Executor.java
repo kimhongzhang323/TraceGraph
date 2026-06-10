@@ -159,7 +159,8 @@ public final class Executor<S> {
 
     public ExecutionResult<S> run(S initial, String executionId) {
         traceRecorder.recordStart(executionId, initial, correlationIdFactory.get());
-        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec, false));
+        ExecutionResult<S> result = completing(executionId,
+                () -> withExecutor(exec -> loop(executionId, initial, entry, new ArrayList<>(), exec, false)));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
     }
@@ -169,9 +170,20 @@ public final class Executor<S> {
             throw new GraphValidationException("Start node '" + startNode + "' is not declared");
         }
         traceRecorder.recordStart(executionId, seed, correlationIdFactory.get());
-        ExecutionResult<S> result = withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec, false));
+        ExecutionResult<S> result = completing(executionId,
+                () -> withExecutor(exec -> loop(executionId, seed, startNode, new ArrayList<>(), exec, false)));
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
         return result;
+    }
+
+    private ExecutionResult<S> completing(String executionId,
+                                          java.util.function.Supplier<ExecutionResult<S>> work) {
+        try {
+            return work.get();
+        } catch (RuntimeException | Error e) {
+            traceRecorder.recordComplete(executionId, Status.FAILED, null);
+            throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -194,14 +206,16 @@ public final class Executor<S> {
             if (next == null) {
                 result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
             } else {
-                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true));
+                result = completing(executionId,
+                        () -> withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true)));
             }
         } else {
             String next = pickNext(last, state);
             if (next == null) {
                 result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
             } else {
-                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false));
+                result = completing(executionId,
+                        () -> withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false)));
             }
         }
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
@@ -228,14 +242,16 @@ public final class Executor<S> {
             if (next == null) {
                 result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
             } else {
-                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true));
+                result = completing(executionId,
+                        () -> withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, true)));
             }
         } else {
             String next = pickNext(last, state);
             if (next == null) {
                 result = new ExecutionResult<>(executionId, state, List.of(), Status.COMPLETED, null);
             } else {
-                result = withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false));
+                result = completing(executionId,
+                        () -> withExecutor(exec -> loop(executionId, state, next, new ArrayList<>(), exec, false)));
             }
         }
         traceRecorder.recordComplete(executionId, result.status(), result.finalState());
@@ -261,6 +277,8 @@ public final class Executor<S> {
         while (current != null) {
             if (steps++ >= maxSteps) {
                 LOG.warn("[{}] max-step guard ({}) reached at node '{}'", executionId, maxSteps, current);
+                traceRecorder.recordError(executionId, current,
+                        new IllegalStateException("max-step guard (" + maxSteps + ") reached at node '" + current + "'"));
                 return new ExecutionResult<>(executionId, state, path, Status.HALTED, null);
             }
 
@@ -280,7 +298,6 @@ public final class Executor<S> {
             S before = state;
             long startNanos = System.nanoTime();
 
-            String routingTarget = null;
             java.util.List<?> subgraphChildren = null;
             NodeOutcome<S> outcome;
             if (node instanceof NodeKind.Subgraph<S> subgraphKind) {
@@ -345,8 +362,9 @@ public final class Executor<S> {
                 } catch (Throwable t) {
                     listener.onError(current, t);
                     traceRecorder.recordError(executionId, current, t);
-                    return new ExecutionResult<>(executionId, state, path, Status.FAILED,
-                            new NodeExecutionException(current, t));
+                    NodeExecutionException failure = t instanceof NodeExecutionException nee
+                            ? nee : new NodeExecutionException(current, t);
+                    return new ExecutionResult<>(executionId, state, path, Status.FAILED, failure);
                 }
                 String next = pickNext(current, state);
                 if (next == null) {
@@ -551,10 +569,20 @@ public final class Executor<S> {
             futures.add(java.util.concurrent.CompletableFuture.supplyAsync(
                     () -> target.invoke(send.payload(), ctx, exec).join(), exec));
         }
-        java.util.concurrent.CompletableFuture.allOf(
-                futures.toArray(new java.util.concurrent.CompletableFuture<?>[0])).join();
+        // Join in declaration order so the first-declared failure wins, matching the
+        // parallel(...) contract; cancel the remaining sends once a failure is chosen.
         List<S> results = new ArrayList<>(futures.size());
-        for (var f : futures) results.add(f.join());
+        for (int i = 0; i < futures.size(); i++) {
+            try {
+                results.add(futures.get(i).join());
+            } catch (CompletionException | java.util.concurrent.CancellationException e) {
+                for (int j = i + 1; j < futures.size(); j++) {
+                    futures.get(j).cancel(true);
+                }
+                Throwable cause = e instanceof CompletionException && e.getCause() != null ? e.getCause() : e;
+                throw new NodeExecutionException(sends.get(i).target(), cause);
+            }
+        }
         return merger.merge(base, java.util.Collections.unmodifiableList(results));
     }
 

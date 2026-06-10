@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class RecordingTraceRecorder implements TraceRecorder {
 
     private final TraceStore store;
+    private final int flushEverySteps;
     private final ConcurrentMap<String, Builder> active = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ForkLineage> pendingLineage = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ParentLineage> pendingParent = new ConcurrentHashMap<>();
@@ -35,7 +36,19 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     }
 
     public RecordingTraceRecorder(TraceStore store) {
+        this(store, 0);
+    }
+
+    /**
+     * @param flushEverySteps if {@code > 0}, the in-flight trace is persisted with
+     *                        {@link Status#RUNNING} after every N recorded steps, so a crash
+     *                        mid-run loses at most N steps instead of the whole trace.
+     *                        {@code 0} keeps the save-on-completion-only behavior.
+     */
+    public RecordingTraceRecorder(TraceStore store, int flushEverySteps) {
         this.store = Objects.requireNonNull(store, "store");
+        if (flushEverySteps < 0) throw new IllegalArgumentException("flushEverySteps must be >= 0");
+        this.flushEverySteps = flushEverySteps;
     }
 
     @Override
@@ -58,7 +71,15 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     }
 
     @Override
-    public void recordEnter(String executionId, String nodeName, int attempt, Object state) {}
+    public void recordEnter(String executionId, String nodeName, int attempt, Object state) {
+        Builder b = active.get(executionId);
+        if (b == null || attempt > 1) return;
+        // Drop stale usage/raw-IO left behind by Send fan-out branches or aborted attempts so
+        // it can't attach to this fresh invocation of the same node.
+        b.pendingUsage.remove(nodeName);
+        b.pendingRawInput.remove(nodeName);
+        b.pendingRawOutput.remove(nodeName);
+    }
 
     @Override
     public void recordRetry(String executionId, String nodeName, int attempt, Throwable error) {}
@@ -73,6 +94,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         String rawOutput = b.pendingRawOutput.remove(nodeName);
         b.steps.add(TraceStep.leaf(b.steps.size(), nodeName, attempts, before, after,
                 Duration.ofNanos(durationNanos), null, usage, rawInput, rawOutput));
+        maybeFlush(b);
     }
 
     @Override
@@ -87,6 +109,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         List<TraceStep<Object>> children = (List<TraceStep<Object>>) childrenSteps;
         b.steps.add(new TraceStep<>(b.steps.size(), nodeName, attempts, before, after,
                 Duration.ofNanos(durationNanos), null, children, usage, rawInput, rawOutput));
+        maybeFlush(b);
     }
 
     @Override
@@ -95,6 +118,24 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         if (b == null) return;
         b.steps.add(TraceStep.leaf(b.steps.size(), nodeName, 1, null, null, Duration.ZERO, error));
         b.error = error;
+        maybeFlush(b);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void maybeFlush(Builder b) {
+        if (flushEverySteps <= 0 || b.steps.size() % flushEverySteps != 0) return;
+        ForkLineage lineage = pendingLineage.get(b.executionId);
+        ParentLineage parent = pendingParent.get(b.executionId);
+        store.save(new ExecutionTrace(
+                b.executionId, b.initialState, null,
+                Status.RUNNING, b.error,
+                List.copyOf(b.steps),
+                b.startedAt, Instant.now(),
+                lineage == null ? null : lineage.parentExecutionId(),
+                lineage == null ? -1 : lineage.parentStepIndex(),
+                parent == null ? null : parent.parentExecutionId(),
+                parent == null ? -1 : parent.parentStepIndex(),
+                b.correlationId));
     }
 
     @Override

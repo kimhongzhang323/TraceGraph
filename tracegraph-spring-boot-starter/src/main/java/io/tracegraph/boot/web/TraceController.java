@@ -66,12 +66,30 @@ public class TraceController {
      * Completed traces are immutable — long-cache with ETag so browsers don't re-fetch.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ExecutionTrace<?>> get(@PathVariable("id") String id, WebRequest webRequest) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public ResponseEntity<ExecutionTrace<?>> get(
+            @PathVariable("id") String id,
+            @RequestParam(name = "fromStep", required = false) Integer fromStep,
+            @RequestParam(name = "maxSteps", required = false) Integer maxSteps,
+            WebRequest webRequest) {
+        if ((fromStep != null && fromStep < 0) || (maxSteps != null && maxSteps < 0)) {
+            return ResponseEntity.badRequest().build();
+        }
         Optional<ExecutionTrace<?>> trace = store.load(id);
         if (trace.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         ExecutionTrace<?> t = trace.get();
+        int totalSteps = t.steps().size();
+        if (fromStep != null || maxSteps != null) {
+            List steps = t.steps();
+            int from = Math.min(fromStep == null ? 0 : fromStep, steps.size());
+            int to = maxSteps == null ? steps.size() : Math.min(from + maxSteps, steps.size());
+            t = new ExecutionTrace(t.executionId(), t.initialState(), t.finalState(),
+                    t.status(), t.error(), steps.subList(from, to), t.startedAt(), t.completedAt(),
+                    t.forkedFromExecutionId(), t.forkedFromStepIndex(),
+                    t.parentExecutionId(), t.parentStepIndex(), t.correlationId());
+        }
         String etag = "\"" + Integer.toHexString(t.hashCode()) + "\"";
         if (webRequest.checkNotModified(etag)) {
             return ResponseEntity.status(304).build();
@@ -82,6 +100,7 @@ public class TraceController {
         return ResponseEntity.ok()
                 .cacheControl(cc)
                 .eTag(etag)
+                .header("X-Total-Steps", Integer.toString(totalSteps))
                 .body(t);
     }
 

@@ -1,0 +1,11 @@
+[extend]
+useDefault = true
+
+# The redaction test suites necessarily contain credential-shaped fixtures
+# (now assembled at runtime, but earlier commits on feature branches may
+# carry literals). Nothing in these files is a real secret.
+[allowlist]
+paths = [
+    '''tracegraph-observability/src/test/java/io/tracegraph/observability/replay/RedactorTest\.java''',
+    '''tracegraph-observability/src/test/java/io/tracegraph/observability/replay/RedactingTraceStoreTest\.java''',
+]

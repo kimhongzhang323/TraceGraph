@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -40,7 +42,8 @@ class ApiKeyAuthFilter extends OncePerRequestFilter {
         }
 
         String provided = extractKey(request);
-        if (provided == null || !provided.equals(expectedKey)) {
+        if (provided == null || !MessageDigest.isEqual(
+                provided.getBytes(StandardCharsets.UTF_8), expectedKey.getBytes(StandardCharsets.UTF_8))) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Unauthorized — missing or invalid API key\"}");
