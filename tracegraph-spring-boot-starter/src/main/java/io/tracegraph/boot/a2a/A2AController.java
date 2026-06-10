@@ -3,8 +3,6 @@ package io.tracegraph.boot.a2a;
 import io.tracegraph.a2a.AgentBus;
 import io.tracegraph.a2a.AgentMessage;
 import io.tracegraph.a2a.http.A2AMessage;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Receives inbound A2A messages over HTTP and delivers them to the local {@link AgentBus}.
+ * Registered by {@code A2AAutoConfiguration} behind an API-key filter; requests are
+ * rejected until {@code tracegraph.a2a.api-key} is configured.
  */
 @RestController
-@ConditionalOnBean(AgentBus.class)
-@ConditionalOnWebApplication
 public class A2AController {
 
     private final AgentBus bus;

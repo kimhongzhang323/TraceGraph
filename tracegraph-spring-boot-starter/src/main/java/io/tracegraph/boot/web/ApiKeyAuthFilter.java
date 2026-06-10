@@ -10,7 +10,7 @@ import java.security.MessageDigest;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Rejects requests to /tracegraph/** that do not carry the configured API key.
+ * Rejects requests under {@code pathPrefix} that do not carry the configured API key.
  *
  * <p>Accepted header forms:
  * <ul>
@@ -18,18 +18,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>{@code Authorization: Bearer <key>}</li>
  * </ul>
  *
- * <p>OPTIONS (CORS preflight) requests are always passed through.
+ * <p>OPTIONS (CORS preflight) requests are always passed through. A {@code null}
+ * {@code expectedKey} denies every request — used for endpoints that must not be
+ * reachable until a key is explicitly configured.
  */
-class ApiKeyAuthFilter extends OncePerRequestFilter {
+public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     private static final String HEADER_X_API_KEY = "X-Api-Key";
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final String expectedKey;
+    private final String pathPrefix;
 
     ApiKeyAuthFilter(String expectedKey) {
+        this(expectedKey, "/tracegraph");
+    }
+
+    public ApiKeyAuthFilter(String expectedKey, String pathPrefix) {
         this.expectedKey = expectedKey;
+        this.pathPrefix = pathPrefix;
     }
 
     @Override
@@ -42,7 +50,7 @@ class ApiKeyAuthFilter extends OncePerRequestFilter {
         }
 
         String provided = extractKey(request);
-        if (provided == null || !MessageDigest.isEqual(
+        if (expectedKey == null || provided == null || !MessageDigest.isEqual(
                 provided.getBytes(StandardCharsets.UTF_8), expectedKey.getBytes(StandardCharsets.UTF_8))) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
@@ -67,6 +75,6 @@ class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/tracegraph");
+        return !request.getRequestURI().startsWith(pathPrefix);
     }
 }
