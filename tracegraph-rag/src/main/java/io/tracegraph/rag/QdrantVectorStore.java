@@ -9,7 +9,6 @@ import io.tracegraph.core.spi.VectorStore;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,6 +43,7 @@ public final class QdrantVectorStore implements VectorStore {
 
     @Override
     public void upsert(String scope, String id, float[] embedding, Map<String, String> metadata) {
+        JsonHttp.requireSafeIdentifier("scope", scope);
         ObjectNode body = mapper.createObjectNode();
         ArrayNode points = body.putArray("points");
         ObjectNode point = points.addObject();
@@ -62,6 +62,7 @@ public final class QdrantVectorStore implements VectorStore {
 
     @Override
     public List<VectorMatch> query(String scope, float[] embedding, int topK) {
+        JsonHttp.requireSafeIdentifier("scope", scope);
         ObjectNode body = mapper.createObjectNode();
         ArrayNode vector = body.putArray("vector");
         for (float v : embedding) {
@@ -72,7 +73,10 @@ public final class QdrantVectorStore implements VectorStore {
         String respBody = send("POST", "/collections/" + scope + "/points/search", serialize(body));
         try {
             JsonNode root = mapper.readTree(respBody);
-            JsonNode result = root.get("result");
+            JsonNode result = root.path("result");
+            if (!result.isArray()) {
+                throw new VectorStoreHttpException("Qdrant response missing 'result' array: " + respBody);
+            }
             List<VectorMatch> matches = new ArrayList<>();
             for (JsonNode item : result) {
                 float score = (float) item.get("score").asDouble();
@@ -89,6 +93,8 @@ public final class QdrantVectorStore implements VectorStore {
                 matches.add(new VectorMatch(originalId, score, Map.copyOf(meta)));
             }
             return List.copyOf(matches);
+        } catch (VectorStoreHttpException e) {
+            throw e;
         } catch (Exception e) {
             throw new VectorStoreHttpException("Failed to parse Qdrant query response", e);
         }
@@ -96,6 +102,7 @@ public final class QdrantVectorStore implements VectorStore {
 
     @Override
     public void delete(String scope, String id) {
+        JsonHttp.requireSafeIdentifier("scope", scope);
         ObjectNode body = mapper.createObjectNode();
         ArrayNode points = body.putArray("points");
         points.add(toPointId(id));
@@ -116,27 +123,11 @@ public final class QdrantVectorStore implements VectorStore {
                 ? HttpRequest.BodyPublishers.ofString(requestBody)
                 : HttpRequest.BodyPublishers.noBody();
         req.method(method, publisher);
-        HttpResponse<String> response;
-        try {
-            response = httpClient.send(req.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new VectorStoreHttpException("Request interrupted", e);
-        } catch (Exception e) {
-            throw new VectorStoreHttpException("HTTP request failed", e);
-        }
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new VectorStoreHttpException(response.statusCode(), response.body());
-        }
-        return response.body();
+        return JsonHttp.send(httpClient, req.build(), JsonHttp.VECTOR_STORE);
     }
 
     private String serialize(Object value) {
-        try {
-            return mapper.writeValueAsString(value);
-        } catch (Exception e) {
-            throw new VectorStoreHttpException("Failed to serialize request body", e);
-        }
+        return JsonHttp.serialize(mapper, value, JsonHttp.VECTOR_STORE);
     }
 
     private static String toPointId(String id) {

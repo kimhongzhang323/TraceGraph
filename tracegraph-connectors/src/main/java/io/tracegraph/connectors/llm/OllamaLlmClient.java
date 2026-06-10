@@ -4,13 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -48,12 +44,7 @@ public final class OllamaLlmClient implements LlmClient {
 
     @Override
     public LlmResponse complete(LlmRequest request) {
-        byte[] body;
-        try {
-            body = mapper.writeValueAsBytes(toRequestBody(request, defaultModel));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to serialize Ollama request", e);
-        }
+        byte[] body = JsonHttp.writeBody(mapper, toRequestBody(request, defaultModel), "Ollama");
 
         HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
                 .header("Content-Type", "application/json")
@@ -61,25 +52,7 @@ public final class OllamaLlmClient implements LlmClient {
         if (apiKey != null) rb.header("Authorization", "Bearer " + apiKey);
         if (requestTimeout != null) rb.timeout(requestTimeout);
 
-        HttpResponse<byte[]> response;
-        try {
-            response = httpClient.send(rb.build(), HttpResponse.BodyHandlers.ofByteArray());
-        } catch (IOException e) {
-            throw new UncheckedIOException("Ollama request failed", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Ollama request interrupted", e);
-        }
-
-        if (response.statusCode() / 100 != 2) {
-            throw new LlmHttpException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
-        }
-
-        try {
-            return parseResponse(mapper.readTree(response.body()));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to parse Ollama response", e);
-        }
+        return parseResponse(JsonHttp.sendForJson(httpClient, rb.build(), mapper, "Ollama"));
     }
 
     private static List<Map<String, Object>> toMessages(LlmRequest request) {

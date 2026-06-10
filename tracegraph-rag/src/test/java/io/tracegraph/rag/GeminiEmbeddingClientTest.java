@@ -24,6 +24,8 @@ class GeminiEmbeddingClientTest {
     private HttpServer server;
     private int port;
     private final AtomicReference<String> lastRequestBody = new AtomicReference<>();
+    private final AtomicReference<String> lastApiKeyHeader = new AtomicReference<>();
+    private final AtomicReference<String> lastUri = new AtomicReference<>();
 
     @BeforeEach
     void startServer() throws Exception {
@@ -31,6 +33,8 @@ class GeminiEmbeddingClientTest {
         port = server.getAddress().getPort();
         server.createContext("/", exchange -> {
             lastRequestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            lastApiKeyHeader.set(exchange.getRequestHeaders().getFirst("x-goog-api-key"));
+            lastUri.set(exchange.getRequestURI().toString());
             byte[] response = "{\"embedding\":{\"values\":[0.5,0.6,0.7]}}".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, response.length);
             exchange.getResponseBody().write(response);
@@ -73,6 +77,19 @@ class GeminiEmbeddingClientTest {
         client.embed(List.of("some text"));
 
         assertThat(lastRequestBody.get()).contains("\"text\":\"some text\"");
+    }
+
+    @Test
+    void sendsApiKeyAsHeaderNotQueryParameter() throws Exception {
+        GeminiEmbeddingClient client = GeminiEmbeddingClient.builder()
+                .apiKey("secret-key")
+                .httpClient(buildRedirectingClient(port))
+                .build();
+
+        client.embed(List.of("hello"));
+
+        assertThat(lastApiKeyHeader.get()).isEqualTo("secret-key");
+        assertThat(lastUri.get()).doesNotContain("secret-key").doesNotContain("key=");
     }
 
     @Test

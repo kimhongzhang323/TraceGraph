@@ -10,6 +10,16 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ### Added
 - **SPI contract tests**: abstract `MemoryStoreContractTest`, `CheckpointStoreContractTest`, and `TraceStoreContractTest` base classes; every store implementation now extends the shared behavioral contract for its SPI.
 
+### Changed
+- **Shared HTTP plumbing**: package-private `JsonHttp` helpers in `tracegraph-connectors` (LLM adapters) and `tracegraph-rag` (vector stores + embedding clients) replace ten copies of the serialize/send/status-check/parse cycle. No public API change.
+
+### Fixed
+- **Gemini API keys no longer leak into URLs**: `GeminiLlmClient` and `GeminiEmbeddingClient` now send the key via the `x-goog-api-key` header instead of the `?key=` query parameter (query strings end up in logs and proxies).
+- **`GeminiLlmClient` tool loop**: assistant tool calls are now rendered as `functionCall` parts and tool results as `functionResponse` parts (consecutive results coalesced into one user turn). Previously tool results were sent as plain user text, breaking ReAct loops on Gemini. Malformed tool-call arguments are preserved as `_malformed_arguments` instead of failing.
+- **Vector-store scope injection**: `QdrantVectorStore` and `WeaviateVectorStore` reject scopes containing characters that could escape a URL path segment or the GraphQL document (`IllegalArgumentException`).
+- **Silent metadata loss in `WeaviateVectorStore`**: corrupt `tgMeta` payloads now surface as `VectorStoreHttpException` instead of silently returning empty metadata; metadata serialization failures throw instead of writing `{}`.
+- **Parse hardening**: `QdrantVectorStore` reports a missing `result` array with a clear message; `PineconeVectorStore` reports matches missing `id` instead of throwing `NullPointerException`.
+
 ## [0.4.0] - Unreleased
 
 ## [0.3.0] - 2026-05-24

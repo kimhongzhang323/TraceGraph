@@ -7,7 +7,6 @@ import io.tracegraph.core.spi.EmbeddingClient;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,22 +64,10 @@ public final class CohereEmbeddingClient implements EmbeddingClient {
             reqBuilder.timeout(requestTimeout);
         }
 
-        HttpResponse<String> response;
-        try {
-            response = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new EmbeddingHttpException("Request interrupted", e);
-        } catch (Exception e) {
-            throw new EmbeddingHttpException("HTTP request failed", e);
-        }
-
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new EmbeddingHttpException(response.statusCode(), response.body());
-        }
+        String responseBody = JsonHttp.send(httpClient, reqBuilder.build(), JsonHttp.EMBEDDING);
 
         try {
-            JsonNode root = mapper.readTree(response.body());
+            JsonNode root = mapper.readTree(responseBody);
             JsonNode embeddingsNode = root.get("embeddings");
             List<float[]> results = new ArrayList<>(embeddingsNode.size());
             for (JsonNode embNode : embeddingsNode) {

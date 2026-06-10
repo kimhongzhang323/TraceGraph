@@ -8,8 +8,6 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,6 +22,7 @@ public final class GeminiLlmClient implements LlmClient {
     private static final String DEFAULT_MODEL = "gemini-3-flash-preview";
     static final String DEFAULT_BASE_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/";
+    private static final ObjectMapper ARG_MAPPER = new ObjectMapper();
 
     private final String apiKey;
     private final String model;
@@ -48,62 +47,74 @@ public final class GeminiLlmClient implements LlmClient {
 
     @Override
     public LlmResponse complete(LlmRequest request) {
-        URI endpoint = URI.create(baseUrl + model + ":generateContent?key=" + apiKey);
+        // API key goes in a header, not the query string — URLs leak into logs and proxies.
+        URI endpoint = URI.create(baseUrl + model + ":generateContent");
 
-        byte[] body;
-        try {
-            body = mapper.writeValueAsBytes(toRequestBody(request));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to serialize Gemini request", e);
-        }
+        byte[] body = JsonHttp.writeBody(mapper, toRequestBody(request), "Gemini");
 
         HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
                 .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body));
         if (requestTimeout != null) rb.timeout(requestTimeout);
 
-        HttpResponse<byte[]> response;
-        try {
-            response = httpClient.send(rb.build(), HttpResponse.BodyHandlers.ofByteArray());
-        } catch (IOException e) {
-            throw new UncheckedIOException("Gemini request failed", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Gemini request interrupted", e);
-        }
-
-        if (response.statusCode() / 100 != 2) {
-            throw new LlmHttpException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
-        }
-
-        try {
-            return parseResponse(mapper.readTree(response.body()), mapper);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to parse Gemini response", e);
-        }
+        return parseResponse(JsonHttp.sendForJson(httpClient, rb.build(), mapper, "Gemini"), mapper);
     }
 
     private static List<Map<String, Object>> toContents(LlmRequest request) {
-        List<Map<String, Object>> contents = new ArrayList<>(request.messages().size());
-        for (ChatMessage m : request.messages()) {
-            String role;
-            String text;
-            if (m.role() == ChatMessage.Role.SYSTEM) {
-                role = "user";
-                text = "[System]: " + m.content();
-            } else if (m.role() == ChatMessage.Role.ASSISTANT) {
-                role = "model";
-                text = m.content();
+        List<ChatMessage> all = request.messages();
+        List<Map<String, Object>> contents = new ArrayList<>(all.size());
+        for (int i = 0; i < all.size(); i++) {
+            ChatMessage m = all.get(i);
+            if (m.role() == ChatMessage.Role.ASSISTANT && !m.toolCalls().isEmpty()) {
+                List<Map<String, Object>> parts = new ArrayList<>();
+                if (!m.content().isEmpty()) {
+                    parts.add(Map.of("text", m.content()));
+                }
+                for (ToolCall tc : m.toolCalls()) {
+                    parts.add(Map.of("functionCall",
+                            Map.of("name", tc.name(), "args", parseArgs(tc.arguments()))));
+                }
+                contents.add(content("model", parts));
+            } else if (m.role() == ChatMessage.Role.TOOL) {
+                // All tool results for a turn land in one user content as functionResponse parts.
+                List<Map<String, Object>> parts = new ArrayList<>();
+                while (true) {
+                    parts.add(Map.of("functionResponse", Map.of(
+                            "name", m.toolCallId() == null ? "" : m.toolCallId(),
+                            "response", Map.of("content", m.content()))));
+                    if (i + 1 < all.size() && all.get(i + 1).role() == ChatMessage.Role.TOOL) {
+                        m = all.get(++i);
+                    } else {
+                        break;
+                    }
+                }
+                contents.add(content("user", parts));
+            } else if (m.role() == ChatMessage.Role.SYSTEM) {
+                contents.add(content("user", List.of(Map.of("text", "[System]: " + m.content()))));
             } else {
-                role = "user";
-                text = m.content();
+                String role = m.role() == ChatMessage.Role.ASSISTANT ? "model" : "user";
+                contents.add(content(role, List.of(Map.of("text", m.content()))));
             }
-            Map<String, Object> content = new LinkedHashMap<>();
-            content.put("role", role);
-            content.put("parts", List.of(Map.of("text", text)));
-            contents.add(content);
         }
         return contents;
+    }
+
+    private static Map<String, Object> content(String role, List<Map<String, Object>> parts) {
+        Map<String, Object> content = new LinkedHashMap<>();
+        content.put("role", role);
+        content.put("parts", parts);
+        return content;
+    }
+
+    private static Object parseArgs(String arguments) {
+        try {
+            return ARG_MAPPER.readValue(arguments, Map.class);
+        } catch (IOException e) {
+            // Preserve the model's malformed arguments instead of silently dropping them —
+            // the model must see its own output to self-correct, and traces stay faithful.
+            return Map.of("_malformed_arguments", arguments);
+        }
     }
 
     private static Map<String, Object> toRequestBody(LlmRequest request) {

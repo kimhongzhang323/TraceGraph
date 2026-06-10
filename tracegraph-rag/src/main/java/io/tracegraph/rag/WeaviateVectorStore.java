@@ -45,6 +45,7 @@ public final class WeaviateVectorStore implements VectorStore {
 
     @Override
     public void upsert(String scope, String id, float[] embedding, Map<String, String> metadata) {
+        JsonHttp.requireSafeIdentifier("scope", scope);
         String uuid = toUuid(id);
         ObjectNode props = buildProps(id, metadata);
         ArrayNode vector = buildVector(embedding);
@@ -72,6 +73,8 @@ public final class WeaviateVectorStore implements VectorStore {
 
     @Override
     public List<VectorMatch> query(String scope, float[] embedding, int topK) {
+        // scope is interpolated into the GraphQL document — reject anything that could escape it
+        JsonHttp.requireSafeIdentifier("scope", scope);
         String vectorJson = serialize(buildVector(embedding));
         String gql = "{ Get { " + scope + "(nearVector: {vector: " + vectorJson + "} limit: " + topK + ") "
                 + "{ tgId tgMeta _additional { distance } } } }";
@@ -99,6 +102,7 @@ public final class WeaviateVectorStore implements VectorStore {
 
     @Override
     public void delete(String scope, String id) {
+        JsonHttp.requireSafeIdentifier("scope", scope);
         String uuid = toUuid(id);
         HttpRequest.Builder req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl.toString() + "/v1/objects/" + scope + "/" + uuid))
@@ -150,38 +154,18 @@ public final class WeaviateVectorStore implements VectorStore {
             req.timeout(requestTimeout);
         }
         req.method(method, HttpRequest.BodyPublishers.ofString(requestBody));
-        HttpResponse<String> response;
-        try {
-            response = httpClient.send(req.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new VectorStoreHttpException("Request interrupted", e);
-        } catch (Exception e) {
-            throw new VectorStoreHttpException("HTTP request failed", e);
-        }
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new VectorStoreHttpException(response.statusCode(), response.body());
-        }
-        return response.body();
+        return JsonHttp.send(httpClient, req.build(), JsonHttp.VECTOR_STORE);
     }
 
     private String serialize(Object value) {
-        try {
-            return mapper.writeValueAsString(value);
-        } catch (Exception e) {
-            throw new VectorStoreHttpException("Failed to serialize request body", e);
-        }
+        return JsonHttp.serialize(mapper, value, JsonHttp.VECTOR_STORE);
     }
 
     private String serializeMeta(Map<String, String> metadata) {
         if (metadata == null || metadata.isEmpty()) {
             return "{}";
         }
-        try {
-            return mapper.writeValueAsString(metadata);
-        } catch (Exception e) {
-            return "{}";
-        }
+        return serialize(metadata);
     }
 
     @SuppressWarnings("unchecked")
@@ -189,7 +173,7 @@ public final class WeaviateVectorStore implements VectorStore {
         try {
             return (Map<String, String>) mapper.readValue(json, Map.class);
         } catch (Exception e) {
-            return Map.of();
+            throw new VectorStoreHttpException("Failed to parse tgMeta payload: " + json, e);
         }
     }
 

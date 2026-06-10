@@ -104,6 +104,25 @@ class WeaviateVectorStoreTest {
     }
 
     @Test
+    void rejectsScopeWithGraphQlMetacharacters() {
+        assertThatThrownBy(() -> store().query("MyClass) { } #", new float[]{0.1f}, 5))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("scope");
+        assertThat(callCount.get()).isZero();
+    }
+
+    @Test
+    void corruptMetadataSurfacesInsteadOfSilentlyDropping() {
+        responseBody.set("{\"data\":{\"Get\":{\"MyClass\":["
+                + "{\"tgId\":\"doc1\",\"tgMeta\":\"not json\","
+                + "\"_additional\":{\"distance\":0.0}}"
+                + "]}}}");
+        assertThatThrownBy(() -> store().query("MyClass", new float[]{0.1f}, 5))
+                .isInstanceOf(VectorStoreHttpException.class)
+                .hasMessageContaining("tgMeta");
+    }
+
+    @Test
     void propagatesHttpError() {
         firstStatus.set(503);
         responseBody.set("{\"error\":\"unavailable\"}");
