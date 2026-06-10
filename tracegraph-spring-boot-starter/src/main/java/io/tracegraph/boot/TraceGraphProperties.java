@@ -14,6 +14,11 @@ public class TraceGraphProperties {
     private final Llm llm = new Llm();
     private final Rag rag = new Rag();
     private final Mdc mdc = new Mdc();
+    private final A2a a2a = new A2a();
+
+    public A2a getA2a() {
+        return a2a;
+    }
 
     public Web getWeb() {
         return web;
@@ -204,6 +209,25 @@ public class TraceGraphProperties {
                 this.table = table;
             }
         }
+    }
+
+    /**
+     * Agent-to-agent (A2A) HTTP ingress properties.
+     */
+    public static class A2a {
+        private boolean enabled = true;
+        /**
+         * Static API key that protects POST /a2a/messages. Inbound A2A messages are
+         * REJECTED until this is set — peers are machines, so unlike the human-facing
+         * web endpoints there is no unauthenticated mode.
+         */
+        private String apiKey;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String apiKey) { this.apiKey = apiKey; }
     }
 
     /**
