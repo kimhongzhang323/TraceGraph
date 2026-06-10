@@ -5,7 +5,6 @@ import io.tracegraph.boot.TraceGraphProperties;
 import io.tracegraph.core.Graph;
 import io.tracegraph.observability.replay.TraceStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import tools.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -17,8 +16,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.DispatcherServlet;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.Optional;
 
 import java.util.Optional;
 
@@ -42,7 +39,13 @@ public class TraceWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TraceController traceController(TraceStore store) {
+    public TraceController traceController(TraceStore store, TraceGraphProperties props) {
+        if (props.getWeb().getApiKey() == null || props.getWeb().getApiKey().isBlank()) {
+            org.slf4j.LoggerFactory.getLogger(TraceWebAutoConfiguration.class).warn(
+                    "TraceGraph web endpoints are enabled WITHOUT authentication. Replay/resume endpoints "
+                            + "re-execute graphs (including LLM calls). Set tracegraph.web.api-key to secure them, "
+                            + "or tracegraph.web.enabled=false to disable.");
+        }
         return new TraceController(store);
     }
 

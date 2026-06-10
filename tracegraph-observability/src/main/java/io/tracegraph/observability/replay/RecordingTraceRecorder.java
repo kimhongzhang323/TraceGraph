@@ -58,7 +58,15 @@ public final class RecordingTraceRecorder implements TraceRecorder {
     }
 
     @Override
-    public void recordEnter(String executionId, String nodeName, int attempt, Object state) {}
+    public void recordEnter(String executionId, String nodeName, int attempt, Object state) {
+        Builder b = active.get(executionId);
+        if (b == null || attempt > 1) return;
+        // Drop stale usage/raw-IO left behind by Send fan-out branches or aborted attempts so
+        // it can't attach to this fresh invocation of the same node.
+        b.pendingUsage.remove(nodeName);
+        b.pendingRawInput.remove(nodeName);
+        b.pendingRawOutput.remove(nodeName);
+    }
 
     @Override
     public void recordRetry(String executionId, String nodeName, int attempt, Throwable error) {}

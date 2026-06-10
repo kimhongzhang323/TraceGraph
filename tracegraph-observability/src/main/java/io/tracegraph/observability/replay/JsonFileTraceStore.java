@@ -52,7 +52,9 @@ public final class JsonFileTraceStore<S> implements TraceStore {
         Path tmp = target.resolveSibling(target.getFileName() + ".tmp");
         Dto<S> dto = Dto.from((ExecutionTrace<S>) trace);
         try {
-            Files.write(tmp, mapper.writeValueAsBytes(dto));
+            try (var out = Files.newOutputStream(tmp)) {
+                mapper.writeValue(out, dto);
+            }
             Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to save trace " + trace.executionId(), e);
@@ -63,9 +65,8 @@ public final class JsonFileTraceStore<S> implements TraceStore {
     public Optional<ExecutionTrace<?>> load(String executionId) {
         Path file = pathFor(executionId);
         if (!Files.exists(file)) return Optional.empty();
-        try {
-            byte[] bytes = Files.readAllBytes(file);
-            Dto<S> dto = mapper.readValue(bytes, mapper.getTypeFactory()
+        try (var in = Files.newInputStream(file)) {
+            Dto<S> dto = mapper.readValue(in, mapper.getTypeFactory()
                     .constructParametricType(Dto.class, stateType));
             return Optional.of(dto.toTrace());
         } catch (IOException e) {
@@ -98,7 +99,8 @@ public final class JsonFileTraceStore<S> implements TraceStore {
     }
 
     private Path pathFor(String executionId) {
-        if (executionId.indexOf('/') >= 0 || executionId.indexOf('\\') >= 0 || executionId.contains("..")) {
+        if (executionId.isBlank() || executionId.indexOf('/') >= 0 || executionId.indexOf('\\') >= 0
+                || executionId.contains("..") || executionId.indexOf('\0') >= 0) {
             throw new IllegalArgumentException("Illegal characters in executionId: " + executionId);
         }
         return directory.resolve(executionId + ".json");

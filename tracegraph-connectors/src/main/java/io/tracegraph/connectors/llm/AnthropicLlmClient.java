@@ -25,6 +25,7 @@ import java.util.Objects;
 public final class AnthropicLlmClient implements LlmClient {
 
     private static final String DEFAULT_VERSION = "2023-06-01";
+    private static final ObjectMapper ARG_MAPPER = new ObjectMapper();
 
     private final URI endpoint;
     private final String apiKey;
@@ -97,7 +98,9 @@ public final class AnthropicLlmClient implements LlmClient {
 
         StringBuilder system = new StringBuilder();
         List<Map<String, Object>> messages = new ArrayList<>(request.messages().size());
-        for (ChatMessage m : request.messages()) {
+        List<ChatMessage> all = request.messages();
+        for (int i = 0; i < all.size(); i++) {
+            ChatMessage m = all.get(i);
             if (m.role() == ChatMessage.Role.SYSTEM) {
                 if (!system.isEmpty()) system.append("\n\n");
                 system.append(m.content());
@@ -113,21 +116,31 @@ public final class AnthropicLlmClient implements LlmClient {
                     toolUse.put("id", tc.id());
                     toolUse.put("name", tc.name());
                     try {
-                        ObjectMapper om = new ObjectMapper();
-                        toolUse.put("input", om.readValue(tc.arguments(), Map.class));
+                        toolUse.put("input", ARG_MAPPER.readValue(tc.arguments(), Map.class));
                     } catch (IOException e) {
-                        toolUse.put("input", Map.of());
+                        // Preserve the model's malformed arguments instead of silently dropping them —
+                        // the model must see its own output to self-correct, and traces stay faithful.
+                        toolUse.put("input", Map.of("_malformed_arguments", tc.arguments()));
                     }
                     contentBlocks.add(toolUse);
                 }
                 messages.add(Map.of("role", "assistant", "content", contentBlocks));
             } else if (m.role() == ChatMessage.Role.TOOL) {
-                // Tool result
-                Map<String, Object> toolResult = new LinkedHashMap<>();
-                toolResult.put("type", "tool_result");
-                toolResult.put("tool_use_id", m.toolCallId());
-                toolResult.put("content", m.content());
-                messages.add(Map.of("role", "user", "content", List.of(toolResult)));
+                // All tool results for a turn must land in a single user message.
+                List<Map<String, Object>> toolResults = new ArrayList<>();
+                while (true) {
+                    Map<String, Object> toolResult = new LinkedHashMap<>();
+                    toolResult.put("type", "tool_result");
+                    toolResult.put("tool_use_id", m.toolCallId());
+                    toolResult.put("content", m.content());
+                    toolResults.add(toolResult);
+                    if (i + 1 < all.size() && all.get(i + 1).role() == ChatMessage.Role.TOOL) {
+                        m = all.get(++i);
+                    } else {
+                        break;
+                    }
+                }
+                messages.add(Map.of("role", "user", "content", toolResults));
             } else if (!m.contentBlocks().isEmpty()) {
                 List<Map<String, Object>> parts = new ArrayList<>(m.contentBlocks().size() + 1);
                 if (!m.content().isEmpty()) {
