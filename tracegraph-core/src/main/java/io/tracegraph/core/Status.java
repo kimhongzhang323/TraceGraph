@@ -1,6 +1,11 @@
 package io.tracegraph.core;
 
 public enum Status {
+    /**
+     * Execution is still in flight. Never returned by {@code Graph.run}; appears only on
+     * partial traces flushed mid-run for crash durability.
+     */
+    RUNNING,
     COMPLETED,
     FAILED,
     INTERRUPTED,
