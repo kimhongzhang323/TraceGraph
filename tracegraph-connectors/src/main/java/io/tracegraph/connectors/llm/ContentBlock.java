@@ -1,7 +1,17 @@
 package io.tracegraph.connectors.llm;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.Objects;
 
+// Jackson annotations keep RecordedLlmClient.save/load round-trips type-safe; Jackson stays an
+// optional dependency — annotations are ignored by the JVM when Jackson is absent at runtime.
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = ContentBlock.TextBlock.class, name = "text"),
+        @JsonSubTypes.Type(value = ContentBlock.ImageBlock.class, name = "image")
+})
 public sealed interface ContentBlock permits ContentBlock.TextBlock, ContentBlock.ImageBlock {
 
     record TextBlock(String text) implements ContentBlock {
