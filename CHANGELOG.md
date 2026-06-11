@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **`ChatSession`** (`tracegraph-connectors`): durable conversation history layered on the `MemoryStore` SPI — `append(ChatMessage)` / `messages()` / `clear()` keyed by `scope` + `sessionId` (default scope `tracegraph.session`). History reloads across executions and processes when backed by a persistent store (`FileMemoryStore`/`JdbcMemoryStore`); single-instance appends are lock-guarded, tool-call and multimodal messages round-trip intact.
 - **`FallbackLlmClient`** (`tracegraph-connectors`): provider failover over an ordered list of `LlmClient`s — falls through on transient failures (HTTP 408/429/5xx, network errors/timeouts), propagates non-retryable errors (e.g. 401) and interruptions immediately, and surfaces which provider answered via the existing `servedModel`/`rerouted()` mechanism. Custom failover predicate via `FallbackLlmClient.of(clients, predicate)`; when all clients fail, the last failure carries earlier ones as suppressed exceptions.
 - **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
