@@ -41,13 +41,19 @@ public final class RagPipeline {
     }
 
     private static Graph<RagState> buildGraph(Builder b) {
-        return Graph.<RagState>builder()
+        Graph.Builder<RagState> gb = Graph.<RagState>builder()
                 .node("retrieve", (state, ctx) -> {
                     List<String> chunks = b.retriever.apply(state.query());
+                    ctx.reportRawIO(state.query(), "chunks=" + chunks.size());
                     return new RagState(state.query(), chunks, state.rankedChunks(), state.context());
                 })
                 .node("rerank", (state, ctx) -> {
                     List<RankedChunk> ranked = b.reranker.rerank(state.query(), state.chunks());
+                    StringBuilder scores = new StringBuilder("ranked=").append(ranked.size());
+                    for (RankedChunk chunk : ranked) {
+                        scores.append(' ').append(String.format(java.util.Locale.ROOT, "%.4f", chunk.score()));
+                    }
+                    ctx.reportRawIO(state.query(), scores.toString());
                     return new RagState(state.query(), state.chunks(), ranked, state.context());
                 })
                 .node("stuff", (state, ctx) -> {
@@ -61,8 +67,12 @@ public final class RagPipeline {
                 .edge("retrieve", "rerank")
                 .edge("rerank", "stuff")
                 .entry("retrieve")
-                .terminal("stuff")
-                .build();
+                .terminal("stuff");
+        if (b.traceRecorder != null) {
+            gb.traceRecorder(b.traceRecorder);
+        }
+        gb.sensitiveDataLogging(b.sensitiveDataLogging);
+        return gb.build();
     }
 
     /**
@@ -70,6 +80,8 @@ public final class RagPipeline {
      */
     public static final class Builder {
         private Function<String, List<String>> retriever;
+        private io.tracegraph.core.spi.TraceRecorder traceRecorder;
+        private boolean sensitiveDataLogging;
         private Reranker reranker = (query, chunks) -> {
             List<RankedChunk> ranked = new ArrayList<>(chunks.size());
             for (String chunk : chunks) ranked.add(new RankedChunk(chunk, 1.0));
@@ -97,6 +109,30 @@ public final class RagPipeline {
          */
         public Builder reranker(Reranker reranker) {
             this.reranker = Objects.requireNonNull(reranker, "reranker");
+            return this;
+        }
+
+        /**
+         * Record the pipeline's executions (including the per-step retrieval reporting) through
+         * {@code recorder} — typically a {@code RecordingTraceRecorder} or {@code LiveTraceFeed}.
+         *
+         * @param recorder trace recorder to wire into the compiled graph
+         * @return this builder
+         */
+        public Builder traceRecorder(io.tracegraph.core.spi.TraceRecorder recorder) {
+            this.traceRecorder = Objects.requireNonNull(recorder, "recorder");
+            return this;
+        }
+
+        /**
+         * Enable capture of the retrieval query and hit summary into traces. Queries are
+         * prompt-shaped data, so they respect the same opt-in as raw LLM I/O (default off).
+         *
+         * @param enabled whether to record query/hit text into traces
+         * @return this builder
+         */
+        public Builder sensitiveDataLogging(boolean enabled) {
+            this.sensitiveDataLogging = enabled;
             return this;
         }
 
