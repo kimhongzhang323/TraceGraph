@@ -9,6 +9,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ### Added
 - **SPI contract tests**: abstract `MemoryStoreContractTest`, `CheckpointStoreContractTest`, and `TraceStoreContractTest` base classes; every store implementation now extends the shared behavioral contract for its SPI.
+- **Recorded-LLM replay stubbing** (`tracegraph-connectors`): `RecordedLlmClient.recording(delegate)` captures full request/response exchanges during a live run (persist via `save(Path)` / `load(Path)`, Jackson optional); `RecordedLlmClient.replaying(exchanges[, fallback])` serves them back matched by `LlmRequest` equality — unchanged fork steps get recorded answers deterministically, edited prompts throw `LlmReplayMismatchException` or fall back to a live client. Pairs with `ReplayRunner` for deterministic what-if forks.
 
 ### Changed
 - **Shared HTTP plumbing**: package-private `JsonHttp` helpers in `tracegraph-connectors` (LLM adapters) and `tracegraph-rag` (vector stores + embedding clients) replace ten copies of the serialize/send/status-check/parse cycle. No public API change.
