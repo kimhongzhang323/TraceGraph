@@ -4,8 +4,10 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
-### Deprecated
-- `io.tracegraph.connectors.vector.InMemoryVectorStore`, `io.tracegraph.connectors.llm.MockEmbeddingClient`, and `io.tracegraph.connectors.llm.OpenAiEmbeddingClient` — duplicates of the canonical `io.tracegraph.rag.*` implementations used by the Spring Boot starter and examples. `@Deprecated(forRemoval = true)`; removal planned for 0.5.
+## [0.4.0] - 2026-06-11
+
+### Removed
+- `io.tracegraph.connectors.vector.InMemoryVectorStore`, `io.tracegraph.connectors.llm.MockEmbeddingClient`, and `io.tracegraph.connectors.llm.OpenAiEmbeddingClient` — duplicates of the canonical `io.tracegraph.rag.*` implementations, deprecated `forRemoval` during the 0.4.0 development cycle and removed before ever shipping in a release. Migrate imports to `io.tracegraph.rag.InMemoryVectorStore` / `MockEmbeddingClient` / `OpenAiEmbeddingClient` (drop-in equivalents).
 
 ### Added
 - **SPI contract tests**: abstract `MemoryStoreContractTest`, `CheckpointStoreContractTest`, and `TraceStoreContractTest` base classes; every store implementation now extends the shared behavioral contract for its SPI.
@@ -25,8 +27,6 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 - **Vector-store scope injection**: `QdrantVectorStore` and `WeaviateVectorStore` reject scopes containing characters that could escape a URL path segment or the GraphQL document (`IllegalArgumentException`).
 - **Silent metadata loss in `WeaviateVectorStore`**: corrupt `tgMeta` payloads now surface as `VectorStoreHttpException` instead of silently returning empty metadata; metadata serialization failures throw instead of writing `{}`.
 - **Parse hardening**: `QdrantVectorStore` reports a missing `result` array with a clear message; `PineconeVectorStore` reports matches missing `id` instead of throwing `NullPointerException`.
-
-## [0.4.0] - Unreleased
 
 ## [0.3.0] - 2026-05-24
 
