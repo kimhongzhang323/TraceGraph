@@ -32,6 +32,33 @@ public final class Retriever {
         return new Retriever(vectorStore, embeddingClient);
     }
 
+    /**
+     * Retrieval variant for use inside graph nodes: reports the query and the ranked hits
+     * (id + score per match) through {@code ctx.reportRawIO}, so the retrieval step is visible
+     * in the recorded {@code ExecutionTrace} and the trace viewer.
+     *
+     * @param ctx   the node's execution context
+     * @param scope vector-store scope to query
+     * @param query natural-language query
+     * @param topK  maximum number of matches
+     * @return matched documents, best first
+     */
+    public List<Document> retrieve(io.tracegraph.core.Context ctx, String scope, String query, int topK) {
+        Objects.requireNonNull(ctx, "ctx");
+        List<Document> docs = retrieve(scope, query, topK);
+        ctx.reportRawIO(query, describeHits(docs));
+        return docs;
+    }
+
+    static String describeHits(List<Document> docs) {
+        StringBuilder sb = new StringBuilder("hits=").append(docs.size());
+        for (Document doc : docs) {
+            sb.append(' ').append(doc.id()).append(':')
+                    .append(String.format(java.util.Locale.ROOT, "%.4f", doc.score()));
+        }
+        return sb.toString();
+    }
+
     public List<Document> retrieve(String scope, String query, int topK) {
         List<float[]> embeddings = embeddingClient.embed(List.of(query));
         float[] embedding = embeddings.get(0);
