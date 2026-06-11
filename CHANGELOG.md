@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **`RateLimitedLlmClient`** (`tracegraph-connectors`): token-bucket rate-limiting decorator over any `LlmClient` — `of(delegate, permits, per)` allows bursts up to `permits` and refills continuously. Blocking is virtual-thread friendly (`ReentrantLock`/`Condition`, no synchronized-over-I/O, no busy-spin); interruption while waiting propagates with the interrupt flag restored. Share one instance across everything bound by the same provider quota.
 - **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
 
