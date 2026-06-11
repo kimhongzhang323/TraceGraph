@@ -8,13 +8,20 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class GeminiLlmClient implements LlmClient {
 
@@ -59,6 +66,94 @@ public final class GeminiLlmClient implements LlmClient {
         if (requestTimeout != null) rb.timeout(requestTimeout);
 
         return parseResponse(JsonHttp.sendForJson(httpClient, rb.build(), mapper, "Gemini"), mapper);
+    }
+
+    @Override
+    public Flow.Publisher<LlmStreamChunk> stream(LlmRequest request) {
+        return subscriber -> {
+            SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
+                    ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+            pub.subscribe(subscriber);
+            Thread.startVirtualThread(() -> {
+                try {
+                    URI endpoint = URI.create(baseUrl + model + ":streamGenerateContent?alt=sse");
+                    byte[] bodyBytes = mapper.writeValueAsBytes(toRequestBody(request));
+                    HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
+                            .header("Content-Type", "application/json")
+                            .header("x-goog-api-key", apiKey)
+                            .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
+                    if (requestTimeout != null) rb.timeout(requestTimeout);
+
+                    HttpResponse<Stream<String>> response = httpClient.send(
+                            rb.build(), HttpResponse.BodyHandlers.ofLines());
+                    int status = response.statusCode();
+
+                    try (Stream<String> lines = response.body()) {
+                        if (status / 100 != 2) {
+                            String errorBody = lines.collect(Collectors.joining("\n"));
+                            throw new LlmHttpException(status, errorBody);
+                        }
+                        StreamState state = new StreamState();
+                        Iterator<String> it = lines.iterator();
+                        while (it.hasNext()) {
+                            String line = it.next();
+                            if (!line.startsWith("data: ")) continue;
+                            try {
+                                parseSseChunk(pub, mapper.readTree(line.substring(6)), state, mapper);
+                            } catch (IOException ignored) {
+                                // Skip malformed SSE chunks — stream remains open
+                            }
+                        }
+                        pub.submit(LlmStreamChunk.done(
+                                state.sawToolCall ? LlmResponse.FinishReason.TOOL_CALLS : state.finishReason));
+                    }
+
+                    Thread.sleep(10);
+                    pub.close();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    pub.closeExceptionally(e);
+                } catch (Throwable t) {
+                    pub.closeExceptionally(t);
+                }
+            });
+        };
+    }
+
+    private static final class StreamState {
+        LlmResponse.FinishReason finishReason = LlmResponse.FinishReason.STOP;
+        boolean sawToolCall;
+        int toolCallCount;
+    }
+
+    private static void parseSseChunk(SubmissionPublisher<LlmStreamChunk> pub, JsonNode chunk,
+                                      StreamState state, ObjectMapper mapper) throws IOException {
+        JsonNode candidates = chunk.path("candidates");
+        if (!candidates.isArray() || candidates.isEmpty()) return;
+        JsonNode candidate = candidates.get(0);
+
+        for (JsonNode part : candidate.path("content").path("parts")) {
+            if (part.has("text")) {
+                String text = part.path("text").asText("");
+                if (!text.isEmpty()) pub.submit(LlmStreamChunk.content(text));
+            } else if (part.has("functionCall")) {
+                // Gemini sends function calls whole, not incrementally — one delta per call.
+                JsonNode fc = part.path("functionCall");
+                pub.submit(LlmStreamChunk.toolCallDelta(state.toolCallCount++,
+                        fc.path("name").asText(""), mapper.writeValueAsString(fc.path("args"))));
+                state.sawToolCall = true;
+            }
+        }
+
+        String finishRaw = candidate.path("finishReason").asText("");
+        if (!finishRaw.isEmpty()) {
+            state.finishReason = switch (finishRaw) {
+                case "STOP" -> LlmResponse.FinishReason.STOP;
+                case "MAX_TOKENS" -> LlmResponse.FinishReason.LENGTH;
+                case "SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST" -> LlmResponse.FinishReason.REFUSED;
+                default -> LlmResponse.FinishReason.OTHER;
+            };
+        }
     }
 
     private static List<Map<String, Object>> toContents(LlmRequest request) {

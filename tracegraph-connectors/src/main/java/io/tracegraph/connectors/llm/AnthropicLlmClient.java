@@ -8,13 +8,20 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * HTTP adapter for Anthropic Messages API endpoints.
@@ -62,6 +69,113 @@ public final class AnthropicLlmClient implements LlmClient {
         if (requestTimeout != null) rb.timeout(requestTimeout);
 
         return parseResponse(JsonHttp.sendForJson(httpClient, rb.build(), mapper, "Anthropic"));
+    }
+
+    @Override
+    public Flow.Publisher<LlmStreamChunk> stream(LlmRequest request) {
+        return subscriber -> {
+            SubmissionPublisher<LlmStreamChunk> pub = new SubmissionPublisher<>(
+                    ForkJoinPool.commonPool(), Flow.defaultBufferSize());
+            pub.subscribe(subscriber);
+            Thread.startVirtualThread(() -> {
+                try {
+                    Map<String, Object> bodyMap = toRequestBody(request);
+                    bodyMap.put("stream", true);
+                    byte[] bodyBytes = mapper.writeValueAsBytes(bodyMap);
+                    HttpRequest.Builder rb = HttpRequest.newBuilder(endpoint)
+                            .header("Content-Type", "application/json")
+                            .header("anthropic-version", anthropicVersion)
+                            .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
+                    if (apiKey != null) rb.header("x-api-key", apiKey);
+                    if (requestTimeout != null) rb.timeout(requestTimeout);
+
+                    HttpResponse<Stream<String>> response = httpClient.send(
+                            rb.build(), HttpResponse.BodyHandlers.ofLines());
+                    int status = response.statusCode();
+
+                    try (Stream<String> lines = response.body()) {
+                        if (status / 100 != 2) {
+                            String errorBody = lines.collect(Collectors.joining("\n"));
+                            throw new LlmHttpException(status, errorBody);
+                        }
+                        StreamState state = new StreamState();
+                        Iterator<String> it = lines.iterator();
+                        while (it.hasNext()) {
+                            String line = it.next();
+                            if (!line.startsWith("data: ")) continue;
+                            try {
+                                parseSseEvent(pub, mapper.readTree(line.substring(6)), state);
+                            } catch (IOException ignored) {
+                                // Skip malformed SSE chunks — stream remains open
+                            }
+                        }
+                        pub.submit(LlmStreamChunk.done(state.finishReason));
+                    }
+
+                    Thread.sleep(10);
+                    pub.close();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    pub.closeExceptionally(e);
+                } catch (Throwable t) {
+                    pub.closeExceptionally(t);
+                }
+            });
+        };
+    }
+
+    /**
+     * Mutable per-stream accumulator: Anthropic numbers content blocks across text and tool_use
+     * alike, while {@link LlmStreamChunk.ToolCallDelta#index()} counts tool calls only — the map
+     * translates between the two.
+     */
+    private static final class StreamState {
+        LlmResponse.FinishReason finishReason = LlmResponse.FinishReason.STOP;
+        final Map<Integer, Integer> toolIndexByBlockIndex = new LinkedHashMap<>();
+    }
+
+    private static void parseSseEvent(
+            SubmissionPublisher<LlmStreamChunk> pub, JsonNode event, StreamState state) {
+        switch (event.path("type").asText("")) {
+            case "content_block_start" -> {
+                JsonNode block = event.path("content_block");
+                if ("tool_use".equals(block.path("type").asText(""))) {
+                    int toolIdx = state.toolIndexByBlockIndex.size();
+                    state.toolIndexByBlockIndex.put(event.path("index").asInt(0), toolIdx);
+                    pub.submit(LlmStreamChunk.toolCallDelta(toolIdx, block.path("name").asText(""), ""));
+                }
+            }
+            case "content_block_delta" -> {
+                JsonNode delta = event.path("delta");
+                switch (delta.path("type").asText("")) {
+                    case "text_delta" -> {
+                        String text = delta.path("text").asText("");
+                        if (!text.isEmpty()) pub.submit(LlmStreamChunk.content(text));
+                    }
+                    case "input_json_delta" -> {
+                        Integer toolIdx = state.toolIndexByBlockIndex.get(event.path("index").asInt(0));
+                        String partial = delta.path("partial_json").asText("");
+                        if (toolIdx != null && !partial.isEmpty()) {
+                            pub.submit(LlmStreamChunk.toolCallDelta(toolIdx, "", partial));
+                        }
+                    }
+                    default -> { }
+                }
+            }
+            case "message_delta" -> {
+                String stopReason = event.path("delta").path("stop_reason").asText("");
+                if (!stopReason.isEmpty()) {
+                    state.finishReason = switch (stopReason) {
+                        case "end_turn", "stop_sequence" -> LlmResponse.FinishReason.STOP;
+                        case "max_tokens" -> LlmResponse.FinishReason.LENGTH;
+                        case "tool_use" -> LlmResponse.FinishReason.TOOL_CALLS;
+                        case "refusal" -> LlmResponse.FinishReason.REFUSED;
+                        default -> LlmResponse.FinishReason.OTHER;
+                    };
+                }
+            }
+            default -> { }
+        }
     }
 
     private static Map<String, Object> toRequestBody(LlmRequest request) {
