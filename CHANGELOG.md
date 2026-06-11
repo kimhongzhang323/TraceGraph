@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **Native Gemini streaming** (`tracegraph-connectors`): `GeminiLlmClient` now overrides `stream(LlmRequest)` with real SSE via `:streamGenerateContent?alt=sse` — text parts become content chunks; `functionCall` parts (which Gemini sends whole) emit one `ToolCallDelta` each and force the terminal finish reason to `TOOL_CALLS`; `SAFETY`/`PROHIBITED_CONTENT`/`BLOCKLIST` map to `REFUSED`. Non-2xx surfaces as `LlmHttpException`; malformed SSE chunks are skipped.
 - **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
 
