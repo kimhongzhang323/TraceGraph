@@ -108,6 +108,8 @@
         <spotbugs.version>4.9.8</spotbugs.version>
         <license-maven-plugin.version>5.0.0</license-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
+        <japicmp.baseline.version>0.4.0</japicmp.baseline.version>
     </properties>
 
     <dependencyManagement>
@@ -368,8 +370,43 @@
                         </dependency>
                     </dependencies>
                 </plugin>
+                <plugin>
+                    <groupId>com.github.siom79.japicmp</groupId>
+                    <artifactId>japicmp-maven-plugin</artifactId>
+                    <version>${japicmp-maven-plugin.version}</version>
+                    <configuration>
+                        <oldVersion>
+                            <dependency>
+                                <groupId>site.tracegraph</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <version>${japicmp.baseline.version}</version>
+                            </dependency>
+                        </oldVersion>
+                        <parameter>
+                            <onlyModified>true</onlyModified>
+                            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                            <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
+                            <skipXmlReport>true</skipXmlReport>
+                        </parameter>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>com.github.siom79.japicmp</groupId>
+                <artifactId>japicmp-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>api-compat</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>cmp</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>

@@ -15,6 +15,7 @@
 
     <properties>
         <automatic.module.name>io.tracegraph.e2e</automatic.module.name>
+        <japicmp.skip>true</japicmp.skip>
     </properties>
     <description>End-to-end integration tests for TraceGraph</description>
 

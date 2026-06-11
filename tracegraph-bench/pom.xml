@@ -16,6 +16,7 @@
   <properties>
     <automatic.module.name>io.tracegraph.bench</automatic.module.name>
     <jmh.version>1.37</jmh.version>
+    <japicmp.skip>true</japicmp.skip>
   </properties>
 
   <dependencies>
@@ -27,6 +28,11 @@
     <dependency>
       <groupId>site.tracegraph</groupId>
       <artifactId>tracegraph-connectors</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>site.tracegraph</groupId>
+      <artifactId>tracegraph-observability</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
