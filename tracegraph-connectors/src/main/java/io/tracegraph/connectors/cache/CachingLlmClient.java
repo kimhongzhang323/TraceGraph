@@ -36,7 +36,7 @@ public final class CachingLlmClient implements LlmClient {
         this.cache = new LinkedHashMap<>(16, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<LlmRequest, LlmResponse> eldest) {
-                return size() > maxSize;
+                return super.size() > maxSize;
             }
         };
     }

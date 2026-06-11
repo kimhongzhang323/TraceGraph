@@ -16,6 +16,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
 
 ### Fixed
+- SpotBugs findings in the new resilience decorators: `CachingLlmClient`'s LRU eviction now calls `super.size()` (the outer class also defines `size()` — ambiguous inherited/outer invocation); `RateLimitedLlmClient`'s deliberately-unused `awaitNanos` result is documented as a justified exclusion. `scripts/verify.sh` now runs `-Pquality` so SpotBugs gates locally, not just in CI.
 - **`RecordedLlmClient` multimodal round-trip**: `ContentBlock` now carries Jackson polymorphic type info (`@JsonTypeInfo`/`@JsonSubTypes`, `type` = `text`/`image`), so exchanges containing content blocks survive `save(Path)`/`load(Path)` and replay by `LlmRequest` equality. Previously `load` threw on any recording with multimodal messages. Jackson remains an optional dependency.
 - `release.yml` now strips the `v` prefix from the tag before collecting release artifacts (GitHub Release assets were empty since v0.3.0) and groups the `find` predicates so `.pom` files are collected too.
 

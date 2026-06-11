@@ -77,4 +77,16 @@
     </Or>
   </Match>
 
+  <!--
+    RV_RETURN_VALUE_IGNORED_BAD_PRACTICE on RateLimitedLlmClient.acquire:
+    awaitNanos' remaining-time result is deliberately unused — whether the wait
+    was signalled, timed out, or woke spuriously, the loop refills the bucket
+    and re-checks the token count. Using the value would add no correctness.
+  -->
+  <Match>
+    <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+    <Class name="io.tracegraph.connectors.llm.RateLimitedLlmClient"/>
+    <Method name="acquire"/>
+  </Match>
+
 </FindBugsFilter>
