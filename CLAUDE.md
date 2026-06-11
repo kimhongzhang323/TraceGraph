@@ -7,7 +7,7 @@
 ## Stack
 
 - **JDK 21** (records, pattern matching, virtual threads)
-- **Maven** multi-module — parent POM at root, 6 modules
+- **Maven** multi-module — parent POM at root, 14 modules
 - **JUnit 5** + **AssertJ** for tests
 - **SLF4J** API only at runtime in `tracegraph-core` — no Spring, Jackson, OTel in core
 
@@ -15,12 +15,20 @@
 
 | Module | Belongs here |
 |---|---|
-| `tracegraph-core` | Pure graph definitions and the sync execution loop. Zero heavy deps. The `NodeListener` SPI lives here so Phase 3 can plug in without a breaking change. |
-| `tracegraph-runtime` | Async/parallel nodes, checkpointing, retries, resume |
-| `tracegraph-observability` | OTel spans, state diffs, replay |
-| `tracegraph-memory` | `MemoryStore` interface + working/session/long-term/semantic layers |
-| `tracegraph-spring-boot-starter` | Auto-config, REST endpoints, DI |
-| `tracegraph-connectors` | LLM + vector DB adapters |
+| `tracegraph-bom` | Bill of materials — consumers import this to pin all module versions |
+| `tracegraph-core` | Pure graph definitions and the execution loop. Zero heavy deps. All SPIs (`NodeListener`, `TraceRecorder`, `CheckpointStore`, `MemoryStore`, `VectorStore`, `EmbeddingClient`, `Guardrail`) live here. |
+| `tracegraph-runtime` | Checkpoint store implementations (`InMemoryCheckpointStore`, `JdbcCheckpointStore`) |
+| `tracegraph-memory` | `MemoryStore` implementations (in-memory, file, JDBC) |
+| `tracegraph-observability` | OTel spans, state diffs, replay (`ExecutionTrace`, `TraceStore` impls, `ReplayRunner`, `TraceDiff`), cost/budget/termination listeners, exporters |
+| `tracegraph-connectors` | LLM adapters (OpenAI, Anthropic, Gemini, DeepSeek, Ollama), `ChatNode`, tool-use/ReAct, multi-agent patterns, guardrail impls, prompts, structured output, MCP, `RecordedLlmClient` |
+| `tracegraph-rag` | Canonical home of embeddings + vector stores (OpenAI/Gemini/Cohere/Ollama embeddings; InMemory/PgVector/Pinecone/Qdrant/Weaviate stores), retrieval, ingestion, hybrid BM25 |
+| `tracegraph-eval` | Eval harness — cases, suites, metrics (exact/contains/BLEU/ROUGE/F1), baselines, CI gating, golden-trace assertions |
+| `tracegraph-a2a` | Agent-to-agent protocol — `AgentBus` SPI, in-memory bus, Google A2A wire-compatible HTTP transport |
+| `tracegraph-ui` | Trace-viewer web UI served under `/tracegraph/ui` |
+| `tracegraph-spring-boot-starter` | Auto-config, REST endpoints (traces, replay, stream, resume, A2A ingress), API-key filters, DI |
+| `tracegraph-bench` | JMH benchmarks (not published) |
+| `tracegraph-e2e` | Cross-module end-to-end tests (not published) |
+| `tracegraph-demo` | Runnable Spring Boot demo app (not published) |
 
 If a feature would force `tracegraph-core` to depend on Spring / Jackson / OTel / a memory store — it goes in another module. Core stays minimal.
 

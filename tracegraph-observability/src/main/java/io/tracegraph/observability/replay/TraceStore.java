@@ -24,6 +24,19 @@ public interface TraceStore {
         return List.of();
     }
 
+    /**
+     * Persist one newly recorded step of an in-flight trace. The default implementation saves
+     * the full {@code snapshot} (so every store works unchanged); stores backed by append-friendly
+     * media can override to write only {@code newStep} instead of rewriting the whole trace on
+     * each periodic flush.
+     *
+     * @param snapshot the full in-flight trace including {@code newStep} as its last entry
+     * @param newStep  the step that was just recorded
+     */
+    default void appendStep(ExecutionTrace<?> snapshot, TraceStep<?> newStep) {
+        save(snapshot);
+    }
+
     static TraceStore noop() {
         return new TraceStore() {
             @Override public void save(ExecutionTrace<?> trace) {}

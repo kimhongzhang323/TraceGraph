@@ -66,6 +66,48 @@ class RecordingTraceRecorderFlushTest {
     }
 
     @Test
+    void flushGoesThroughAppendStepWithTheNewStep() {
+        var appended = new java.util.ArrayList<TraceStep<?>>();
+        var saved = new java.util.concurrent.atomic.AtomicInteger();
+        TraceStore store = new TraceStore() {
+            @Override public void save(ExecutionTrace<?> trace) { saved.incrementAndGet(); }
+            @Override public java.util.Optional<ExecutionTrace<?>> load(String executionId) {
+                return java.util.Optional.empty();
+            }
+            @Override public void delete(String executionId) {}
+            @Override public void appendStep(ExecutionTrace<?> snapshot, TraceStep<?> newStep) {
+                appended.add(newStep);
+            }
+        };
+        RecordingTraceRecorder recorder = new RecordingTraceRecorder(store, 1);
+        recorder.recordStart("exec-5", "init");
+
+        recorder.recordExit("exec-5", "a", 1, "s0", "s1", 1L);
+        recorder.recordExit("exec-5", "b", 1, "s1", "s2", 1L);
+
+        assertThat(appended).hasSize(2);
+        assertThat(appended.get(0).nodeName()).isEqualTo("a");
+        assertThat(appended.get(1).nodeName()).isEqualTo("b");
+        assertThat(saved.get()).isZero();
+
+        recorder.recordComplete("exec-5", Status.COMPLETED, "s2");
+        assertThat(saved.get()).isEqualTo(1);
+    }
+
+    @Test
+    void appendStepDefaultsToFullSave() {
+        InMemoryTraceStore store = new InMemoryTraceStore();
+        RecordingTraceRecorder recorder = new RecordingTraceRecorder(store, 1);
+        recorder.recordStart("exec-6", "init");
+
+        recorder.recordExit("exec-6", "a", 1, "s0", "s1", 1L);
+
+        ExecutionTrace<?> partial = store.load("exec-6").orElseThrow();
+        assertThat(partial.status()).isEqualTo(Status.RUNNING);
+        assertThat(partial.steps()).hasSize(1);
+    }
+
+    @Test
     void rejectsNegativeFlushInterval() {
         assertThatThrownBy(() -> new RecordingTraceRecorder(new InMemoryTraceStore(), -1))
                 .isInstanceOf(IllegalArgumentException.class);

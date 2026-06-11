@@ -193,12 +193,14 @@ public final class AnthropicLlmClient implements LlmClient {
             case "end_turn", "stop_sequence" -> LlmResponse.FinishReason.STOP;
             case "max_tokens" -> LlmResponse.FinishReason.LENGTH;
             case "tool_use" -> LlmResponse.FinishReason.TOOL_CALLS;
+            case "refusal" -> LlmResponse.FinishReason.REFUSED;
             default -> LlmResponse.FinishReason.OTHER;
         };
         JsonNode usage = root.path("usage");
         int prompt = usage.path("input_tokens").asInt(0);
         int completion = usage.path("output_tokens").asInt(0);
-        return new LlmResponse(text.toString(), finish, new LlmResponse.Usage(prompt, completion), toolCalls);
+        return new LlmResponse(text.toString(), finish, new LlmResponse.Usage(prompt, completion), toolCalls,
+                root.path("model").asText(null));
     }
 
     public static final class Builder {

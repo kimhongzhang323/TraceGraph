@@ -126,7 +126,7 @@ public final class RecordingTraceRecorder implements TraceRecorder {
         if (flushEverySteps <= 0 || b.steps.size() % flushEverySteps != 0) return;
         ForkLineage lineage = pendingLineage.get(b.executionId);
         ParentLineage parent = pendingParent.get(b.executionId);
-        store.save(new ExecutionTrace(
+        ExecutionTrace snapshot = new ExecutionTrace(
                 b.executionId, b.initialState, null,
                 Status.RUNNING, b.error,
                 List.copyOf(b.steps),
@@ -135,7 +135,8 @@ public final class RecordingTraceRecorder implements TraceRecorder {
                 lineage == null ? -1 : lineage.parentStepIndex(),
                 parent == null ? null : parent.parentExecutionId(),
                 parent == null ? -1 : parent.parentStepIndex(),
-                b.correlationId));
+                b.correlationId);
+        store.appendStep(snapshot, b.steps.get(b.steps.size() - 1));
     }
 
     @Override

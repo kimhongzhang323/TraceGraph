@@ -42,6 +42,8 @@ public final class OtelNodeListener implements NodeListener {
     public static final String ATTR_GENAI_SYSTEM = "gen_ai.system";
     /** GenAI request model identifier. */
     public static final String ATTR_GENAI_REQUEST_MODEL = "gen_ai.request.model";
+    /** GenAI response (served) model identifier — differs from the request model on safeguard reroutes. */
+    public static final String ATTR_GENAI_RESPONSE_MODEL = "gen_ai.response.model";
     /** GenAI input token count. */
     public static final String ATTR_GENAI_INPUT_TOKENS = "gen_ai.usage.input_tokens";
     /** GenAI output token count. */
@@ -149,6 +151,7 @@ public final class OtelNodeListener implements NodeListener {
         if (a == null || !a.nodeName.equals(nodeName)) return;
         if (info.system() != null) a.span.setAttribute(ATTR_GENAI_SYSTEM, info.system());
         if (info.model() != null) a.span.setAttribute(ATTR_GENAI_REQUEST_MODEL, info.model());
+        if (info.servedModel() != null) a.span.setAttribute(ATTR_GENAI_RESPONSE_MODEL, info.servedModel());
         a.span.setAttribute(ATTR_GENAI_INPUT_TOKENS, info.promptTokens());
         a.span.setAttribute(ATTR_GENAI_OUTPUT_TOKENS, info.completionTokens());
         if (info.finishReason() != null) {

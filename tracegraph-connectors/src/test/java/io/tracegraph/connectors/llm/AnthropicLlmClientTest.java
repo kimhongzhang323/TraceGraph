@@ -62,6 +62,23 @@ class AnthropicLlmClientTest {
     }
 
     @Test
+    void mapsRefusalStopReasonAndCapturesServedModel() {
+        respond(200, """
+                {"model":"claude-opus-4-8",
+                 "content":[{"type":"text","text":""}],
+                 "stop_reason":"refusal",
+                 "usage":{"input_tokens":5,"output_tokens":0}}""");
+
+        AnthropicLlmClient client = AnthropicLlmClient.builder().endpoint(endpoint).build();
+        LlmResponse r = client.complete(LlmRequest.builder()
+                .model("claude-fable-5").messages(List.of(ChatMessage.user("x"))).build());
+
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.REFUSED);
+        assertThat(r.servedModel()).isEqualTo("claude-opus-4-8");
+        assertThat(r.rerouted("claude-fable-5")).isTrue();
+    }
+
+    @Test
     void concatenatesMultipleTextBlocks() {
         respond(200, """
                 {"content":[{"type":"text","text":"part 1 "},
