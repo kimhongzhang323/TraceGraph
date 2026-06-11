@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **`CircuitBreakerLlmClient`** (`tracegraph-connectors`): closed/open/half-open breaker over any `LlmClient` — opens after N consecutive failures, rejects fast with `CircuitOpenException` (carrying the last failure as cause) while open, half-opens after the cooldown with exactly one probe (success closes, failure re-opens and restarts the cooldown; concurrent calls during the probe are rejected). State transitions are lock-guarded; delegate calls happen outside the lock.
 - **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
 
