@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **`ChatSession`** (`tracegraph-connectors`): durable conversation history layered on the `MemoryStore` SPI — `append(ChatMessage)` / `messages()` / `clear()` keyed by `scope` + `sessionId` (default scope `tracegraph.session`). History reloads across executions and processes when backed by a persistent store (`FileMemoryStore`/`JdbcMemoryStore`); single-instance appends are lock-guarded, tool-call and multimodal messages round-trip intact.
 - **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
 
