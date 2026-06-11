@@ -13,6 +13,7 @@
 
     <properties>
         <automatic.module.name>io.tracegraph.demo</automatic.module.name>
+        <japicmp.skip>true</japicmp.skip>
     </properties>
 
     <dependencies>
