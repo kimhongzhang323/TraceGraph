@@ -8,6 +8,7 @@ on:
       - master
   schedule:
     - cron: "23 3 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -67,9 +68,12 @@ jobs:
         uses: github/codeql-action/analyze@v4
 
   owasp:
+    # Weekly + manual only: the full NVD update is too slow/flaky to gate every
+    # push (NVD API throttling aborts mid-update and corrupts the local DB).
+    # PRs are covered by dependency-review; pushes by CodeQL + gitleaks.
     name: OWASP dependency-check
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -80,6 +84,14 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+
+      - name: Restore NVD database cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-data-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nvd-data-${{ runner.os }}-
 
       - name: Run OWASP dependency-check
         run: mvn -B -ntp -Psecurity verify -DskipTests
