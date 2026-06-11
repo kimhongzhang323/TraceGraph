@@ -62,11 +62,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-artifacts
-          find . -path "*/target/*-${VERSION_NO_V}*.jar" -o -path "*/target/*-${VERSION_NO_V}*.pom" 2>/dev/null \
+          VERSION_NO_V="${RELEASE_TAG#v}"
+          find . \( -path "*/target/*-${VERSION_NO_V}*.jar" -o -path "*/target/*-${VERSION_NO_V}*.pom" \) 2>/dev/null \
             | xargs -I{} cp {} release-artifacts/ || true
           ls -la release-artifacts/ || true
         env:
-          VERSION_NO_V: ${{ github.event.inputs.tag && github.event.inputs.tag || github.ref_name }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
       - name: Generate SBOM
         run: mvn -B -ntp -Psbom package -DskipTests

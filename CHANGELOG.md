@@ -4,6 +4,13 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+- **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
+- `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
+
+### Fixed
+- `release.yml` now strips the `v` prefix from the tag before collecting release artifacts (GitHub Release assets were empty since v0.3.0) and groups the `find` predicates so `.pom` files are collected too.
+
 ## [0.4.0] - 2026-06-11
 
 ### Removed
