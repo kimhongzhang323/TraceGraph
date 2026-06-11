@@ -12,4 +12,4 @@ if [[ -d "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.4.7-hotspot" ]]; then
 fi
 
 cd "$(dirname "$0")/.."
-mvn -B -ntp verify
+mvn -B -ntp -Pquality verify
