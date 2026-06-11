@@ -155,8 +155,9 @@ window.API_GROUPS = [
     { m:'POST', p:'/tracegraph/traces/diff',                           desc:'Diff two executions; body is { left, right }.',                  returns:'TraceDiff<JsonNode>' },
   ]},
   { group: 'Stream', endpoints: [
-    { m:'GET',  p:'/tracegraph/stream',                                desc:'Server-Sent Events: live stream of node enter/exit events.',     returns:'text/event-stream' },
+    { m:'GET',  p:'/tracegraph/stream',                                desc:'SSE: live node enter/exit/retry/error events for every execution (requires a LiveTraceFeed wired via traceRecorder).', returns:'text/event-stream' },
     { m:'GET',  p:'/tracegraph/stream?execution={id}',                 desc:'SSE filtered to a single execution.',                            returns:'text/event-stream' },
+    { m:'POST', p:'/tracegraph/traces/stream',                         desc:'Run-and-watch: starts a new execution with the posted initial state and streams its NodeEvents.', returns:'text/event-stream' },
   ]},
   { group: 'Graph definitions', endpoints: [
     { m:'GET',  p:'/tracegraph/graphs',                                desc:'List registered graphs and their node/edge counts.',             returns:'List<GraphDescriptor>' },

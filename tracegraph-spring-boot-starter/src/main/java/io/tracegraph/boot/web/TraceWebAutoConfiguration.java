@@ -65,4 +65,11 @@ public class TraceWebAutoConfiguration {
     public TraceStreamController traceStreamController(Graph<?> graph) {
         return new TraceStreamController(graph);
     }
+
+    @Bean
+    @ConditionalOnBean(io.tracegraph.observability.live.LiveTraceFeed.class)
+    @ConditionalOnMissingBean
+    public TraceLiveController traceLiveController(io.tracegraph.observability.live.LiveTraceFeed feed) {
+        return new TraceLiveController(feed);
+    }
 }
