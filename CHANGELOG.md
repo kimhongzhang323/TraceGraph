@@ -11,8 +11,13 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 - **SPI contract tests**: abstract `MemoryStoreContractTest`, `CheckpointStoreContractTest`, and `TraceStoreContractTest` base classes; every store implementation now extends the shared behavioral contract for its SPI.
 - **Recorded-LLM replay stubbing** (`tracegraph-connectors`): `RecordedLlmClient.recording(delegate)` captures full request/response exchanges during a live run (persist via `save(Path)` / `load(Path)`, Jackson optional); `RecordedLlmClient.replaying(exchanges[, fallback])` serves them back matched by `LlmRequest` equality — unchanged fork steps get recorded answers deterministically, edited prompts throw `LlmReplayMismatchException` or fall back to a live client. Pairs with `ReplayRunner` for deterministic what-if forks.
 
+- **Refusal + served-model capture**: `LlmResponse.FinishReason` gains `REFUSED` (OpenAI `content_filter`, Anthropic `refusal`, Gemini `SAFETY`/`PROHIBITED_CONTENT`/`BLOCKLIST`); `LlmResponse` gains a `servedModel` component (the model that actually answered) plus `rerouted(requestedModel)` to detect safeguard rerouting. `LlmCallInfo` gains `servedModel` + `rerouted()`; `ChatNode` reports it; `OtelNodeListener` emits `gen_ai.response.model`. Backwards-compatible constructors keep existing positional callers compiling.
+- **Append-oriented trace flush** (`tracegraph-observability`): new `TraceStore.appendStep(snapshot, newStep)` default method (falls back to full `save`); `RecordingTraceRecorder`'s periodic flush now goes through it so append-friendly stores can persist only the new step instead of rewriting the whole trace every N steps.
+
 ### Changed
 - **Shared HTTP plumbing**: package-private `JsonHttp` helpers in `tracegraph-connectors` (LLM adapters) and `tracegraph-rag` (vector stores + embedding clients) replace ten copies of the serialize/send/status-check/parse cycle. No public API change.
+- **Record component additions** (pre-1.0 documented break): `LlmResponse` and `LlmCallInfo` gained a trailing `servedModel` component — positional deconstruction over the full component list needs updating; all prior constructors still compile.
+- `CLAUDE.md` module table regenerated to cover all 14 reactor modules (was 6).
 
 ### Fixed
 - **Gemini API keys no longer leak into URLs**: `GeminiLlmClient` and `GeminiEmbeddingClient` now send the key via the `x-goog-api-key` header instead of the `?key=` query parameter (query strings end up in logs and proxies).

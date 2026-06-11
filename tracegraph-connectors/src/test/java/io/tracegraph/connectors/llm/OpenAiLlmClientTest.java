@@ -73,7 +73,7 @@ class OpenAiLlmClientTest {
     }
 
     @Test
-    void mapsUnknownFinishToOther() {
+    void mapsContentFilterToRefused() {
         respond(200, """
                 {"choices":[{"message":{"content":"x"},"finish_reason":"content_filter"}],
                  "usage":{"prompt_tokens":0,"completion_tokens":0}}""");
@@ -82,7 +82,50 @@ class OpenAiLlmClientTest {
         LlmResponse r = client.complete(LlmRequest.builder()
                 .model("m").messages(List.of(ChatMessage.user("x"))).build());
 
+        assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.REFUSED);
+    }
+
+    @Test
+    void mapsUnknownFinishToOther() {
+        respond(200, """
+                {"choices":[{"message":{"content":"x"},"finish_reason":"mystery"}],
+                 "usage":{"prompt_tokens":0,"completion_tokens":0}}""");
+
+        OpenAiLlmClient client = OpenAiLlmClient.builder().endpoint(endpoint).build();
+        LlmResponse r = client.complete(LlmRequest.builder()
+                .model("m").messages(List.of(ChatMessage.user("x"))).build());
+
         assertThat(r.finish()).isEqualTo(LlmResponse.FinishReason.OTHER);
+    }
+
+    @Test
+    void capturesServedModelAndDetectsReroute() {
+        respond(200, """
+                {"model":"gpt-4o-mini-2024-07-18",
+                 "choices":[{"message":{"content":"ok"},"finish_reason":"stop"}],
+                 "usage":{"prompt_tokens":1,"completion_tokens":1}}""");
+
+        OpenAiLlmClient client = OpenAiLlmClient.builder().endpoint(endpoint).build();
+        LlmResponse r = client.complete(LlmRequest.builder()
+                .model("gpt-4o").messages(List.of(ChatMessage.user("x"))).build());
+
+        assertThat(r.servedModel()).isEqualTo("gpt-4o-mini-2024-07-18");
+        assertThat(r.rerouted("gpt-4o")).isTrue();
+        assertThat(r.rerouted("gpt-4o-mini-2024-07-18")).isFalse();
+    }
+
+    @Test
+    void servedModelAbsentLeavesNullAndNoReroute() {
+        respond(200, """
+                {"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}],
+                 "usage":{"prompt_tokens":1,"completion_tokens":1}}""");
+
+        OpenAiLlmClient client = OpenAiLlmClient.builder().endpoint(endpoint).build();
+        LlmResponse r = client.complete(LlmRequest.builder()
+                .model("m").messages(List.of(ChatMessage.user("x"))).build());
+
+        assertThat(r.servedModel()).isNull();
+        assertThat(r.rerouted("m")).isFalse();
     }
 
     @Test

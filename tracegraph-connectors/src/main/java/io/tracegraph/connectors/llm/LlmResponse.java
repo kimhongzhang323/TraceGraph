@@ -9,13 +9,26 @@ import java.util.Objects;
  * <p>A response may contain plain text, tool calls, or both depending on the provider and finish
  * reason. Token usage is tracked separately so callers can record costs or budgets.
  */
-public record LlmResponse(String content, FinishReason finish, Usage usage, List<ToolCall> toolCalls) {
+public record LlmResponse(String content, FinishReason finish, Usage usage, List<ToolCall> toolCalls,
+                          String servedModel) {
 
     public LlmResponse {
         Objects.requireNonNull(content, "content");
         Objects.requireNonNull(finish, "finish");
         Objects.requireNonNull(usage, "usage");
         toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+    }
+
+    /**
+     * Create a response without the served-model identifier.
+     *
+     * @param content textual content returned by the model
+     * @param finish provider-normalized finish reason
+     * @param usage token usage for the call
+     * @param toolCalls tool invocations requested by the model
+     */
+    public LlmResponse(String content, FinishReason finish, Usage usage, List<ToolCall> toolCalls) {
+        this(content, finish, usage, toolCalls, null);
     }
 
     /**
@@ -26,7 +39,19 @@ public record LlmResponse(String content, FinishReason finish, Usage usage, List
      * @param usage token usage for the call
      */
     public LlmResponse(String content, FinishReason finish, Usage usage) {
-        this(content, finish, usage, List.of());
+        this(content, finish, usage, List.of(), null);
+    }
+
+    /**
+     * Return whether the provider answered with a different model than was requested —
+     * e.g. safeguard classifiers rerouting a request to another model. {@code false} when
+     * either side is unknown.
+     *
+     * @param requestedModel the model id sent in the request
+     * @return {@code true} when the serving model is known and differs from the requested one
+     */
+    public boolean rerouted(String requestedModel) {
+        return servedModel != null && requestedModel != null && !servedModel.equals(requestedModel);
     }
 
     /**
@@ -39,9 +64,10 @@ public record LlmResponse(String content, FinishReason finish, Usage usage, List
     }
 
     /**
-     * Normalized completion outcome across providers.
+     * Normalized completion outcome across providers. {@link #REFUSED} maps provider-side
+     * safety terminations (OpenAI {@code content_filter}, Anthropic {@code refusal}).
      */
-    public enum FinishReason { STOP, LENGTH, TOOL_CALLS, OTHER }
+    public enum FinishReason { STOP, LENGTH, TOOL_CALLS, REFUSED, OTHER }
 
     /**
      * Token accounting for a single request/response exchange.

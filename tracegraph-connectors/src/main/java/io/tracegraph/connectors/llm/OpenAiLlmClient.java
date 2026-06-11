@@ -247,6 +247,7 @@ public final class OpenAiLlmClient implements LlmClient {
             case "stop" -> LlmResponse.FinishReason.STOP;
             case "length" -> LlmResponse.FinishReason.LENGTH;
             case "tool_calls" -> LlmResponse.FinishReason.TOOL_CALLS;
+            case "content_filter" -> LlmResponse.FinishReason.REFUSED;
             default -> LlmResponse.FinishReason.OTHER;
         };
         JsonNode usage = root.path("usage");
@@ -268,7 +269,8 @@ public final class OpenAiLlmClient implements LlmClient {
             toolCalls = List.copyOf(parsed);
         }
 
-        return new LlmResponse(content, finish, new LlmResponse.Usage(prompt, completion), toolCalls);
+        return new LlmResponse(content, finish, new LlmResponse.Usage(prompt, completion), toolCalls,
+                root.path("model").asText(null));
     }
 
     public static final class Builder {

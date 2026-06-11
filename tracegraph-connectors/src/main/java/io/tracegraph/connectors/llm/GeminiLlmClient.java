@@ -182,6 +182,7 @@ public final class GeminiLlmClient implements LlmClient {
             finish = switch (finishStr) {
                 case "stop" -> LlmResponse.FinishReason.STOP;
                 case "length" -> LlmResponse.FinishReason.LENGTH;
+                case "safety", "prohibited_content", "blocklist" -> LlmResponse.FinishReason.REFUSED;
                 default -> LlmResponse.FinishReason.OTHER;
             };
         }
@@ -191,7 +192,7 @@ public final class GeminiLlmClient implements LlmClient {
         int completionTokens = usageMeta.path("candidatesTokenCount").asInt(0);
 
         return new LlmResponse(content, finish, new LlmResponse.Usage(promptTokens, completionTokens),
-                List.copyOf(toolCalls));
+                List.copyOf(toolCalls), root.path("modelVersion").asText(null));
     }
 
     public static final class Builder {

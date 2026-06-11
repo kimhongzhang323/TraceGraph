@@ -49,7 +49,8 @@ public final class ChatNode<S> implements Node<S> {
                 request.model(),
                 u.promptTokens(),
                 u.completionTokens(),
-                response.finish().name().toLowerCase(Locale.ROOT)));
+                response.finish().name().toLowerCase(Locale.ROOT),
+                response.servedModel()));
         if (ctx.sensitiveDataLoggingEnabled()) {
             ctx.reportRawIO(renderRequest(request), response.content());
         }

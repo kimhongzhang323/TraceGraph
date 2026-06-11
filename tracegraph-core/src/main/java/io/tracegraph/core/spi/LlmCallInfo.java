@@ -14,10 +14,25 @@ package io.tracegraph.core.spi;
  * Token counts are non-negative.
  */
 public record LlmCallInfo(String system, String model, int promptTokens, int completionTokens,
-                          String finishReason) {
+                          String finishReason, String servedModel) {
 
     public LlmCallInfo {
         if (promptTokens < 0) throw new IllegalArgumentException("promptTokens < 0");
         if (completionTokens < 0) throw new IllegalArgumentException("completionTokens < 0");
+    }
+
+    /** Backwards-compatible constructor without the served-model identifier. */
+    public LlmCallInfo(String system, String model, int promptTokens, int completionTokens,
+                       String finishReason) {
+        this(system, model, promptTokens, completionTokens, finishReason, null);
+    }
+
+    /**
+     * Returns whether the provider served the call with a different model than was requested —
+     * e.g. safeguard classifiers rerouting to another model. {@code false} when either side
+     * is unknown.
+     */
+    public boolean rerouted() {
+        return servedModel != null && model != null && !servedModel.equals(model);
     }
 }
