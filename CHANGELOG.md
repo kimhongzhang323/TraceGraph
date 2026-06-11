@@ -5,6 +5,7 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 ## [Unreleased]
 
 ### Added
+- **Native Anthropic streaming** (`tracegraph-connectors`): `AnthropicLlmClient` now overrides `stream(LlmRequest)` with real SSE (`stream: true` on the Messages API) instead of the single-chunk fallback — `content_block_delta`/`text_delta` events become content chunks, `tool_use` blocks stream as `ToolCallDelta`s (name from `content_block_start`, arguments accumulated from `input_json_delta`), and `message_delta.stop_reason` maps to the terminal chunk's finish reason (`refusal` → `REFUSED`). Non-2xx surfaces as `LlmHttpException`; malformed SSE chunks are skipped without killing the stream.
 - **API-compatibility gate**: `japicmp-maven-plugin` bound to `verify`, comparing every published module against the `0.4.0` baseline and failing the build on binary-incompatible changes. Intentional pre-1.0 breaks require an explicit exclusion plus a CHANGELOG entry. Non-published modules (`bench`, `e2e`, `demo`) skip the check.
 - `scripts/verify.sh` — one-shot local verification gate (JDK 21 selection + `mvn verify`); `docs/0.5.0-PROGRESS.md` tracks the 0.5.0 work queue.
 
