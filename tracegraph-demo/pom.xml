@@ -6,7 +6,7 @@
     <parent>
         <groupId>site.tracegraph</groupId>
         <artifactId>tracegraph-parent</artifactId>
-        <version>0.5.0</version>
+        <version>0.4.0</version>
     </parent>
     <artifactId>tracegraph-demo</artifactId>
     <name>TraceGraph :: Demo</name>

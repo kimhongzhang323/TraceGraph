@@ -4,10 +4,10 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-06-11
+## [0.4.0] - 2026-06-11
 
 ### Removed
-- `io.tracegraph.connectors.vector.InMemoryVectorStore`, `io.tracegraph.connectors.llm.MockEmbeddingClient`, and `io.tracegraph.connectors.llm.OpenAiEmbeddingClient` — previously `@Deprecated(forRemoval = true)` duplicates of the canonical `io.tracegraph.rag.*` implementations. Migrate imports to `io.tracegraph.rag.InMemoryVectorStore` / `MockEmbeddingClient` / `OpenAiEmbeddingClient` (drop-in equivalents). Note: 0.4.0 was never published, so the deprecation and removal land in the same released version.
+- `io.tracegraph.connectors.vector.InMemoryVectorStore`, `io.tracegraph.connectors.llm.MockEmbeddingClient`, and `io.tracegraph.connectors.llm.OpenAiEmbeddingClient` — duplicates of the canonical `io.tracegraph.rag.*` implementations, deprecated `forRemoval` during the 0.4.0 development cycle and removed before ever shipping in a release. Migrate imports to `io.tracegraph.rag.InMemoryVectorStore` / `MockEmbeddingClient` / `OpenAiEmbeddingClient` (drop-in equivalents).
 
 ### Added
 - **SPI contract tests**: abstract `MemoryStoreContractTest`, `CheckpointStoreContractTest`, and `TraceStoreContractTest` base classes; every store implementation now extends the shared behavioral contract for its SPI.
