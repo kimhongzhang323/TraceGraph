@@ -104,6 +104,28 @@ class RecordedLlmClientTest {
     }
 
     @Test
+    void saveAndLoadRoundTripContentBlocks(@TempDir Path dir) throws Exception {
+        LlmRequest multimodal = LlmRequest.builder()
+                .model("test-model")
+                .messages(List.of(ChatMessage.userWithImages("look at this", List.of(
+                        ContentBlock.text("look at this"),
+                        ContentBlock.image("image/png", "aWJlZQ==")))))
+                .build();
+        RecordedLlmClient recorder = RecordedLlmClient.recording(MockLlmClient.constant("a cat"));
+        recorder.complete(multimodal);
+        Path file = dir.resolve("exchanges.json");
+        recorder.save(file);
+
+        List<RecordedLlmClient.Exchange> loaded = RecordedLlmClient.load(file);
+
+        assertThat(loaded.get(0).request().messages().get(0).contentBlocks()).containsExactly(
+                ContentBlock.text("look at this"),
+                ContentBlock.image("image/png", "aWJlZQ=="));
+        assertThat(RecordedLlmClient.replaying(loaded).complete(multimodal).content())
+                .isEqualTo("a cat");
+    }
+
+    @Test
     void modeMethodsRejectWrongMode() {
         RecordedLlmClient recorder = RecordedLlmClient.recording(MockLlmClient.echoing());
         RecordedLlmClient replay = RecordedLlmClient.replaying(List.of());

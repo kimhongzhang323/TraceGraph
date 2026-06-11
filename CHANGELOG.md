@@ -4,6 +4,9 @@ All notable changes to TraceGraph are recorded here. Format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+- **`RecordedLlmClient` multimodal round-trip**: `ContentBlock` now carries Jackson polymorphic type info (`@JsonTypeInfo`/`@JsonSubTypes`, `type` = `text`/`image`), so exchanges containing content blocks survive `save(Path)`/`load(Path)` and replay by `LlmRequest` equality. Previously `load` threw on any recording with multimodal messages. Jackson remains an optional dependency.
+
 ## [0.4.0] - 2026-06-11
 
 ### Removed
