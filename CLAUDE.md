@@ -25,6 +25,7 @@
 | `tracegraph-eval` | Eval harness — cases, suites, metrics (exact/contains/BLEU/ROUGE/F1), baselines, CI gating, golden-trace assertions |
 | `tracegraph-a2a` | Agent-to-agent protocol — `AgentBus` SPI, in-memory bus, Google A2A wire-compatible HTTP transport |
 | `tracegraph-ui` | Trace-viewer web UI served under `/tracegraph/ui` |
+| `tracegraph-cli` | Interactive terminal trace viewer (JLine) — browse traces, inspect steps, live-tail `GET /tracegraph/stream` |
 | `tracegraph-spring-boot-starter` | Auto-config, REST endpoints (traces, replay, stream, resume, A2A ingress), API-key filters, DI |
 | `tracegraph-bench` | JMH benchmarks (not published) |
 | `tracegraph-e2e` | Cross-module end-to-end tests (not published) |

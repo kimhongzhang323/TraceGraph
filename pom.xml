@@ -67,6 +67,7 @@
         <module>tracegraph-bench</module>
         <module>tracegraph-e2e</module>
         <module>tracegraph-ui</module>
+        <module>tracegraph-cli</module>
         <module>tracegraph-demo</module>
     </modules>
 
