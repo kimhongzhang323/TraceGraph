@@ -28,4 +28,22 @@ public interface AgentBus {
             throws InterruptedException {
         throw new UnsupportedOperationException("sendAndAwait not supported by this bus");
     }
+
+    /**
+     * Registers (or replaces, by {@link AgentCard#id()}) a capability descriptor for discovery.
+     * Default is a no-op so existing buses keep compiling; {@code InMemoryAgentBus} stores cards.
+     *
+     * @param card the agent's capability descriptor
+     */
+    default void registerCard(AgentCard card) {}
+
+    /**
+     * Capability descriptors of the agents registered on this bus, ordered by id.
+     * Default is empty for buses without discovery support.
+     *
+     * @return registered agent cards
+     */
+    default java.util.List<AgentCard> agentCards() {
+        return java.util.List.of();
+    }
 }
