@@ -16,6 +16,19 @@ import java.util.function.Consumer;
 public final class InMemoryAgentBus implements AgentBus {
 
     private final Map<String, List<Consumer<AgentMessage>>> subscribers = new ConcurrentHashMap<>();
+    private final Map<String, AgentCard> cards = new ConcurrentHashMap<>();
+
+    @Override
+    public void registerCard(AgentCard card) {
+        cards.put(card.id(), card);
+    }
+
+    @Override
+    public List<AgentCard> agentCards() {
+        return cards.values().stream()
+                .sorted(java.util.Comparator.comparing(AgentCard::id))
+                .toList();
+    }
 
     @Override
     public void send(AgentMessage message) {

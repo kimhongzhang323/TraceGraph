@@ -1,9 +1,11 @@
 package io.tracegraph.boot.a2a;
 
 import io.tracegraph.a2a.AgentBus;
+import io.tracegraph.a2a.AgentCard;
 import io.tracegraph.a2a.AgentMessage;
 import io.tracegraph.a2a.http.A2AMessage;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -21,6 +23,12 @@ public class A2AController {
 
     public A2AController(AgentBus bus) {
         this.bus = bus;
+    }
+
+    /** Discovery: capability cards of the agents registered on the local bus. */
+    @GetMapping("/a2a/agents")
+    public java.util.List<AgentCard> agents() {
+        return bus.agentCards();
     }
 
     @PostMapping("/a2a/messages")
