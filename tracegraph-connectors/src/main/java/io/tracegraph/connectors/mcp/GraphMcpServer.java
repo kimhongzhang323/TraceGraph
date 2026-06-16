@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +48,7 @@ public final class GraphMcpServer {
     private GraphMcpServer(Builder b) {
         this.serverName = b.serverName;
         this.serverVersion = b.serverVersion;
-        this.tools = Map.copyOf(b.tools);
+        this.tools = Collections.unmodifiableMap(new LinkedHashMap<>(b.tools));
     }
 
     public static Builder builder() {
