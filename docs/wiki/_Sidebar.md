@@ -26,6 +26,7 @@
 - [[Spring Boot Integration]]
 - [[REST API Reference]]
 - [[Trace UI]]
+- [[Trace CLI|CLI]]
 
 **Reference**
 - [[Sample Trace Output]]

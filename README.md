@@ -22,7 +22,7 @@ The project is aimed at teams that want graph-style orchestration on the JVM wit
 
 - [Why TraceGraph](#why-tracegraph)
 - [Project Status](#project-status)
-- [What's New in 0.3.0](#whats-new-in-030)
+- [What's New in 0.5.0](#whats-new-in-050)
 - [Modules](#modules)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -34,6 +34,7 @@ The project is aimed at teams that want graph-style orchestration on the JVM wit
 - [Runtime Features](#runtime-features)
 - [Spring Boot Integration](#spring-boot-integration)
 - [LLM Connectors](#llm-connectors)
+- [Trace CLI](#trace-cli)
 - [Examples](#examples)
 - [Documentation](#documentation)
 - [Build and Test](#build-and-test)
@@ -67,21 +68,26 @@ TraceGraph is probably not the right fit when you want:
 
 ## Project Status
 
-TraceGraph is under active development. Current release: **0.3.0** (2026-05-24).
+TraceGraph is under active development. Latest released version: **0.4.0** (2026-06-11); **0.5.0** is in development on `main`.
 
 - `tracegraph-core` is the most mature module and already covers core graph construction and execution behavior.
 - `tracegraph-runtime`, `tracegraph-memory`, `tracegraph-observability`, and `tracegraph-spring-boot-starter` are implemented and tested, but are still evolving.
-- `tracegraph-connectors` is maturing — the 0.3.0 release adds first-class multi-agent patterns (handoff, group-chat, voting, role/tool isolation) on top of the existing ReAct + Supervisor primitives.
-- `tracegraph-eval` covers golden-trace replay, baseline comparison, BLEU/ROUGE/F1, dataset loaders, and parallel execution.
+- `tracegraph-connectors` is maturing — it ships LLM adapters (OpenAI, Anthropic, Gemini, DeepSeek, Ollama) with native streaming, resilience decorators, multi-agent patterns, and both an MCP client and server.
+- `tracegraph-eval` covers golden-trace replay, baseline comparison, BLEU/ROUGE/F1, dataset loaders, parallel execution, and CI gating.
+- `tracegraph-ui` and `tracegraph-cli` provide a web trace viewer and an interactive terminal trace viewer.
 
 Until the API settles, expect breaking changes between pre-1.0 releases. See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
-## What's New in 0.3.0
+## What's New in 0.5.0
 
-- **Multi-agent patterns** (`tracegraph-connectors/llm`): `HandoffNode<S>` for peer-to-peer delegation; `AgentProfile<S>` + `ReActAgent.Builder.profile(...)` for role/tool isolation; `GroupChatAgent<S>` with round-robin or LLM-selected speaker order; `VotingNode<S>` with `Tally.majority` / `Tally.firstNonNull` consensus.
-- **Termination-predicate listener** (`tracegraph-observability`): `TerminationListener<S>` with `maxTurns`, `afterNode`, `stateMatches` predicates surfaces clean `Status.TERMINATED` outcomes.
-- **Observability batch**: `MicrometerNodeListener` (Prometheus-ready timers/counters); `SamplingTraceStore` (`random`/`slowExecutions`/`failedOnly`); OTel GenAI semantic-convention attributes on LLM spans; `Graph.Builder.correlationId(Supplier<String>)` for upstream APM linkage; `SlowNodeListener` per-node SLA alerts; `JsonlTraceExporter` for batch ingestion into LangSmith/Langfuse/Arize; per-step `TraceStep.Usage`; `Graph.Builder.sensitiveDataLogging(boolean)` gating prompt/response capture; `LlmCostListener.snapshot(executionId)` per-execution cost reports; parent-execution-id lineage on `ExecutionTrace` for subgraph correlation.
-- **Eval-harness batch** (`tracegraph-eval`): `BleuMetric` / `RougeMetric` / `TokenF1Metric`; `EvalSuite.assertPassed(...)` with `failFast` / `minPassRate` for CI gating; `EvalBaseline` + `EvalBaselineStore` + `EvalReport.toComparisonMarkdown(...)`; `EvalCaseLoader.fromJsonl/fromCsv`; `EvalSuite.runParallel(Executor)` on virtual threads; `EvalReport.toSummaryMarkdown(...)` + `EvalSummary` (pass rate, per-metric means, latency p50/p95/p99); `Metric.canScore(...)` for conditional skipping; `TraceAssertion<S>` for per-step golden-trace assertions.
+0.5.0 is a feature release spanning four themes:
+
+- **Resilience layer** (`tracegraph-connectors`): composable `LlmClient` decorators — `FallbackLlmClient` (ordered provider failover surfacing `servedModel`/`rerouted()`), `RateLimitedLlmClient` (virtual-thread-friendly token bucket), `CircuitBreakerLlmClient` (closed/open/half-open with `CircuitOpenException`), and `CachingLlmClient` (exact-match `LlmRequest` cache with LRU eviction).
+- **Sessions & context** (`tracegraph-connectors` + `tracegraph-memory`): `ChatSession` layers durable conversation history over the `MemoryStore` SPI, keyed by scope + sessionId; tool-call and multimodal messages round-trip and reload across executions.
+- **Observability+ / live debugging**: `LiveTraceFeed` broadcasts execution events to a new `GET /tracegraph/stream` SSE endpoint; **`tracegraph-cli`** is a new interactive terminal trace viewer; RAG retrieval steps are now visible in recorded traces; a golden-trace eval gate runs in CI.
+- **Ecosystem & interop**: native SSE streaming for Anthropic and Gemini; A2A agent-card discovery (`GET /a2a/agents`); and an **MCP server** (`GraphMcpServer`) that exposes compiled graphs as MCP tools over stdio.
+
+Plus an API-compatibility gate (`japicmp` vs the previous release) and `RecordedLlmClient` multimodal round-trip support.
 
 ## Modules
 
@@ -95,7 +101,9 @@ Until the API settles, expect breaking changes between pre-1.0 releases. See [CH
 | `tracegraph-connectors` | LLM HTTP clients (OpenAI, Anthropic, Gemini, DeepSeek, Ollama), prompt templates, structured output, MCP, and multi-agent patterns (ReAct, Supervisor, Handoff, GroupChat, Voting) |
 | `tracegraph-eval` | Golden-trace replay, metrics (Exact/Contains/BLEU/ROUGE/F1/Embedding/LLM-judge), baseline comparison, dataset loaders |
 | `tracegraph-rag` | Embedding clients, vector stores (in-memory, Qdrant, Weaviate, Pinecone, PgVector), retrievers, RAG pipelines |
-| `tracegraph-a2a` | Agent-to-agent message bus and HTTP transport |
+| `tracegraph-a2a` | Agent-to-agent message bus, HTTP transport, and agent-card discovery |
+| `tracegraph-ui` | Web trace viewer served under `/tracegraph/ui` |
+| `tracegraph-cli` | Interactive terminal trace viewer (JLine) — browse traces, inspect steps, live-tail executions |
 | `tracegraph-bench` | JMH micro-benchmarks for graph dispatch and ReAct loops |
 
 ## Requirements
@@ -113,7 +121,7 @@ Pick the smallest module set that matches your use case:
 <dependency>
     <groupId>site.tracegraph</groupId>
     <artifactId>tracegraph-core</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
@@ -487,6 +495,27 @@ LlmResponse response = client.complete(LlmRequest.builder()
 
 The connector layer is intentionally low-level. It is meant to give graph nodes clean Java types and test seams rather than hide provider differences completely.
 
+## Trace CLI
+
+`tracegraph-cli` is an interactive terminal trace viewer for a running TraceGraph app (any service exposing the starter's `/tracegraph/*` endpoints). Browse recorded traces, drill into per-step state diffs, and live-tail executions — without leaving the terminal.
+
+```bash
+java -jar tracegraph-cli/target/tracegraph-cli-<version>.jar \
+     --url http://localhost:8080 [--api-key KEY]
+```
+
+```text
+ tracegraph · traces                   ↑↓ move · ⏎ open · w watch live · r refresh · q quit
+
+  #    EXECUTION                               STATUS        STEPS  STARTED
+  ────────────────────────────────────────────────────────────────────────────────────────
+▸ 0    checkout-7f3a91c2                       COMPLETED     4      2026-06-16T09:14:02Z
+  1    summarize-bd0e1144                      FAILED        2      2026-06-16T09:18:41Z
+  2    rag-query-9920aa07                      INTERRUPTED   3      2026-06-16T09:22:10Z
+```
+
+Keys: arrows move, `⏎` opens a trace, `s` toggles the before/after state pane, `w` live-tails the `GET /tracegraph/stream` SSE feed, `esc` goes back, `q` quits. Status and event types are color-coded; on non-UTF-8 terminals (e.g. legacy Windows consoles) the UI automatically falls back to an ASCII glyph set. See the [CLI wiki page](docs/wiki/CLI.md) for a full interface tour.
+
 ## Examples
 
 The repository includes small runnable examples for common adoption paths:
@@ -551,12 +580,14 @@ Current expectations for users:
 
 GitHub Actions is configured for:
 
-- cross-platform CI on Ubuntu and Windows
+- cross-platform CI on Ubuntu, Windows, and macOS
+- an API-compatibility gate (`japicmp`) against the previous release
+- a golden-trace eval gate that re-runs recorded traces deterministically
+- SpotBugs, license, Javadoc doclint, and JaCoCo/Codecov checks
 - pull request security review for dependency changes
 - scheduled and main-branch CodeQL analysis
 - weekly Dependabot updates for Maven and GitHub Actions
-- automated release drafting
-- release publishing to GitHub Packages
+- automated release drafting and publishing to Maven Central
 - GitHub Release creation for tagged versions
 
 Release tags follow the `v*` convention, for example:

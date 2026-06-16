@@ -9,10 +9,12 @@ TraceGraph is a Maven multi-module project — a parent POM at the root plus the
 | `tracegraph-memory` | Scoped key-value memory: `InMemoryMemoryStore`, `FileMemoryStore`, `JdbcMemoryStore`. |
 | `tracegraph-observability` | OpenTelemetry listeners, trace recording, replay, diffing, trace stores, cost/budget/termination listeners, exporters. |
 | `tracegraph-spring-boot-starter` | Auto-configuration, REST endpoints, DI. The only module allowed to import Spring. |
-| `tracegraph-connectors` | LLM HTTP clients (OpenAI, Anthropic, Gemini, DeepSeek, Ollama), prompt templates, structured output, guardrails, MCP, tools, ReAct + multi-agent patterns (Handoff, GroupChat, Voting, Supervisor). |
-| `tracegraph-eval` | Golden-trace replay, metrics (Exact / Contains / Latency / BLEU / ROUGE / F1 / Embedding / LLM-judge), baseline comparison, dataset loaders, parallel execution. |
-| `tracegraph-rag` | Embedding clients, vector stores (in-memory, Qdrant, Weaviate, Pinecone, PgVector), retrievers, RAG pipelines. |
-| `tracegraph-a2a` | Agent-to-agent message bus and HTTP transport. |
+| `tracegraph-connectors` | LLM HTTP clients (OpenAI, Anthropic, Gemini, DeepSeek, Ollama) with native streaming, resilience decorators (Fallback / RateLimited / CircuitBreaker / Caching), prompt templates, structured output, guardrails, MCP client + server, tools, ReAct + multi-agent patterns (Handoff, GroupChat, Voting, Supervisor), `ChatSession`. |
+| `tracegraph-eval` | Golden-trace replay, metrics (Exact / Contains / Latency / BLEU / ROUGE / F1 / Embedding / LLM-judge), baseline comparison, dataset loaders, parallel execution, CI gating. |
+| `tracegraph-rag` | Embedding clients, vector stores (in-memory, Qdrant, Weaviate, Pinecone, PgVector), retrievers, RAG pipelines (with trace integration). |
+| `tracegraph-a2a` | Agent-to-agent message bus, HTTP transport, and agent-card discovery. |
+| `tracegraph-ui` | Web trace viewer served under `/tracegraph/ui`. |
+| `tracegraph-cli` | Interactive terminal trace viewer (JLine) — browse traces, inspect steps, live-tail executions. Not published as a library; runnable jar. See **[[Trace CLI|CLI]]**. |
 | `tracegraph-bench` | JMH micro-benchmarks for graph dispatch and ReAct loops. Not published to Maven Central. |
 
 ## Dependency direction
@@ -60,7 +62,7 @@ Maven `groupId` is **`site.tracegraph`** (reverse-DNS of the verified `tracegrap
 <dependency>
     <groupId>site.tracegraph</groupId>
     <artifactId>tracegraph-core</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
