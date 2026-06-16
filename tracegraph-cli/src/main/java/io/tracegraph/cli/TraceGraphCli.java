@@ -59,6 +59,7 @@ public final class TraceGraphCli {
         ApiClient api = new ApiClient(url, apiKey,
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
         try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
+            Glyphs.active = Glyphs.forCharset(terminal.encoding());
             terminal.enterRawMode();
             new TraceGraphCli(api, terminal).run();
         }
