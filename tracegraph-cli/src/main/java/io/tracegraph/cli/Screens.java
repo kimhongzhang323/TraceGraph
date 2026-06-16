@@ -23,22 +23,26 @@ final class Screens {
     private Screens() {}
 
     static String header(String title, String hint, int width) {
-        String left = " " + bold("tracegraph") + " " + dim("·") + " " + title;
+        String left = " " + bold("tracegraph") + " " + dim(Glyphs.active.bullet()) + " " + title;
         String right = dim(hint) + " ";
         int gap = Math.max(1, width - Ansi.visibleLength(left) - Ansi.visibleLength(right));
         return Ansi.INVERSE + padVisible(left + " ".repeat(gap) + right, width) + Ansi.RESET;
     }
 
     static String rule(int width) {
-        return dim("─".repeat(Math.max(0, width)));
+        return dim(Glyphs.active.rule().repeat(Math.max(0, width)));
     }
 
     static List<String> traceList(List<String> ids, List<JsonNode> summaries, int selected, int width) {
         List<String> lines = new ArrayList<>();
-        lines.add(header("traces", "↑↓ move · ⏎ open · w watch live · r refresh · q quit", width));
+        Glyphs g = Glyphs.active;
+        lines.add(header("traces", g.up() + g.down() + " move " + g.bullet() + " " + g.enter()
+                + " open " + g.bullet() + " w watch live " + g.bullet() + " r refresh "
+                + g.bullet() + " q quit", width));
         lines.add("");
         if (ids.isEmpty()) {
-            lines.add(dim("  no traces recorded yet — run a graph, then press r"));
+            lines.add(dim("  no traces recorded yet " + Glyphs.active.dash()
+                    + " run a graph, then press r"));
             return lines;
         }
         lines.add("  " + dim(padVisible("#", 5) + padVisible("EXECUTION", 40)
@@ -47,9 +51,9 @@ final class Screens {
         for (int i = 0; i < ids.size(); i++) {
             JsonNode t = i < summaries.size() ? summaries.get(i) : null;
             String status = t == null ? "?" : t.path("status").asText("?");
-            String steps = t == null ? "—" : String.valueOf(t.path("steps").size());
-            String started = t == null ? "—" : t.path("startedAt").asText("—");
-            String marker = i == selected ? color(GREEN, "▸ ") : "  ";
+            String steps = t == null ? g.dash() : String.valueOf(t.path("steps").size());
+            String started = t == null ? g.dash() : t.path("startedAt").asText(g.dash());
+            String marker = i == selected ? color(GREEN, g.marker() + " ") : "  ";
             String id = padVisible(ids.get(i), 40);
             String row = marker + padVisible(String.valueOf(i), 5)
                     + (i == selected ? bold(id) : id)
@@ -62,21 +66,23 @@ final class Screens {
 
     static List<String> traceDetail(String id, JsonNode trace, int selectedStep, boolean showState, int width) {
         List<String> lines = new ArrayList<>();
-        lines.add(header("trace " + id, "↑↓ step · s state · esc back · q quit", width));
+        Glyphs g = Glyphs.active;
+        lines.add(header("trace " + id, g.up() + g.down() + " step " + g.bullet()
+                + " s state " + g.bullet() + " esc back " + g.bullet() + " q quit", width));
         String status = trace.path("status").asText("?");
         lines.add("  " + color(statusColor(status), bold(status))
-                + dim("  ·  started " + trace.path("startedAt").asText("—")
-                + "  ·  " + trace.path("steps").size() + " steps"));
+                + dim("  " + g.bullet() + "  started " + trace.path("startedAt").asText(g.dash())
+                + "  " + g.bullet() + "  " + trace.path("steps").size() + " steps"));
         lines.add("");
         JsonNode steps = trace.path("steps");
         for (int i = 0; i < steps.size(); i++) {
             JsonNode step = steps.get(i);
             boolean active = i == selectedStep;
-            String marker = active ? color(GREEN, "▸ ") : "  ";
+            String marker = active ? color(GREEN, g.marker() + " ") : "  ";
             String attempts = step.path("attempts").asInt(1) > 1
-                    ? color(YELLOW, " ↻" + step.path("attempts").asInt()) : "";
+                    ? color(YELLOW, " " + g.retry() + step.path("attempts").asInt()) : "";
             String error = step.path("error").isMissingNode() || step.path("error").isNull()
-                    ? "" : color(RED, " ✕");
+                    ? "" : color(RED, " " + g.cross());
             String name = padVisible(step.path("nodeName").asText("?"), 28);
             String row = marker + dim(padVisible("#" + i, 5))
                     + (active ? bold(name) : name) + attempts + error;
@@ -85,7 +91,8 @@ final class Screens {
         if (showState && selectedStep >= 0 && selectedStep < steps.size()) {
             JsonNode step = steps.get(selectedStep);
             lines.add("");
-            lines.add("  " + dim("state · before → after  (step #" + selectedStep + ")"));
+            lines.add("  " + dim("state " + g.bullet() + " before " + g.arrow()
+                    + " after  (step #" + selectedStep + ")"));
             lines.add("  " + rule(width - 4));
             for (String before : step.path("before").toPrettyString().split("\n")) {
                 lines.add(color(GRAY, "  - " + before));
@@ -104,10 +111,11 @@ final class Screens {
 
     static List<String> liveTail(List<JsonNode> events, boolean connected, int width, int height) {
         List<String> lines = new ArrayList<>();
-        lines.add(header("live", "esc back · q quit", width));
+        Glyphs g = Glyphs.active;
+        lines.add(header("live", "esc back " + g.bullet() + " q quit", width));
         lines.add("  " + (connected
-                ? color(GREEN, "●") + dim(" connected — events stream as nodes execute")
-                : color(YELLOW, "●") + dim(" connecting…")));
+                ? color(GREEN, g.dot()) + dim(" connected " + g.dash() + " events stream as nodes execute")
+                : color(YELLOW, g.dot()) + dim(" connecting" + g.ellipsis())));
         lines.add("");
         int budget = Math.max(1, height - 4);
         int from = Math.max(0, events.size() - budget);
