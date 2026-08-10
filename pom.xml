@@ -77,39 +77,39 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <slf4j.version>2.0.18</slf4j.version>
-        <junit.version>6.0.3</junit.version>
+        <junit.version>6.1.2</junit.version>
         <assertj.version>3.27.7</assertj.version>
-        <opentelemetry.version>1.62.0</opentelemetry.version>
-        <spring-boot.version>4.0.6</spring-boot.version>
-        <jackson.version>2.21.3</jackson.version>
+        <opentelemetry.version>1.64.0</opentelemetry.version>
+        <spring-boot.version>4.1.0</spring-boot.version>
+        <jackson.version>2.22.1</jackson.version>
 
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
-        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
         <owasp-dependency-check.version>12.2.2</owasp-dependency-check.version>
-        <cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
-        <pitest-maven.version>1.23.1</pitest-maven.version>
+        <cyclonedx-maven-plugin.version>2.9.3</cyclonedx-maven-plugin.version>
+        <pitest-maven.version>1.25.9</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
 
         <!-- Test tooling -->
         <equalsverifier.version>4.5</equalsverifier.version>
-        <jqwik.version>1.9.3</jqwik.version>
+        <jqwik.version>1.10.1</jqwik.version>
         <wiremock.version>3.13.2</wiremock.version>
         <testcontainers.version>1.21.0</testcontainers.version>
-        <archunit.version>1.4.2</archunit.version>
+        <archunit.version>1.5.0</archunit.version>
 
         <!-- default empty so @{argLine} in child modules resolves when coverage profile is inactive -->
         <argLine></argLine>
 
         <!-- Quality plugins -->
-        <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
-        <spotbugs.version>4.9.8</spotbugs.version>
-        <license-maven-plugin.version>5.0.0</license-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
-        <japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.10.3.0</spotbugs-maven-plugin.version>
+        <spotbugs.version>4.10.3</spotbugs.version>
+        <license-maven-plugin.version>5.1.1</license-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+        <japicmp-maven-plugin.version>0.26.1</japicmp-maven-plugin.version>
         <japicmp.baseline.version>0.4.0</japicmp.baseline.version>
     </properties>
 
@@ -196,7 +196,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.32</version>
+                <version>1.6.1</version>
                 <scope>test</scope>
             </dependency>
 
